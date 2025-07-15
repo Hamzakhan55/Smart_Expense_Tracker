@@ -1,22 +1,14 @@
 from sqlalchemy.orm import Session
-from . import models, schemas
+from . import models
+from . import schemas
 
+def get_expenses(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.Expense).offset(skip).limit(limit).all()
+
+# Ensure you have other necessary functions like create_expense as well
 def create_expense(db: Session, expense: schemas.ExpenseCreate):
-    """
-    Creates a new expense record in the database.
-    """
-    # 1. Convert the Pydantic schema object into a SQLAlchemy model object.
-    #    **expense.model_dump() unpacks the data from the API into the model's fields.
-    db_expense = models.Expense(**expense.model_dump())
-
-    # 2. Add the new expense object to the database session (the "staging area").
+    db_expense = models.Expense(**expense.dict())
     db.add(db_expense)
-
-    # 3. Commit the transaction, saving the changes permanently to the database.
     db.commit()
-
-    # 4. Refresh the object to get the new ID that the database assigned to it.
     db.refresh(db_expense)
-
-    # 5. Return the newly created expense object.
     return db_expense
