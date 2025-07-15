@@ -17,3 +17,12 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # We will inherit from this class to create each of the database models
 Base = declarative_base()
+
+
+# This is our new "manager" function
+def get_db():
+    db = SessionLocal() # Create a new "cash drawer" (a database session)
+    try:
+        yield db # Give the drawer to the "teller" (the API endpoint)
+    finally:
+        db.close() # Always close the drawer when the transaction is done
