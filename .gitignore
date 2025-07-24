@@ -64,8 +64,8 @@
 *.npz
 
 # Ignore the entire models directory
-/models/
-backend/models/
+/models/*
+backend/models/*
 
 # ML models and weights
 *.bin
