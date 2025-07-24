@@ -42,6 +42,11 @@
 *.tmp
 *.temp
 
+# Ignore the entire models directory
+/models/whisper/
+/models/distilbert/
+/models/*
+
 # ML models
 backend/models/distilbert-base-uncased-mnli/
 backend/models/whisper-large-v3/
