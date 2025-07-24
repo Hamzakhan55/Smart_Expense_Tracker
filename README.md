@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Smart Expense Tracker
 
 A modern expense tracking application built with Next.js.
@@ -31,3 +32,6 @@ npm run dev
 - Reports generation
 - Settings management
 - Mobile-friendly interface with bottom navigation
+=======
+# Smart_Expense_Tracker
+>>>>>>> 90fc1ccc712297b530b0bc1e60389d26fdedf472
