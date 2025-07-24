@@ -12,3 +12,14 @@ def create_expense(db: Session, expense: schemas.ExpenseCreate):
     db.commit()
     db.refresh(db_expense)
     return db_expense
+
+
+def get_incomes(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.Income).order_by(models.Income.date.desc()).offset(skip).limit(limit).all()
+
+def create_income(db: Session, income: schemas.IncomeCreate):
+    db_income = models.Income(**income.dict())
+    db.add(db_income)
+    db.commit()
+    db.refresh(db_income)
+    return db_income

@@ -107,3 +107,13 @@ async def process_voice_and_create_expense(
     finally:
         if temp_file_path.exists():
             temp_file_path.unlink()
+            
+            
+@app.post("/incomes/", response_model=schemas.Income)
+def create_income_endpoint(income: schemas.IncomeCreate, db: Session = Depends(get_db)):
+    return crud.create_income(db=db, income=income)
+
+@app.get("/incomes/", response_model=List[schemas.Income])
+def read_incomes_endpoint(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    incomes = crud.get_incomes(db, skip=skip, limit=limit)
+    return incomes
