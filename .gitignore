@@ -8,6 +8,9 @@
 *.mov
 *.avi
 *.wmv
+*.mkv
+*.flv
+*.webm
 *.iso
 *.dmg
 *.exe
@@ -42,16 +45,50 @@
 *.tmp
 *.temp
 
-# Ignore the entire models directory
-/models/whisper/
-/models/distilbert/
-/models/*
+# Audio files
+*.wav
+*.mp3
+*.flac
+*.aac
+*.ogg
+*.wma
+*.m4a
 
-# ML models
-backend/models/distilbert-base-uncased-mnli/
-backend/models/whisper-large-v3/
+# Large data files
+*.parquet
+*.h5
+*.hdf5
+*.pickle
+*.pkl
+*.npy
+*.npz
+
+# Ignore the entire models directory
+/models/
+backend/models/
+
+# ML models and weights
 *.bin
 *.safetensors
+*.onnx
+*.pb
+*.h5
+*.tflite
+*.pt
+*.pth
+*.ckpt
+*.model
+*.weights
+
+# Specific audio files in backend
+backend/*.wav
+backend/*.mp3
+burgers800.wav
+rrrr.wav
+
+# Temp directories
+temp_audio/
+/temp_audio/
 
 # Python cache
 __pycache__/
@@ -90,6 +127,4 @@ out/
 *.sublime-workspace
 .DS_Store
 Thumbs.db
-node_modules
-node_modules
-node_modules
+
