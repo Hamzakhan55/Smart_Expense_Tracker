@@ -1,0 +1,11 @@
+# backend/app/database.py
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+# Import the pre-loaded database URL from our config file
+from .config import DATABASE_URL
+
+engine = create_engine(DATABASE_URL)
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
