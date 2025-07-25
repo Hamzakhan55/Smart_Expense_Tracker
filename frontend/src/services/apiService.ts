@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Expense, ExpenseCreate } from '@/types/expense';
+import { Expense, ExpenseCreate, Income, IncomeCreate } from '@/types';
 
 
 const apiClient = axios.create({
@@ -28,5 +28,17 @@ export const processVoiceExpense = async (audioFile: File): Promise<Expense> => 
       'Content-Type': 'multipart/form-data', 
     },
   });
+  return response.data;
+};
+
+
+export const getIncomes = async (): Promise<Income[]> => {
+  const response = await apiClient.get<Income[]>('/incomes/');
+  return response.data;
+};
+
+
+export const createIncome = async (incomeData: IncomeCreate): Promise<Income> => {
+  const response = await apiClient.post<Income>('/incomes/', incomeData);
   return response.data;
 };
