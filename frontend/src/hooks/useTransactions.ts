@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getExpenses, getIncomes, createExpense, createIncome, deleteExpense, deleteIncome } from '@/services/apiService';
+import { getExpenses, getIncomes, createExpense, createIncome, deleteExpense, deleteIncome, processVoiceExpense } from '@/services/apiService';
 
 export const useTransactions = () => {
   const queryClient = useQueryClient();
@@ -64,6 +64,21 @@ export const useTransactions = () => {
 
 
 
+ // --- NEW: VOICE PROCESSING MUTATION ---
+  const processVoiceMutation = useMutation({
+    mutationFn: processVoiceExpense,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+    },
+    onError: (error) => {
+      console.error("Error processing voice expense:", error);
+      alert("Sorry, we couldn't understand that. Please try again.");
+    }
+  });
+
+
+
+
   // --- CALCULATIONS ---
 
   const totalExpenses = expenses?.reduce((acc, expense) => acc + expense.amount, 0) ?? 0;
@@ -88,6 +103,8 @@ export const useTransactions = () => {
     
     removeExpense: deleteExpenseMutation.mutate,
     removeIncome: deleteIncomeMutation.mutate,
+    addExpenseFromVoice: processVoiceMutation.mutate,
+    isProcessingVoice: processVoiceMutation.isPending,
   
   };
 };
