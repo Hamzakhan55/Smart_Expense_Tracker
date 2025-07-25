@@ -3,15 +3,18 @@
 import { useTransactions } from '@/hooks/useTransactions';
 import { Wallet, TrendingUp, TrendingDown } from 'lucide-react';
 import TransactionList from '@/components/TransactionList';
+import { useCurrency } from '@/context/CurrencyContext';
+
 
 export default function HomePage() {
   const { totalExpenses, totalIncome, isLoading, error } = useTransactions();
+  const { currency } = useCurrency();
 
   
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
+    return new Intl.NumberFormat('en-Us', {
       style: 'currency',
-      currency: 'Pkr', 
+      currency: currency, 
       minimumFractionDigits: 2,
     }).format(amount);
   };

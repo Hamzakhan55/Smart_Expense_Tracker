@@ -1,7 +1,8 @@
 'use client';
 
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, Currency } from 'lucide-react';
 import type { Expense, Income } from '@/types';
+import { useCurrency } from '@/context/CurrencyContext';
 
 
 type Transaction = 
@@ -9,14 +10,10 @@ type Transaction =
   | { type: 'income'; data: Income };
 
 
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'Pkr',
-  }).format(amount);
-};
+
 
 const TransactionItem = ({ transaction }: { transaction: Transaction }) => {
+    const { currency } = useCurrency();
   const isExpense = transaction.type === 'expense';
 
   const amount = transaction.data.amount;
@@ -27,6 +24,15 @@ const TransactionItem = ({ transaction }: { transaction: Transaction }) => {
     minute: '2-digit',
     hour12: false
   });
+  
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('en-Us', {
+    style: 'currency',
+    currency: currency,
+  }).format(amount);
+};
+
+
 
   return (
     <div className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg">
