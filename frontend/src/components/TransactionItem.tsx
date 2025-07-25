@@ -1,22 +1,24 @@
 'use client';
 
-import { TrendingUp, TrendingDown, Currency } from 'lucide-react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 import type { Expense, Income } from '@/types';
 import { useCurrency } from '@/context/CurrencyContext';
-
 
 type Transaction = 
   | { type: 'expense'; data: Expense } 
   | { type: 'income'; data: Income };
 
+interface TransactionItemProps {
+  transaction: Transaction;
+  onClick: () => void;
+}
 
-
-
-const TransactionItem = ({ transaction }: { transaction: Transaction }) => {
-    const { currency } = useCurrency();
+const TransactionItem = ({ transaction, onClick }: TransactionItemProps) => {
+  const { currency } = useCurrency();
   const isExpense = transaction.type === 'expense';
 
   const amount = transaction.data.amount;
+  // --- THIS IS THE CORRECTED LINE ---
   const title = isExpense ? transaction.data.category : transaction.data.category;
   const description = transaction.data.description;
   const date = new Date(transaction.data.date).toLocaleTimeString('en-US', {
@@ -25,17 +27,16 @@ const TransactionItem = ({ transaction }: { transaction: Transaction }) => {
     hour12: false
   });
   
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('en-Us', {
-    style: 'currency',
-    currency: currency,
-  }).format(amount);
-};
-
-
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+    }).format(amount);
+  };
 
   return (
-    <div className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg">
+    // Make sure to add the onClick handler here
+    <div onClick={onClick} className="flex items-center justify-between p-3 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors">
       <div className="flex items-center gap-4">
         <div className={`p-2 rounded-full ${isExpense ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
           {isExpense ? <TrendingDown size={20} /> : <TrendingUp size={20} />}

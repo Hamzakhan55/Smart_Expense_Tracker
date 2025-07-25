@@ -117,3 +117,18 @@ def create_income_endpoint(income: schemas.IncomeCreate, db: Session = Depends(g
 def read_incomes_endpoint(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     incomes = crud.get_incomes(db, skip=skip, limit=limit)
     return incomes
+
+
+@app.delete("/expenses/{expense_id}", response_model=schemas.Expense)
+def delete_expense_endpoint(expense_id: int, db: Session = Depends(get_db)):
+    db_expense = crud.delete_expense(db, expense_id=expense_id)
+    if db_expense is None:
+        raise HTTPException(status_code=404, detail="Expense not found")
+    return db_expense
+
+@app.delete("/incomes/{income_id}", response_model=schemas.Income)
+def delete_income_endpoint(income_id: int, db: Session = Depends(get_db)):
+    db_income = crud.delete_income(db, income_id=income_id)
+    if db_income is None:
+        raise HTTPException(status_code=404, detail="Income not found")
+    return db_income

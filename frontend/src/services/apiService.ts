@@ -42,3 +42,13 @@ export const createIncome = async (incomeData: IncomeCreate): Promise<Income> =>
   const response = await apiClient.post<Income>('/incomes/', incomeData);
   return response.data;
 };
+
+export const deleteExpense = async (id: number): Promise<Expense> => {
+  const response = await apiClient.delete(`/expenses/${id}`);
+  return response.data;
+};
+
+export const deleteIncome = async (id: number): Promise<Income> => {
+  const response = await apiClient.delete(`/incomes/${id}`);
+  return response.data;
+};

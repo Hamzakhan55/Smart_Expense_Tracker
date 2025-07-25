@@ -1,11 +1,9 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getExpenses, getIncomes, createExpense, createIncome } from '@/services/apiService';
-import { ExpenseCreate, IncomeCreate } from '@/types'; // Ensure your types are in @/types/index.ts
+import { getExpenses, getIncomes, createExpense, createIncome, deleteExpense, deleteIncome } from '@/services/apiService';
 
 export const useTransactions = () => {
-  // 1. Get the query client instance from the provider
   const queryClient = useQueryClient();
 
   // --- QUERIES (for fetching data) ---
@@ -50,6 +48,21 @@ export const useTransactions = () => {
     }
   });
 
+ const deleteExpenseMutation = useMutation({
+    mutationFn: deleteExpense,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+    },
+  });
+
+  const deleteIncomeMutation = useMutation({
+    mutationFn: deleteIncome,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['incomes'] });
+    },
+  });
+
+
 
   // --- CALCULATIONS ---
 
@@ -72,5 +85,12 @@ export const useTransactions = () => {
     addExpense: createExpenseMutation.mutate, // Expose the mutate function
     addIncome: createIncomeMutation.mutate,   // Expose the mutate function
     isCreating: createExpenseMutation.isPending || createIncomeMutation.isPending, // Expose a loading state for the form
+    
+    removeExpense: deleteExpenseMutation.mutate,
+    removeIncome: deleteIncomeMutation.mutate,
+  
   };
 };
+
+
+
