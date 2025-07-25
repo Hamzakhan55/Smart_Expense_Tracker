@@ -1,7 +1,8 @@
 'use client';
 
 import { useTransactions } from '@/hooks/useTransactions';
-import { Wallet, TrendingUp, TrendingDown, EyeOff } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown } from 'lucide-react';
+import TransactionList from '@/components/TransactionList';
 
 export default function HomePage() {
   const { totalExpenses, totalIncome, isLoading, error } = useTransactions();
@@ -67,8 +68,7 @@ export default function HomePage() {
       <div>
         <h2 className="text-xl font-bold text-gray-800 mb-4">Recent Transactions</h2>
         <div className="bg-white p-4 rounded-xl shadow">
-          <p className="text-center text-gray-500">Transaction list will go here.</p>
-          {/* We will build the transaction list component in the next step */}
+          <TransactionList />
         </div>
       </div>
     </div>
