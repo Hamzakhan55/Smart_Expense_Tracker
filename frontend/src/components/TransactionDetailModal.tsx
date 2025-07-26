@@ -1,4 +1,3 @@
-// src/components/TransactionDetailModal.tsx
 'use client';
 
 import * as Dialog from '@radix-ui/react-dialog';
@@ -14,9 +13,10 @@ type Transaction =
 interface TransactionDetailModalProps {
   transaction: Transaction | null;
   onClose: () => void;
+  onEdit?: () => void;
 }
 
-const TransactionDetailModal = ({ transaction, onClose }: TransactionDetailModalProps) => {
+const TransactionDetailModal = ({ transaction, onClose, onEdit }: TransactionDetailModalProps) => {
   const { currency } = useCurrency();
   const { removeExpense, removeIncome } = useTransactions();
 
@@ -29,7 +29,7 @@ const TransactionDetailModal = ({ transaction, onClose }: TransactionDetailModal
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 
   const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete this transaction?')) {
+     {
       if (isExpense) {
         removeExpense(transaction.data.id);
       } else {
@@ -56,7 +56,7 @@ const TransactionDetailModal = ({ transaction, onClose }: TransactionDetailModal
           </div>
 
           <div className="flex justify-end gap-4 mt-6">
-            <button onClick={() => alert('Edit feature coming soon!')} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+            <button onClick={onEdit} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
               <Edit size={16}/> Edit
             </button>
             <button onClick={handleDelete} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700">

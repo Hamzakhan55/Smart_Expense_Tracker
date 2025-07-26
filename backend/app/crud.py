@@ -38,3 +38,22 @@ def delete_income(db: Session, income_id: int):
         db.delete(db_income)
         db.commit()
     return db_income
+
+
+def update_expense(db: Session, expense_id: int, expense: schemas.ExpenseCreate):
+    db_expense = db.query(models.Expense).filter(models.Expense.id == expense_id).first()
+    if db_expense:
+        for key, value in expense.dict().items():
+            setattr(db_expense, key, value)
+        db.commit()
+        db.refresh(db_expense)
+    return db_expense
+
+def update_income(db: Session, income_id: int, income: schemas.IncomeCreate):
+    db_income = db.query(models.Income).filter(models.Income.id == income_id).first()
+    if db_income:
+        for key, value in income.dict().items():
+            setattr(db_income, key, value)
+        db.commit()
+        db.refresh(db_income)
+    return db_income

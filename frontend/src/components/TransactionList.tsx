@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useTransactions } from '@/hooks/useTransactions';
 import TransactionItem from './TransactionItem';
 import TransactionDetailModal from './TransactionDetailModal';
+import AddTransactionModal from './AddTransactionModal';
 import type { Expense, Income } from '@/types';
 
 type Transaction = | { type: 'expense'; data: Expense } | { type: 'income'; data: Income };
@@ -11,6 +12,13 @@ type Transaction = | { type: 'expense'; data: Expense } | { type: 'income'; data
 const TransactionList = () => {
   const { allTransactions, isLoading, error } = useTransactions();
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const handleEditClick = () => {
+    if (selectedTransaction) {
+      setIsEditModalOpen(true);
+    }
+  };
 
   const recentTransactions = allTransactions.slice(0, 10); 
 
@@ -40,7 +48,17 @@ const TransactionList = () => {
       </div>
       <TransactionDetailModal 
         transaction={selectedTransaction} 
-        onClose={() => setSelectedTransaction(null)} 
+        onClose={() => setSelectedTransaction(null)}
+        onEdit={handleEditClick}
+      />
+      
+      <AddTransactionModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedTransaction(null);
+        }}
+        transactionToEdit={selectedTransaction}
       />
     </>
   );

@@ -132,3 +132,18 @@ def delete_income_endpoint(income_id: int, db: Session = Depends(get_db)):
     if db_income is None:
         raise HTTPException(status_code=404, detail="Income not found")
     return db_income
+
+
+@app.put("/expenses/{expense_id}", response_model=schemas.Expense)
+def update_expense_endpoint(expense_id: int, expense: schemas.ExpenseCreate, db: Session = Depends(get_db)):
+    db_expense = crud.update_expense(db, expense_id=expense_id, expense=expense)
+    if db_expense is None:
+        raise HTTPException(status_code=404, detail="Expense not found")
+    return db_expense
+
+@app.put("/incomes/{income_id}", response_model=schemas.Income)
+def update_income_endpoint(income_id: int, income: schemas.IncomeCreate, db: Session = Depends(get_db)):
+    db_income = crud.update_income(db, income_id=income_id, income=income)
+    if db_income is None:
+        raise HTTPException(status_code=404, detail="Income not found")
+    return db_income
