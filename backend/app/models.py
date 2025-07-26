@@ -22,3 +22,7 @@ class Income(Base):
     category = Column(String(100), nullable=False) 
     description = Column(String(255), nullable=True)
     income_date = Column(DateTime, default=datetime.now, nullable=False)
+    
+    @property
+    def date(self):
+        return self.income_date

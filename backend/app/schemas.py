@@ -33,7 +33,7 @@ class IncomeCreate(IncomeBase):
 
 class Income(IncomeBase):
     id: int
-    income_date: datetime
+    date: datetime
 
     class Config:
         from_attributes = True

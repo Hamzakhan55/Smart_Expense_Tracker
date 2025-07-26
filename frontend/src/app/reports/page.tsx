@@ -5,13 +5,20 @@ import { useState, useMemo } from 'react';
 import { useTransactions } from '@/hooks/useTransactions';
 import { generateTransactionReport } from '@/services/reportService';
 import { Download } from 'lucide-react';
-import TransactionList from '@/components/TransactionList'; // We can reuse our list!
+// 1. Import the necessary components and types
+import TransactionItem from '@/components/TransactionItem';
+import TransactionDetailModal from '@/components/TransactionDetailModal';
+import type { Expense, Income } from '@/types';
 
 type TimeRange = 'Daily' | 'Weekly' | 'Monthly' | 'All';
+// Define the Transaction union type again for use in this component
+type Transaction = | { type: 'expense'; data: Expense } | { type: 'income'; data: Income };
 
 export default function ReportsPage() {
   const { expenses, incomes, isLoading, error } = useTransactions();
   const [timeRange, setTimeRange] = useState<TimeRange>('All');
+  // 2. Add state to manage the selected transaction for the modal
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
   const filteredTransactions = useMemo(() => {
     const combined = [
@@ -20,56 +27,49 @@ export default function ReportsPage() {
     ];
 
     const now = new Date();
-    const filtered = combined.filter(t => {
-      const transactionDate = new Date(t.data.date);
+    const filtered = combined.filter(transaction => {
+      const transactionDate = new Date(transaction.data.date);
+      
       switch (timeRange) {
         case 'Daily':
           return transactionDate.toDateString() === now.toDateString();
         case 'Weekly':
-          const oneWeekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
-          return transactionDate >= oneWeekAgo;
+          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          return transactionDate >= weekAgo;
         case 'Monthly':
           return transactionDate.getMonth() === now.getMonth() && transactionDate.getFullYear() === now.getFullYear();
-        case 'All':
         default:
           return true;
       }
     });
-    
-    // Sort the filtered list by date
-    filtered.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
-    return filtered;
+
+    return filtered.sort((a, b) => {
+      const dateA = new Date(a.data.date);
+      const dateB = new Date(b.data.date);
+      return dateB.getTime() - dateA.getTime();
+    });
   }, [incomes, expenses, timeRange]);
 
   const handleExport = () => {
-    if (filteredTransactions.length > 0) {
-      generateTransactionReport(filteredTransactions, timeRange);
-    } else {
-      alert('No transactions to export for the selected range.');
-    }
+    generateTransactionReport(filteredTransactions, timeRange);
   };
 
   const renderContent = () => {
     if (isLoading) return <p className="text-center text-gray-500 py-4">Loading report data...</p>;
     if (error) return <p className="text-center text-red-500 py-4">Could not load data.</p>;
     
-    // This is a temporary list view. We'll replace it with a table view.
+    // --- 3. THIS IS THE UPDATED RENDER LOGIC ---
     return (
       <div className="bg-white p-2 md:p-4 rounded-xl shadow">
          {filteredTransactions.length > 0 ? (
-            // This is a simple list view, a table would be better for a report.
-            // We'll use our existing component for now.
             <div className="space-y-2">
-              {filteredTransactions.map(t => (
-                  <div key={`${t.type}-${t.data.id}`} className="flex justify-between p-2 border-b">
-                      <div>
-                          <p className="font-bold">{t.type === 'expense' ? t.data.category : t.data.category}</p>
-                          <p className="text-sm text-gray-600">{t.data.description}</p>
-                      </div>
-                      <p className={`font-semibold ${t.type === 'expense' ? 'text-red-500' : 'text-green-500'}`}>
-                          {t.type === 'expense' ? '-' : '+'}{t.data.amount.toFixed(2)}
-                      </p>
-                  </div>
+              {filteredTransactions.map(transaction => (
+                  <TransactionItem 
+                    key={`${transaction.type}-${transaction.data.id}`}
+                    transaction={transaction}
+                    // When clicked, it sets the state to open the modal
+                    onClick={() => setSelectedTransaction(transaction)}
+                  />
               ))}
             </div>
          ) : (
@@ -80,31 +80,44 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-        <h1 className="text-2xl font-bold text-gray-800">Reports</h1>
-        <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 self-start md:self-auto">
-          <Download size={16} /> Export as PDF
-        </button>
+    // The main return block now includes the TransactionDetailModal
+    <>
+      <div className="p-4 md:p-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            <Download size={20} />
+            Export PDF
+          </button>
+        </div>
+
+        <div className="flex gap-2 overflow-x-auto">
+          {(['Daily', 'Weekly', 'Monthly', 'All'] as TimeRange[]).map((range) => (
+            <button
+              key={range}
+              onClick={() => setTimeRange(range)}
+              className={`px-4 py-2 rounded-lg whitespace-nowrap ${
+                timeRange === range
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {range}
+            </button>
+          ))}
+        </div>
+        
+        <div>{renderContent()}</div>
       </div>
       
-      {/* Filtering Tabs */}
-      <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
-        {(['Daily', 'Weekly', 'Monthly', 'All'] as TimeRange[]).map(range => (
-          <button 
-            key={range}
-            onClick={() => setTimeRange(range)}
-            className={`flex-1 py-2 px-3 text-sm font-semibold rounded-md transition-all ${
-              timeRange === range ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            {range}
-          </button>
-        ))}
-      </div>
-
-      {/* Content Area */}
-      <div>{renderContent()}</div>
-    </div>
+      {/* 4. Render the modal component */}
+      <TransactionDetailModal 
+        transaction={selectedTransaction}
+        onClose={() => setSelectedTransaction(null)}
+      />
+    </>
   );
 }
