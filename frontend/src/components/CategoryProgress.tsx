@@ -3,6 +3,7 @@
 import type { Expense } from '@/types';
 import { useCurrency } from '@/context/CurrencyContext';
 import { useMemo } from 'react';
+import CategoryIcon from './CategoryIcon';
 
 interface CategoryProgressProps {
   expenses: Expense[];
@@ -35,7 +36,10 @@ const CategoryProgress = ({ expenses }: CategoryProgressProps) => {
         return (
           <div key={category}>
             <div className="flex justify-between items-center mb-1 text-sm">
-              <span className="font-semibold text-gray-700">{category}</span>
+              <div className="flex items-center gap-2 text-sm">
+                <CategoryIcon category={category} className="text-gray-500" size={18} />
+                <span className="font-semibold text-gray-700">{category}</span>
+              </div>
               <span className="font-medium text-gray-600">{formatCurrency(amount)}</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2.5">

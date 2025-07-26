@@ -1,4 +1,3 @@
-// src/app/statistics/page.tsx
 'use client';
 
 import { useTransactions } from '@/hooks/useTransactions';
@@ -20,10 +19,9 @@ export default function StatisticsPage() {
     <div className="p-4 md:p-6 space-y-6">
       <h1 className="text-2xl font-bold text-gray-800">Statistics</h1>
       
-      {/* Chart Component */}
+     
       <StatsChart totalIncome={totalIncome} totalExpenses={totalExpenses} />
 
-      {/* Category Breakdown Component */}
       <CategoryProgress expenses={expenses || []} />
     </div>
   );
