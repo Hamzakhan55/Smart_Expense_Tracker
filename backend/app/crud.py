@@ -57,3 +57,13 @@ def update_income(db: Session, income_id: int, income: schemas.IncomeCreate):
         db.commit()
         db.refresh(db_income)
     return db_income
+
+def delete_all_expenses(db: Session):
+    deleted_rows = db.query(models.Expense).delete()
+    db.commit()
+    return deleted_rows
+
+def delete_all_incomes(db: Session):
+    deleted_rows = db.query(models.Income).delete()
+    db.commit()
+    return deleted_rows

@@ -62,3 +62,7 @@ export const updateIncome = async ({ id, ...data }: { id: number } & IncomeCreat
   const response = await apiClient.put(`/incomes/${id}`, data);
   return response.data;
 };
+
+export const deleteAllTransactions = async (): Promise<void> => {
+  await apiClient.delete('/transactions/all');
+};

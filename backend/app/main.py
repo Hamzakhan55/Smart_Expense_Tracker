@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 import shutil
 from pathlib import Path
+from fastapi import status 
 
 # --- NEW: Import the CORS middleware ---
 from fastapi.middleware.cors import CORSMiddleware
@@ -147,3 +148,9 @@ def update_income_endpoint(income_id: int, income: schemas.IncomeCreate, db: Ses
     if db_income is None:
         raise HTTPException(status_code=404, detail="Income not found")
     return db_income
+
+@app.delete("/transactions/all", status_code=status.HTTP_204_NO_CONTENT)
+def delete_all_transactions_endpoint(db: Session = Depends(get_db)):
+    crud.delete_all_expenses(db)
+    crud.delete_all_incomes(db)
+    return {"ok": True}

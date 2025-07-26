@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getExpenses, getIncomes, createExpense, createIncome, deleteExpense, deleteIncome, processVoiceExpense, updateExpense, updateIncome } from '@/services/apiService';
+import { getExpenses, getIncomes, createExpense, createIncome, deleteExpense, deleteIncome, processVoiceExpense, updateExpense, updateIncome, deleteAllTransactions  } from '@/services/apiService';
 import { useMemo } from 'react';
 import type { Expense, Income } from '@/types';
 
@@ -86,6 +86,15 @@ export const useTransactions = () => {
   });
 
 
+  const deleteAllMutation = useMutation({
+    mutationFn: deleteAllTransactions,
+    onSuccess: () => {
+      // Invalidate both queries to clear all data from the UI
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['incomes'] });
+    },
+  });
+
   const totalExpenses = expenses?.reduce((acc, expense) => acc + expense.amount, 0) ?? 0;
   const totalIncome = incomes?.reduce((acc, income) => acc + income.amount, 0) ?? 0;
 
@@ -119,6 +128,8 @@ export const useTransactions = () => {
     editExpense: updateExpenseMutation.mutate,
     editIncome: updateIncomeMutation.mutate,
     isUpdating: updateExpenseMutation.isPending || updateIncomeMutation.isPending,
+    clearAllTransactions: deleteAllMutation.mutate,
+
   };
 };
 
