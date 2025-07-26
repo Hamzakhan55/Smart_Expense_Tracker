@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from datetime import date
+from datetime import datetime
 from typing import Optional
 
 
@@ -17,13 +17,14 @@ class Config:
 
 class Expense(ExpenseBase):
     id: int
+    date: datetime
 
     class Config:
         from_attributes = True
         
         
 class IncomeBase(BaseModel):
-    amount: float
+    amount: int
     category: str
     description: Optional[str] = None
 
@@ -32,6 +33,7 @@ class IncomeCreate(IncomeBase):
 
 class Income(IncomeBase):
     id: int
+    income_date: datetime
 
     class Config:
         from_attributes = True

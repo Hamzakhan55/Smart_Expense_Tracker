@@ -129,8 +129,8 @@ const AddTransactionModal = ({ isOpen, onClose }: AddTransactionModalProps) => {
             </div>
 
             <div>
-              <label htmlFor="description" className="text-sm font-medium text-gray-700">Description</label>
-              <input type="text" id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1 w-full p-2 border rounded-md" placeholder="e.g., Bought a coffee" required />
+              <label htmlFor="description" className="text-sm font-medium text-gray-700">Description (Optional)</label>
+              <input type="text" id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1 w-full p-2 border rounded-md" placeholder="e.g., Bought a coffee" />
             </div>
           </div>
           

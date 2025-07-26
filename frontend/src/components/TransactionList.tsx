@@ -9,24 +9,10 @@ import type { Expense, Income } from '@/types';
 type Transaction = | { type: 'expense'; data: Expense } | { type: 'income'; data: Income };
 
 const TransactionList = () => {
-  
-  const { expenses, incomes, isLoading, error } = useTransactions();
-  
- 
+  const { allTransactions, isLoading, error } = useTransactions();
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
-  
-  const sortedTransactions = useMemo(() => {
-    
-    const combined = [
-      ...(incomes?.map(income => ({ type: 'income' as const, data: income })) ?? []),
-      ...(expenses?.map(expense => ({ type: 'expense' as const, data: expense })) ?? [])
-    ];
-
-    
-    combined.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
-    return combined.slice(0, 10);
-  }, [incomes, expenses]); 
+  const recentTransactions = allTransactions.slice(0, 10); 
 
   if (isLoading) {
     return <p className="text-center text-gray-500 py-4">Loading transactions...</p>;
@@ -40,8 +26,8 @@ const TransactionList = () => {
   return (
     <>
       <div className="space-y-2">
-        {sortedTransactions.length > 0 ? (
-          sortedTransactions.map((transaction) => (
+        {recentTransactions.length > 0 ? (
+          recentTransactions.map((transaction) => (
             <TransactionItem 
               key={`${transaction.type}-${transaction.data.id}`} 
               transaction={transaction}

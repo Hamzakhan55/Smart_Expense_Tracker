@@ -2,11 +2,11 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getExpenses, getIncomes, createExpense, createIncome, deleteExpense, deleteIncome, processVoiceExpense } from '@/services/apiService';
+import { useMemo } from 'react';
+import type { Expense, Income } from '@/types';
 
 export const useTransactions = () => {
   const queryClient = useQueryClient();
-
-  // --- QUERIES (for fetching data) ---
 
   const { data: expenses, isLoading: isLoadingExpenses, error: errorExpenses } = useQuery({
     queryKey: ['expenses'],
@@ -18,37 +18,31 @@ export const useTransactions = () => {
     queryFn: getIncomes,
   });
 
-
-  // --- MUTATIONS (for changing data) ---
-
-  // Mutation for creating an expense
   const createExpenseMutation = useMutation({
-    mutationFn: createExpense, // The API function to call
-    onSuccess: () => {
-      // When the API call is successful, tell TanStack Query to re-fetch the expenses
-      console.log("Expense created, invalidating queries...");
-      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+    mutationFn: createExpense,
+    onSuccess: (newExpense) => {
+      queryClient.setQueryData(['expenses'], (old: Expense[] | undefined) => 
+        old ? [newExpense, ...old] : [newExpense]
+      );
     },
     onError: (error) => {
       console.error("Error creating expense:", error);
-      // You could add a toast notification here
     }
   });
 
-  // Mutation for creating an income
   const createIncomeMutation = useMutation({
-    mutationFn: createIncome, // The API function to call
-    onSuccess: () => {
-      // When the API call is successful, tell TanStack Query to re-fetch the incomes
-      console.log("Income created, invalidating queries...");
-      queryClient.invalidateQueries({ queryKey: ['incomes'] });
+    mutationFn: createIncome,
+    onSuccess: (newIncome) => {
+      queryClient.setQueryData(['incomes'], (old: Income[] | undefined) => 
+        old ? [newIncome, ...old] : [newIncome]
+      );
     },
-     onError: (error) => {
+    onError: (error) => {
       console.error("Error creating income:", error);
     }
   });
 
- const deleteExpenseMutation = useMutation({
+  const deleteExpenseMutation = useMutation({
     mutationFn: deleteExpense,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
@@ -62,13 +56,12 @@ export const useTransactions = () => {
     },
   });
 
-
-
- // --- NEW: VOICE PROCESSING MUTATION ---
   const processVoiceMutation = useMutation({
     mutationFn: processVoiceExpense,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+    onSuccess: (newExpense) => {
+      queryClient.setQueryData(['expenses'], (old: Expense[] | undefined) => 
+        old ? [newExpense, ...old] : [newExpense]
+      );
     },
     onError: (error) => {
       console.error("Error processing voice expense:", error);
@@ -76,36 +69,36 @@ export const useTransactions = () => {
     }
   });
 
-
-
-
-  // --- CALCULATIONS ---
-
   const totalExpenses = expenses?.reduce((acc, expense) => acc + expense.amount, 0) ?? 0;
   const totalIncome = incomes?.reduce((acc, income) => acc + income.amount, 0) ?? 0;
 
+  const allTransactions = useMemo(() => {
+    const combined = [
+      ...(incomes?.map(income => ({ type: 'income' as const, data: income })) ?? []),
+      ...(expenses?.map(expense => ({ type: 'expense' as const, data: expense })) ?? [])
+    ];
 
-  // --- RETURN VALUE ---
+    combined.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
+    return combined;
+  }, [incomes, expenses]);
 
   return {
-    // Queries
     expenses,
     incomes,
+    allTransactions,
     totalExpenses,
     totalIncome,
     isLoading: isLoadingExpenses || isLoadingIncomes,
     error: errorExpenses || errorIncomes,
     
-    // Mutations
-    addExpense: createExpenseMutation.mutate, // Expose the mutate function
-    addIncome: createIncomeMutation.mutate,   // Expose the mutate function
-    isCreating: createExpenseMutation.isPending || createIncomeMutation.isPending, // Expose a loading state for the form
+    addExpense: createExpenseMutation.mutate,
+    addIncome: createIncomeMutation.mutate,
+    isCreating: createExpenseMutation.isPending || createIncomeMutation.isPending,
     
     removeExpense: deleteExpenseMutation.mutate,
     removeIncome: deleteIncomeMutation.mutate,
     addExpenseFromVoice: processVoiceMutation.mutate,
     isProcessingVoice: processVoiceMutation.isPending,
-  
   };
 };
 
