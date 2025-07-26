@@ -1,6 +1,7 @@
 'use client';
 
 import { useCurrency } from '@/context/CurrencyContext';
+import { FaGlobe } from 'react-icons/fa';
 
 const currencies = [
   { code: 'INR', name: 'Indian Rupee', symbol: '₹' },
@@ -87,19 +88,22 @@ const CurrencySelector = () => {
   const { currency, setCurrency } = useCurrency();
 
   return (
-    <div className="bg-white p-4 rounded-xl shadow">
-      <label htmlFor="currency-select" className="block text-sm font-medium text-gray-700 mb-2">
-        Select Your Currency
-      </label>
+    <div className="w-full max-w-md  p-6 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-md rounded-2xl shadow-xl transition-all border border-zinc-200 dark:border-zinc-800">
+      <div className="flex items-center gap-2 mb-4">
+        <FaGlobe className="text-blue-600 dark:text-blue-400 text-lg" />
+        <label htmlFor="currency-select" className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">
+          Select Your Currency
+        </label>
+      </div>
       <select
         id="currency-select"
         value={currency}
         onChange={(e) => setCurrency(e.target.value)}
-        className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+        className="w-full px-4 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all"
       >
         {currencies.map((c) => (
           <option key={c.code} value={c.code}>
-            {c.name} ({c.code})
+            {c.name} ({c.symbol})
           </option>
         ))}
       </select>
