@@ -67,3 +67,21 @@ def delete_all_incomes(db: Session):
     deleted_rows = db.query(models.Income).delete()
     db.commit()
     return deleted_rows
+
+
+def get_expenses(db: Session, user_id: int, skip: int = 0, limit: int = 100):
+    return db.query(models.Expense).filter(models.Expense.user_id == user_id).order_by(models.Expense.date.desc()).offset(skip).limit(limit).all()
+
+def create_expense(db: Session, expense: schemas.ExpenseCreate, user_id: int):
+    db_expense = models.Expense(**expense.dict(), user_id=user_id)
+    db.add(db_expense)
+    # ... (commit and refresh)
+    return db_expense
+    
+def get_incomes(db: Session, user_id: int, skip: int = 0, limit: int = 100):
+    return db.query(models.Income).filter(models.Income.user_id == user_id).order_by(models.Income.date.desc()).offset(skip).limit(limit).all()
+
+def create_income(db: Session, income: schemas.IncomeCreate, user_id: int):
+    db_income = models.Income(**income.dict(), user_id=user_id)
+    # ...
+    return db_income

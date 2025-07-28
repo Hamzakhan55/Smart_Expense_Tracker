@@ -1,4 +1,3 @@
-// src/components/AiConfirmationModal.tsx
 'use client';
 
 import * as Dialog from '@radix-ui/react-dialog';
@@ -52,12 +51,12 @@ const AiConfirmationModal = ({ aiData, onClose }: AiConfirmationModalProps) => {
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50" />
         <Dialog.Content className="fixed top-1/2 left-1/2 w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-lg">
-          <Dialog.Title className="flex items-center gap-2 text-xl font-bold text-gray-800">
+          <div className="flex items-center gap-2 text-xl font-bold text-gray-800">
             <Sparkles className="text-blue-500" />
             Confirm Your Expense
-          </Dialog.Title>
+          </div>
           <Dialog.Description className="text-sm text-gray-500 mt-1 mb-4">
-            We have transcribed your voice. Please confirm or edit the details below.
+            We ha   ve transcribed your voice. Please confirm or edit the details below.
           </Dialog.Description>
           
           <form onSubmit={handleSubmit}>
