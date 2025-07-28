@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
+from typing import Dict
+
 
 
 class ExpenseBase(BaseModel):
@@ -59,3 +61,7 @@ class User(UserBase):
     
     class Config:
         from_attributes = True
+        
+class ForecastResponse(BaseModel):
+    total_forecast: float
+    by_category: Dict[str, float]

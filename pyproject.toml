@@ -27,6 +27,7 @@ pydub = "^0.25.1"
 numpy = "^2.3.1"
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+python-dateutil = "^2.9.0.post0"
 
 [build-system]
 requires = ["poetry-core"]

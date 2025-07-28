@@ -29,8 +29,17 @@ export interface User {
   email: string;
 }
 
-
-export interface User {
-  id: number;
+export interface UserCreate {
   email: string;
+  password: string;
+}
+
+export interface Token {
+  access_token: string;
+  token_type: string;
+}
+
+export interface ForecastResponse {
+  total_forecast: number;
+  by_category: { [key: string]: number };
 }

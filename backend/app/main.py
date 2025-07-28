@@ -186,3 +186,11 @@ async def read_users_me(current_user: models.User = Depends(get_current_user)):
 @app.get("/users/me", response_model=schemas.User)
 async def read_users_me_alt(current_user: models.User = Depends(get_current_user)):
     return current_user
+
+
+@app.get("/expenses/forecast/", response_model=schemas.ForecastResponse)
+def get_forecast_endpoint(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    forecast_data = crud.get_expense_forecast(db, user_id=current_user.id)
+    if not forecast_data:
+        raise HTTPException(status_code=404, detail="Not enough data to generate a forecast.")
+    return forecast_data

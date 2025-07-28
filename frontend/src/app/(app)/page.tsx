@@ -1,12 +1,15 @@
 'use client';
 import { useState } from 'react'; 
 import { useTransactions } from '@/hooks/useTransactions';
+import { useForecast } from '@/hooks/useForecast';
 import { Wallet, TrendingUp, TrendingDown, Eye } from 'lucide-react';
 import TransactionList from '@/components/TransactionList';
+import ForecastCard from '@/components/ForecastCard';
 import { useCurrency } from '@/context/CurrencyContext';
 
 export default function HomePage() {
   const { totalExpenses, totalIncome, isLoading, error } = useTransactions();
+  const { data: forecastData } = useForecast();
   const { currency } = useCurrency();
   const [filter, setFilter] = useState<'income' | 'expense' | 'all'>('all');
 

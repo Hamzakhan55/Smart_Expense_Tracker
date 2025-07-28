@@ -1,6 +1,5 @@
 import axios from 'axios';
-import { Expense, ExpenseCreate, Income, IncomeCreate, AiResponse, Token, User } from '@/types';
-import type { UserCreate } from '@/types/user'; 
+import { Expense, ExpenseCreate, Income, IncomeCreate, AiResponse, Token, User, UserCreate, ForecastResponse } from '@/types'; 
 
 
 const apiClient = axios.create({
@@ -103,5 +102,11 @@ export const signup = async (userData: UserCreate): Promise<User> => {
 
 export const login = async (formData: FormData): Promise<Token> => {
   const response = await apiClient.post<Token>('/token', formData);
+  return response.data;
+};
+
+
+export const getForecast = async (): Promise<ForecastResponse> => {
+  const response = await apiClient.get<ForecastResponse>('/expenses/forecast/');
   return response.data;
 };
