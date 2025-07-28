@@ -18,6 +18,7 @@ class Expense(Base):
     category = Column(String(100), nullable=False)
     description = Column(String(255), nullable=False)
     date = Column(DateTime, default=datetime.now, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
 
 
@@ -31,6 +32,7 @@ class Income(Base):
     category = Column(String(100), nullable=False) 
     description = Column(String(255), nullable=True)
     income_date = Column(DateTime, default=datetime.now, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
 
     

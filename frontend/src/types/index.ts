@@ -24,6 +24,11 @@ export interface AiResponse {
   amount: number;
 }
 
+export interface User {
+  id: number;
+  email: string;
+}
+
 
 export interface User {
   id: number;

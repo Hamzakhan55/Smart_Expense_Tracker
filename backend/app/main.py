@@ -66,9 +66,20 @@ class AiResponse(BaseModel):
     category: str
     amount: float
 
-# Public endpoints
-@app.post("/users/", response_model=schemas.User)
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+# Authentication endpoints
+@app.post("/signup", response_model=schemas.User)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    db_user = user_crud.get_user_by_email(db, email=user.email)
+    if db_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    return user_crud.create_user(db=db, user=user)
+
+@app.post("/users/", response_model=schemas.User)
+def create_user_alt(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = user_crud.get_user_by_email(db, email=user.email)
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -86,10 +97,6 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     access_token = security.create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
 
-class LoginRequest(BaseModel):
-    email: str
-    password: str
-
 @app.post("/login", response_model=schemas.Token)
 def login_json(credentials: LoginRequest, db: Session = Depends(get_db)):
     user = user_crud.get_user_by_email(db, email=credentials.email)
@@ -101,55 +108,55 @@ def login_json(credentials: LoginRequest, db: Session = Depends(get_db)):
     access_token = security.create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
 
-# For development - unprotected endpoints
+# Protected endpoints with user-specific data
 @app.post("/expenses/", response_model=schemas.Expense)
-def create_expense(expense: schemas.ExpenseCreate, db: Session = Depends(get_db)):
-    return crud.create_expense(db=db, expense=expense)
+def create_expense(expense: schemas.ExpenseCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    return crud.create_expense_for_user(db=db, expense=expense, user_id=current_user.id)
 
 @app.get("/expenses/", response_model=List[schemas.Expense])
-def read_expenses(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return crud.get_expenses(db, skip=skip, limit=limit)
+def read_expenses(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    return crud.get_expenses_for_user(db, user_id=current_user.id, skip=skip, limit=limit)
 
 @app.post("/incomes/", response_model=schemas.Income)
-def create_income_endpoint(income: schemas.IncomeCreate, db: Session = Depends(get_db)):
-    return crud.create_income(db=db, income=income)
+def create_income_endpoint(income: schemas.IncomeCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    return crud.create_income_for_user(db=db, income=income, user_id=current_user.id)
 
 @app.get("/incomes/", response_model=List[schemas.Income])
-def read_incomes_endpoint(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return crud.get_incomes(db, skip=skip, limit=limit)
+def read_incomes_endpoint(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    return crud.get_incomes_for_user(db, user_id=current_user.id, skip=skip, limit=limit)
 
 @app.delete("/expenses/{expense_id}", response_model=schemas.Expense)
-def delete_expense_endpoint(expense_id: int, db: Session = Depends(get_db)):
-    db_expense = crud.delete_expense(db, expense_id=expense_id)
+def delete_expense_endpoint(expense_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    db_expense = crud.delete_expense_for_user(db, expense_id=expense_id, user_id=current_user.id)
     if db_expense is None:
         raise HTTPException(status_code=404, detail="Expense not found")
     return db_expense
 
 @app.delete("/incomes/{income_id}", response_model=schemas.Income)
-def delete_income_endpoint(income_id: int, db: Session = Depends(get_db)):
-    db_income = crud.delete_income(db, income_id=income_id)
+def delete_income_endpoint(income_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    db_income = crud.delete_income_for_user(db, income_id=income_id, user_id=current_user.id)
     if db_income is None:
         raise HTTPException(status_code=404, detail="Income not found")
     return db_income
 
 @app.put("/expenses/{expense_id}", response_model=schemas.Expense)
-def update_expense_endpoint(expense_id: int, expense: schemas.ExpenseCreate, db: Session = Depends(get_db)):
-    db_expense = crud.update_expense(db, expense_id=expense_id, expense=expense)
+def update_expense_endpoint(expense_id: int, expense: schemas.ExpenseCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    db_expense = crud.update_expense_for_user(db, expense_id=expense_id, expense=expense, user_id=current_user.id)
     if db_expense is None:
         raise HTTPException(status_code=404, detail="Expense not found")
     return db_expense
 
 @app.put("/incomes/{income_id}", response_model=schemas.Income)
-def update_income_endpoint(income_id: int, income: schemas.IncomeCreate, db: Session = Depends(get_db)):
-    db_income = crud.update_income(db, income_id=income_id, income=income)
+def update_income_endpoint(income_id: int, income: schemas.IncomeCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    db_income = crud.update_income_for_user(db, income_id=income_id, income=income, user_id=current_user.id)
     if db_income is None:
         raise HTTPException(status_code=404, detail="Income not found")
     return db_income
 
 @app.delete("/transactions/all", status_code=status.HTTP_204_NO_CONTENT)
-def delete_all_transactions_endpoint(db: Session = Depends(get_db)):
-    crud.delete_all_expenses(db)
-    crud.delete_all_incomes(db)
+def delete_all_transactions_endpoint(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    crud.delete_all_expenses_for_user(db, user_id=current_user.id)
+    crud.delete_all_incomes_for_user(db, user_id=current_user.id)
     return {"ok": True}
 
 @app.post("/process-voice-dry-run/", response_model=AiResponse)
@@ -172,10 +179,10 @@ async def process_voice_dry_run(file: UploadFile = File(...)):
 def health_check():
     return {"status": "healthy"}
 
+@app.get("/me", response_model=schemas.User)
+async def read_users_me(current_user: models.User = Depends(get_current_user)):
+    return current_user
 
-@app.get("/users/me/", response_model=schemas.User, tags=["Users"])
-async def read_users_me(current_user: schemas.User = Depends(get_current_user)):
-    """
-    Get the current logged-in user.
-    """
+@app.get("/users/me", response_model=schemas.User)
+async def read_users_me_alt(current_user: models.User = Depends(get_current_user)):
     return current_user

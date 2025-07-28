@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { Expense, ExpenseCreate, Income, IncomeCreate, AiResponse } from '@/types';
+import { Expense, ExpenseCreate, Income, IncomeCreate, AiResponse, Token, User } from '@/types';
+import type { UserCreate } from '@/types/user'; 
 
 
 const apiClient = axios.create({
@@ -91,5 +92,16 @@ export const processVoiceDryRun = async (audioFile: File): Promise<AiResponse> =
   const response = await apiClient.post<AiResponse>('/process-voice-dry-run/', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
+  return response.data;
+};
+
+
+export const signup = async (userData: UserCreate): Promise<User> => {
+  const response = await apiClient.post<User>('/users/', userData);
+  return response.data;
+};
+
+export const login = async (formData: FormData): Promise<Token> => {
+  const response = await apiClient.post<Token>('/token', formData);
   return response.data;
 };
