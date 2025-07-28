@@ -75,13 +75,28 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     return user_crud.create_user(db=db, user=user)
 
 @app.post("/token", response_model=schemas.Token)
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = user_crud.get_user_by_email(db, email=form_data.username)
     if not user or not security.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token = security.create_access_token(data={"sub": user.email})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+@app.post("/login", response_model=schemas.Token)
+def login_json(credentials: LoginRequest, db: Session = Depends(get_db)):
+    user = user_crud.get_user_by_email(db, email=credentials.email)
+    if not user or not security.verify_password(credentials.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password"
         )
     access_token = security.create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
@@ -156,3 +171,11 @@ async def process_voice_dry_run(file: UploadFile = File(...)):
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
+
+
+@app.get("/users/me/", response_model=schemas.User, tags=["Users"])
+async def read_users_me(current_user: schemas.User = Depends(get_current_user)):
+    """
+    Get the current logged-in user.
+    """
+    return current_user

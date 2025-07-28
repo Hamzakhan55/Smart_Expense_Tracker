@@ -23,3 +23,9 @@ export interface AiResponse {
   category: string;
   amount: number;
 }
+
+
+export interface User {
+  id: number;
+  email: string;
+}

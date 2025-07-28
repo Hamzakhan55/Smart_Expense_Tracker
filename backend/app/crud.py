@@ -5,14 +5,12 @@ from . import schemas
 def get_expenses(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Expense).order_by(models.Expense.date.desc()).offset(skip).limit(limit).all()
 
-# Ensure you have other necessary functions like create_expense as well
 def create_expense(db: Session, expense: schemas.ExpenseCreate):
     db_expense = models.Expense(**expense.dict())
     db.add(db_expense)
     db.commit()
     db.refresh(db_expense)
     return db_expense
-
 
 def get_incomes(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Income).order_by(models.Income.income_date.desc()).offset(skip).limit(limit).all()
@@ -23,7 +21,6 @@ def create_income(db: Session, income: schemas.IncomeCreate):
     db.commit()
     db.refresh(db_income)
     return db_income
-
 
 def delete_expense(db: Session, expense_id: int):
     db_expense = db.query(models.Expense).filter(models.Expense.id == expense_id).first()
@@ -38,7 +35,6 @@ def delete_income(db: Session, income_id: int):
         db.delete(db_income)
         db.commit()
     return db_income
-
 
 def update_expense(db: Session, expense_id: int, expense: schemas.ExpenseCreate):
     db_expense = db.query(models.Expense).filter(models.Expense.id == expense_id).first()
@@ -67,21 +63,3 @@ def delete_all_incomes(db: Session):
     deleted_rows = db.query(models.Income).delete()
     db.commit()
     return deleted_rows
-
-
-def get_expenses(db: Session, user_id: int, skip: int = 0, limit: int = 100):
-    return db.query(models.Expense).filter(models.Expense.user_id == user_id).order_by(models.Expense.date.desc()).offset(skip).limit(limit).all()
-
-def create_expense(db: Session, expense: schemas.ExpenseCreate, user_id: int):
-    db_expense = models.Expense(**expense.dict(), user_id=user_id)
-    db.add(db_expense)
-    # ... (commit and refresh)
-    return db_expense
-    
-def get_incomes(db: Session, user_id: int, skip: int = 0, limit: int = 100):
-    return db.query(models.Income).filter(models.Income.user_id == user_id).order_by(models.Income.date.desc()).offset(skip).limit(limit).all()
-
-def create_income(db: Session, income: schemas.IncomeCreate, user_id: int):
-    db_income = models.Income(**income.dict(), user_id=user_id)
-    # ...
-    return db_income

@@ -7,6 +7,22 @@ const apiClient = axios.create({
 });
 
 
+
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+export default apiClient;
+
 export const getExpenses = async (): Promise<Expense[]> => {
   const response = await apiClient.get('/expenses/');
   return response.data;

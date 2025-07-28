@@ -5,6 +5,7 @@ import QueryProvider from '@/providers/QueryProvider';
 import { CurrencyProvider } from '@/context/CurrencyContext'
 import BottomNav from "@/components/BottomNav"; 
 import FloatingActions from "@/components/FloatingActions";
+import { AuthProvider } from '@/context/AuthContext';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,6 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} bg-gray-50`} suppressHydrationWarning>
+        <AuthProvider>
         <CurrencyProvider>
           <QueryProvider>
             <main className="pb-20"> {children}</main>
@@ -28,6 +30,7 @@ export default function RootLayout({
             <FloatingActions />
           </QueryProvider>
         </CurrencyProvider>
+        </AuthProvider>
       </body>
     </html>
   );
