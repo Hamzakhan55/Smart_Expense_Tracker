@@ -4,9 +4,9 @@ from typing import Optional
 
 
 class ExpenseBase(BaseModel):
-    amount: int
+    amount: float
     category: str
-    description: Optional[str] = None #
+    description: Optional[str] = None
 
 
 class ExpenseCreate(ExpenseBase):
@@ -24,7 +24,7 @@ class Expense(ExpenseBase):
         
         
 class IncomeBase(BaseModel):
-    amount: int
+    amount: float
     category: str
     description: Optional[str] = None
 

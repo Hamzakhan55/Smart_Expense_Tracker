@@ -17,3 +17,9 @@ export interface Income {
   date: string;
 }
 export type IncomeCreate = Omit<Income, 'id' | 'date'>;
+
+export interface AiResponse {
+  description: string;
+  category: string;
+  amount: number;
+}

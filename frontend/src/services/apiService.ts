@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Expense, ExpenseCreate, Income, IncomeCreate } from '@/types';
+import { Expense, ExpenseCreate, Income, IncomeCreate, AiResponse } from '@/types';
 
 
 const apiClient = axios.create({
@@ -65,4 +65,15 @@ export const updateIncome = async ({ id, ...data }: { id: number } & IncomeCreat
 
 export const deleteAllTransactions = async (): Promise<void> => {
   await apiClient.delete('/transactions/all');
+};
+
+
+export const processVoiceDryRun = async (audioFile: File): Promise<AiResponse> => {
+  const formData = new FormData();
+  formData.append('file', audioFile);
+
+  const response = await apiClient.post<AiResponse>('/process-voice-dry-run/', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
 };

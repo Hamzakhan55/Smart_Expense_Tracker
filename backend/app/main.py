@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 from typing import List
 import shutil
 from pathlib import Path
-from fastapi import status 
+from fastapi import status
+from pydantic import BaseModel 
 
 # --- NEW: Import the CORS middleware ---
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,8 +12,11 @@ from fastapi.middleware.cors import CORSMiddleware
 # --- Your other imports ---
 from . import crud, models, schemas
 from .database import SessionLocal, engine
-# ### CORRECTION: Changed the import from .. to . ###
-from ..services.ai_processor import ai_processor
+# Import AI processor service
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent))
+from services.ai_processor import ai_processor
 
 app = FastAPI(
     title="Expense Tracker API",
@@ -45,6 +49,11 @@ def get_db():
         yield db
     finally:
         db.close()
+        
+class AiResponse(BaseModel):
+    description: str
+    category: str
+    amount: float
 
 
 @app.post("/expenses/", response_model=schemas.Expense)
@@ -85,7 +94,9 @@ async def process_voice_and_create_expense(
         print(f"🎤 Processing audio file: {temp_file_path}")
         try:
             expense_data = ai_processor.process_expense_audio(str(temp_file_path))
+            print(f"✅ AI processing result: {expense_data}")
         except Exception as e:
+            print(f"❌ AI processing failed: {str(e)}")
             raise HTTPException(status_code=400, detail=f"AI processing failed: {str(e)}")
 
         if not isinstance(expense_data, dict) or \
@@ -103,8 +114,12 @@ async def process_voice_and_create_expense(
             category=expense_data["category"]
         )
         db_expense = crud.create_expense(db=db, expense=new_expense)
+        print(f"💾 Expense saved to database: {db_expense.id}")
         return db_expense
 
+    except Exception as e:
+        print(f"❌ Voice processing error: {str(e)}")
+        raise
     finally:
         if temp_file_path.exists():
             temp_file_path.unlink()
@@ -154,3 +169,47 @@ def delete_all_transactions_endpoint(db: Session = Depends(get_db)):
     crud.delete_all_expenses(db)
     crud.delete_all_incomes(db)
     return {"ok": True}
+
+@app.get("/health")
+def health_check(db: Session = Depends(get_db)):
+    """Health check endpoint to verify database connectivity."""
+    try:
+        # Test database connection
+        expense_count = db.query(models.Expense).count()
+        income_count = db.query(models.Income).count()
+        return {
+            "status": "healthy",
+            "database": "connected",
+            "expenses_count": expense_count,
+            "incomes_count": income_count
+        }
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "database": "disconnected",
+            "error": str(e)
+        }
+        
+@app.post("/process-voice-dry-run/", response_model=AiResponse)
+async def process_voice_dry_run(file: UploadFile = File(...)):
+    """
+    Receives an audio file, processes it to extract expense details,
+    BUT DOES NOT SAVE IT. It only returns the processed data.
+    """
+    temp_dir = Path("temp_audio")
+    temp_dir.mkdir(exist_ok=True)
+    temp_file_path = temp_dir / file.filename
+    try:
+        with temp_file_path.open("wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        expense_data = ai_processor.process_expense_audio(str(temp_file_path))
+        
+        if expense_data["category"] == "Error":
+            raise HTTPException(status_code=400, detail=expense_data["description"])
+        
+        # Return the data directly instead of creating an expense
+        return AiResponse(**expense_data)
+    finally:
+        if temp_file_path.exists():
+            temp_file_path.unlink()

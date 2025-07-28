@@ -1,9 +1,10 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getExpenses, getIncomes, createExpense, createIncome, deleteExpense, deleteIncome, processVoiceExpense, updateExpense, updateIncome, deleteAllTransactions  } from '@/services/apiService';
+import { getExpenses, getIncomes, createExpense, createIncome, deleteExpense, deleteIncome, updateExpense, updateIncome, deleteAllTransactions, processVoiceDryRun } from '@/services/apiService';
 import { useMemo } from 'react';
-import type { Expense, Income } from '@/types';
+import type { Expense, Income, AiResponse } from '@/types';
+
 
 export const useTransactions = () => {
   const queryClient = useQueryClient();
@@ -56,19 +57,15 @@ export const useTransactions = () => {
     },
   });
 
-  const processVoiceMutation = useMutation({
-    mutationFn: processVoiceExpense,
-    onSuccess: (newExpense) => {
-      queryClient.setQueryData(['expenses'], (old: Expense[] | undefined) => 
-        old ? [newExpense, ...old] : [newExpense]
-      );
-    },
+  const processVoiceMutation = useMutation<AiResponse, Error, File>({
+    mutationFn: processVoiceDryRun, // It calls the dry run function
+    // We remove the onSuccess here because we are not invalidating queries anymore.
+    // The success will be handled in the component that calls this mutation.
     onError: (error) => {
       console.error("Error processing voice expense:", error);
       alert("Sorry, we couldn't understand that. Please try again.");
     }
   });
-
 
   // --- NEW: UPDATE MUTATIONS ---
   const updateExpenseMutation = useMutation({
@@ -123,12 +120,12 @@ export const useTransactions = () => {
     
     removeExpense: deleteExpenseMutation.mutate,
     removeIncome: deleteIncomeMutation.mutate,
-    addExpenseFromVoice: processVoiceMutation.mutate,
-    isProcessingVoice: processVoiceMutation.isPending,
     editExpense: updateExpenseMutation.mutate,
     editIncome: updateIncomeMutation.mutate,
     isUpdating: updateExpenseMutation.isPending || updateIncomeMutation.isPending,
     clearAllTransactions: deleteAllMutation.mutate,
+    processVoice: processVoiceMutation.mutate,
+    isProcessingVoice: processVoiceMutation.isPending,
 
   };
 };

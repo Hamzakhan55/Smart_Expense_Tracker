@@ -45,8 +45,11 @@ class AIProcessor:
         self.classifier_tokenizer = AutoTokenizer.from_pretrained(str(classifier_model_path))
         self.classifier_model = AutoModelForSequenceClassification.from_pretrained(str(classifier_model_path)).to(self.device)
 
-        with open(label_encoder_path, "rb") as f:
-            label_encoder = pickle.load(f)
+        import warnings
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=UserWarning)
+            with open(label_encoder_path, "rb") as f:
+                label_encoder = pickle.load(f)
         self.id2label = {i: label for i, label in enumerate(label_encoder.classes_)}
         
         print("✅ AIProcessor initialized successfully.")

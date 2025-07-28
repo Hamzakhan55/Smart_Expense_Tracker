@@ -2,78 +2,108 @@
 'use client';
 
 import { Mic } from 'lucide-react';
-import { useState, useRef } from 'react';
-import { useTransactions } from '@/hooks/useTransactions';
+import { useState, useRef, useEffect } from 'react';
 
-const VoiceRecorder = () => {
-  const [isRecording, setIsRecording] = useState(false);
+interface VoiceRecorderProps {
+  onRecordingComplete: (audioFile: File) => void;
+  isProcessing: boolean; // We still accept this prop to know when to show the spinner
+}
+
+const VoiceRecorder = ({ onRecordingComplete, isProcessing }: VoiceRecorderProps) => {
+  // 1. A single state to manage the component's status
+  const [status, setStatus] = useState<'idle' | 'recording' | 'processing'>('idle');
+  
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
-  const { addExpenseFromVoice, isProcessingVoice } = useTransactions();
+  // 2. This effect syncs our internal state with the parent's processing prop
+  useEffect(() => {
+    if (isProcessing) {
+      setStatus('processing');
+    } else if (status === 'processing' && !isProcessing) {
+      // When the parent is done processing, we can become idle again
+      setStatus('idle');
+    }
+  }, [isProcessing, status]);
 
-  const toggleRecording = async () => {
-    if (isRecording) {
-      // Stop recording
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-        mediaRecorderRef.current.stop();
-      }
-      setIsRecording(false);
-    } else {
-      // Start recording
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        setIsRecording(true);
+  const startRecording = async () => {
+    // Can only start recording if we are idle
+    if (status !== 'idle') return;
 
-        const recorder = new MediaRecorder(stream);
-        mediaRecorderRef.current = recorder;
-        audioChunksRef.current = [];
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setStatus('recording'); // Set our internal state
 
-        recorder.ondataavailable = (event) => {
+      const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      mediaRecorderRef.current = recorder;
+      audioChunksRef.current = [];
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
-        };
+        }
+      };
 
-        recorder.onstop = () => {
-          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+      recorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        if (audioBlob.size > 0) {
           const audioFile = new File([audioBlob], 'voice-expense.webm', { type: 'audio/webm' });
-          
-          addExpenseFromVoice(audioFile);
-          stream.getTracks().forEach(track => track.stop());
-        };
+          onRecordingComplete(audioFile);
+        }
+        // The useEffect will handle changing the status to 'processing'
+        stream.getTracks().forEach(track => track.stop());
+      };
 
-        recorder.start();
-      } catch (error) {
-        console.error('Error accessing microphone:', error);
-        alert('Microphone access denied. Please allow microphone access.');
-        setIsRecording(false);
-      }
+      recorder.start();
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      setStatus('idle'); // Reset on error
+      alert('Microphone access was denied. Please allow it in your browser settings.');
     }
   };
 
-  const getButtonState = () => {
-    if (isProcessingVoice) return { bg: 'bg-yellow-500', text: 'Processing...', disabled: true };
-    if (isRecording) return { bg: 'bg-red-500 animate-pulse', text: 'Recording...', disabled: false };
-    return { bg: 'bg-blue-600', text: 'Voice Record', disabled: false };
+  const stopRecording = () => {
+    // Can only stop if we are currently recording
+    if (status !== 'recording' || !mediaRecorderRef.current) return;
+
+    mediaRecorderRef.current.stop();
+    // We let the 'onstop' event and the useEffect handle the state change
   };
 
-  const buttonState = getButtonState();
+  // 3. The button is only truly disabled when it's processing.
+  // It remains active during recording to ensure it receives the 'up' event.
+  const isDisabled = status === 'processing';
+
+  const getButtonClasses = () => {
+    switch (status) {
+      case 'recording':
+        return 'bg-red-500 animate-pulse';
+      case 'processing':
+        return 'bg-yellow-500 cursor-not-allowed';
+      case 'idle':
+      default:
+        return 'bg-blue-600 hover:bg-blue-700';
+    }
+  };
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <button
-        onClick={toggleRecording}
-        disabled={buttonState.disabled}
-        className={`w-16 h-16 rounded-full flex items-center justify-center text-white shadow-lg transition-all duration-300 ${buttonState.bg}`}
-        aria-label={isRecording ? 'Stop recording' : 'Start recording'}
-      >
-        {isProcessingVoice ? (
-          <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-        ) : (
-          <Mic size={32} />
-        )}
-      </button>
-      <span className="text-xs text-gray-600 font-medium">{buttonState.text}</span>
-    </div>
+    <button
+      onMouseDown={startRecording}
+      onMouseUp={stopRecording}
+      onMouseLeave={stopRecording}
+      onTouchStart={startRecording}
+      onTouchEnd={stopRecording}
+      onTouchCancel={stopRecording}
+      disabled={isDisabled}
+      className={`w-16 h-16 rounded-full flex items-center justify-center text-white shadow-lg transition-all duration-300 ${getButtonClasses()}`}
+      aria-label="Hold to record expense"
+    >
+      {status === 'processing' ? (
+        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+      ) : (
+        <Mic size={32} />
+      )}
+    </button>
   );
 };
 

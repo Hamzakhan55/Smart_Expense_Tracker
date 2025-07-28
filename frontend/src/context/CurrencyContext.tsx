@@ -12,7 +12,7 @@ const CurrencyContext = createContext<CurrencyContextType>(null!);
 
 // Create the Provider component
 export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
-  const [currency, setCurrency] = useState('Pkr');
+  const [currency, setCurrency] = useState('PKR');
 
   const value = { currency, setCurrency };
 
