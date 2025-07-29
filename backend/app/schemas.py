@@ -65,3 +65,19 @@ class User(UserBase):
 class ForecastResponse(BaseModel):
     total_forecast: float
     by_category: Dict[str, float]
+
+class MonthlySummary(BaseModel):
+    year: int
+    month: int
+    total_income: float
+    total_expenses: float
+    net_balance: float
+
+    class Config:
+        from_attributes = True
+
+class RunningBalance(BaseModel):
+    total_balance: float
+
+    class Config:
+        from_attributes = True

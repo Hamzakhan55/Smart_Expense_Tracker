@@ -46,3 +46,15 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(100), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
+
+class MonthlySummary(Base):
+    __tablename__ = "monthly_summaries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    year = Column(Integer, nullable=False)
+    month = Column(Integer, nullable=False)
+    
+    total_income = Column(Float, default=0.0)
+    total_expenses = Column(Float, default=0.0)
+    
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)

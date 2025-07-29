@@ -11,8 +11,9 @@ from jose import JWTError, jwt
 
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import crud, models, schemas, user_crud, security
+from . import crud, models, schemas, user_crud, security, summary_crud
 from .database import SessionLocal, engine
+from datetime import date
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -194,3 +195,36 @@ def get_forecast_endpoint(db: Session = Depends(get_db), current_user: models.Us
     if not forecast_data:
         raise HTTPException(status_code=404, detail="Not enough data to generate a forecast.")
     return forecast_data
+
+# --- NEW SUMMARY ENDPOINTS ---
+
+@app.get("/summary/{year}/{month}", response_model=schemas.MonthlySummary, tags=["Summaries"])
+def get_monthly_summary(
+    year: int,
+    month: int,
+    db: Session = Depends(get_db),
+    current_user: schemas.User = Depends(get_current_user)
+):
+    """
+    Gets the financial summary for a specific month. 
+    If a summary is not pre-calculated, it will be generated and stored.
+    """
+    summary = summary_crud.get_or_create_monthly_summary(db, user_id=current_user.id, year=year, month=month)
+    return {
+        "year": summary.year,
+        "month": summary.month,
+        "total_income": summary.total_income,
+        "total_expenses": summary.total_expenses,
+        "net_balance": summary.total_income - summary.total_expenses
+    }
+
+@app.get("/summary/balance", response_model=schemas.RunningBalance, tags=["Summaries"])
+def get_total_balance(
+    db: Session = Depends(get_db),
+    current_user: schemas.User = Depends(get_current_user)
+):
+    """
+    Gets the all-time running balance (total savings).
+    """
+    balance = summary_crud.get_running_balance(db, user_id=current_user.id)
+    return {"total_balance": balance}
