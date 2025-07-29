@@ -1,13 +1,16 @@
 import ProtectedRoute from '@/components/ProtectedRoute';
-import BottomNav from '@/components/BottomNav';
-import FloatingActions from '@/components/FloatingActions';
+import Header from '@/components/Header';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <ProtectedRoute>
-      <main className="pb-20">{children}</main>
-      <BottomNav />
-      <FloatingActions />
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <Header />
+        
+        <main className="pt-32 p-6">
+          {children}
+        </main>
+      </div>
     </ProtectedRoute>
   );
 }
