@@ -58,3 +58,15 @@ class MonthlySummary(Base):
     total_expenses = Column(Float, default=0.0)
     
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+
+class Budget(Base):
+    __tablename__ = "budgets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    category = Column(String(100), nullable=False)
+    amount = Column(Float, nullable=False)
+    year = Column(Integer, nullable=False)
+    month = Column(Integer, nullable=False)
+    
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    owner = relationship("User")

@@ -11,7 +11,7 @@ from jose import JWTError, jwt
 
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import crud, models, schemas, user_crud, security, summary_crud
+from . import crud, models, schemas, user_crud, security, summary_crud, budget_crud
 from .database import SessionLocal, engine
 from datetime import date
 
@@ -228,3 +228,28 @@ def get_total_balance(
     """
     balance = summary_crud.get_running_balance(db, user_id=current_user.id)
     return {"total_balance": balance}
+
+# --- NEW BUDGET ENDPOINTS ---
+
+@app.post("/budgets/", response_model=schemas.Budget, tags=["Budgets"])
+def create_or_update_budget_endpoint(
+    budget: schemas.BudgetCreate,
+    db: Session = Depends(get_db),
+    current_user: schemas.User = Depends(get_current_user)
+):
+    """
+    Creates a new budget or updates an existing one for a specific category and month.
+    """
+    return budget_crud.create_or_update_budget(db, budget=budget, user_id=current_user.id)
+
+@app.get("/budgets/{year}/{month}", response_model=List[schemas.Budget], tags=["Budgets"])
+def get_budgets_for_month_endpoint(
+    year: int,
+    month: int,
+    db: Session = Depends(get_db),
+    current_user: schemas.User = Depends(get_current_user)
+):
+    """
+    Retrieves all budgets set for a specific month.
+    """
+    return budget_crud.get_budgets_for_month(db, user_id=current_user.id, year=year, month=month)

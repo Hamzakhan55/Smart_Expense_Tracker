@@ -81,3 +81,18 @@ class RunningBalance(BaseModel):
 
     class Config:
         from_attributes = True
+
+class BudgetBase(BaseModel):
+    category: str
+    amount: float
+    year: int
+    month: int
+
+class BudgetCreate(BudgetBase):
+    pass
+
+class Budget(BudgetBase):
+    id: int
+    
+    class Config:
+        from_attributes = True
