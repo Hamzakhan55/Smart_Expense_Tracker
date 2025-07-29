@@ -43,3 +43,15 @@ export interface ForecastResponse {
   total_forecast: number;
   by_category: { [key: string]: number };
 }
+
+export interface MonthlySummary {
+  year: number;
+  month: number;
+  total_income: number;
+  total_expenses: number;
+  net_balance: number;
+}
+
+export interface RunningBalance {
+  total_balance: number;
+}

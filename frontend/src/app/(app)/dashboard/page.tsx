@@ -1,90 +1,110 @@
 'use client';
-import { useState } from 'react'; 
-import { useTransactions } from '@/hooks/useTransactions';
-import { useForecast } from '@/hooks/useForecast';
-import { Wallet, TrendingUp, TrendingDown, Eye } from 'lucide-react';
-import TransactionList from '@/components/TransactionList';
-import ForecastCard from '@/components/ForecastCard';
+
+import { useSummary } from '@/hooks/useSummary';
 import { useCurrency } from '@/context/CurrencyContext';
+import TransactionList from '@/components/TransactionList';
+import { Wallet, TrendingUp, TrendingDown } from 'lucide-react';
 
-export default function HomePage() {
-  const { totalExpenses, totalIncome, isLoading, error } = useTransactions();
-  const { data: forecastData } = useForecast();
+const StatCard = ({ title, amount, icon: Icon, gradient, change }: { 
+  title: string; 
+  amount: number; 
+  icon: React.ElementType; 
+  gradient: string;
+  change?: string;
+}) => {
   const { currency } = useCurrency();
-  const [filter, setFilter] = useState<'income' | 'expense' | 'all'>('all');
+  const formatCurrency = (value: number) => new Intl.NumberFormat('en-US', {
+    style: 'currency', currency, minimumFractionDigits: 2
+  }).format(value);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency, 
-      minimumFractionDigits: 2,
-    }).format(amount);
+  return (
+    <div className={`${gradient} text-white p-6 rounded-2xl shadow-lg`}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-medium opacity-90">{title}</h3>
+        <Icon size={24} className="opacity-80" />
+      </div>
+      <p className="text-3xl font-bold mb-2">{formatCurrency(amount)}</p>
+      {change && (
+        <p className="text-sm opacity-80">{change}</p>
+      )}
+    </div>
+  );
+};
+
+export default function DashboardPage() {
+  const { monthlySummary, runningBalance, isLoading, error } = useSummary();
+  const currentMonth = new Date().getMonth() + 1;
+  const currentYear = new Date().getFullYear();
+  const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+  const lastMonthYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+  
+  const { monthlySummary: lastMonthlySummary } = useSummary(lastMonthYear, lastMonth);
+
+  // Calculate percentage changes
+  const calculateChange = (current: number, previous: number) => {
+    if (previous === 0) return current > 0 ? '+100%' : '0%';
+    const change = ((current - previous) / previous) * 100;
+    return `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`;
   };
 
+  // Calculate savings rate
+  const savingsRate = monthlySummary?.total_income ? 
+    ((monthlySummary.total_income - monthlySummary.total_expenses) / monthlySummary.total_income) * 100 : 0;
+
   if (isLoading) {
-    return <div className="p-4">Loading...</div>;
+    return <div className="p-4">Loading Dashboard...</div>;
   }
 
   if (error) {
-    return <div className="p-4 text-red-500">Error fetching data. Please try again later.</div>;
+    return <div className="p-4 text-red-500">Error loading dashboard data. Please try again later.</div>;
   }
 
   return (
-    <div className="p-4 md:p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Smart Expense Tracker</h1>
-        <div className="text-gray-600 font-semibold">July 2025</div>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        {/* Total Balance Card */}
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-lg">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-lg opacity-90">Total Balance</span>
-            <Wallet className="w-6 h-6 opacity-80" />
-          </div>
-          <p className="text-4xl font-bold tracking-tight">
-            {formatCurrency(totalIncome - totalExpenses)}
-          </p>
-        </div>
-
-        {/* Income and Expense Cards */}
-        <div className="grid grid-cols-2 gap-4"><div
-            className={`p-4 rounded-xl shadow cursor-pointer hover:scale-[1.03] transition-all ${filter === 'income' ? 'bg-green-100 ring-2 ring-green-500' : 'bg-white'}`}
-            onClick={() => setFilter('income')} >
-            <div className="flex items-center text-green-500 mb-1">
-              <TrendingUp className="w-5 h-5 mr-2" />
-              <span className="text-sm font-medium">Income</span>
+    <div className="space-y-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard 
+          title="Net Worth" 
+          amount={runningBalance?.total_balance ?? 0}
+          icon={Wallet}
+          gradient="bg-gradient-to-br from-green-500 to-green-600"
+          change={lastMonthlySummary ? 
+            `${calculateChange(runningBalance?.total_balance ?? 0, (lastMonthlySummary.total_income - lastMonthlySummary.total_expenses))} from last month` : 
+            'No previous data'}
+        />
+        <StatCard 
+          title="Monthly Income" 
+          amount={monthlySummary?.total_income ?? 0}
+          icon={TrendingUp}
+          gradient="bg-gradient-to-br from-blue-500 to-blue-600"
+          change={lastMonthlySummary ? 
+            `${calculateChange(monthlySummary?.total_income ?? 0, lastMonthlySummary.total_income)} from last month` : 
+            'No previous data'}
+        />
+        <StatCard 
+          title="Monthly Expenses" 
+          amount={monthlySummary?.total_expenses ?? 0}
+          icon={TrendingDown}
+          gradient="bg-gradient-to-br from-red-500 to-red-600"
+          change={lastMonthlySummary ? 
+            `${calculateChange(monthlySummary?.total_expenses ?? 0, lastMonthlySummary.total_expenses)} from last month` : 
+            'No previous data'}
+        />
+        <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-2xl shadow-lg">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-medium opacity-90">Savings Rate</h3>
+            <div className="w-6 h-6 rounded-full border-2 border-white opacity-80 flex items-center justify-center">
+              <div className="w-2 h-2 bg-white rounded-full"></div>
             </div>
-            <p className="text-xl font-semibold">{formatCurrency(totalIncome)}</p>
           </div>
-          <div 
-            className={`p-4 rounded-xl shadow cursor-pointer hover:scale-[1.03] transition-all ${filter === 'expense' ? 'bg-red-100 ring-2 ring-red-500' : 'bg-white'}`}
-            onClick={() => setFilter('expense')} // 3. Click to filter by expense
-            >
-              <div className="flex items-center text-red-500 mb-1">
-              <TrendingDown className="w-5 h-5 mr-2" />
-              <span className="text-sm font-medium">Expenses</span>
-            </div>
-            <p className="text-xl font-semibold">{formatCurrency(totalExpenses)}</p>
-          </div>
+          <p className="text-3xl font-bold mb-2">{savingsRate.toFixed(1)}%</p>
+          <p className="text-sm opacity-80">Target: 20%</p>
         </div>
       </div>
 
-      {/* Recent Transactions Section */}
       <div>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-gray-800">Recent Transactions</h2>
-          {filter !== 'all' && (
-            <button onClick={() => setFilter('all')} className="flex items-center gap-1 text-sm text-blue-600 hover:underline">
-              <Eye size={16} /> Show All
-            </button>
-          )}
-        </div>
-        <div className="bg-white p-2 md:p-4 rounded-xl shadow">
-          <TransactionList filter={filter} />
+        <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Recent Transactions</h2>
+        <div className="bg-white dark:bg-gray-800 p-2 md:p-4 rounded-xl shadow-sm">
+          <TransactionList filter="all" />
         </div>
       </div>
     </div>

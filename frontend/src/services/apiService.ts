@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Expense, ExpenseCreate, Income, IncomeCreate, AiResponse, Token, User, UserCreate, ForecastResponse } from '@/types'; 
+import { Expense, ExpenseCreate, Income, IncomeCreate, AiResponse, Token, User, UserCreate, ForecastResponse, MonthlySummary, RunningBalance } from '@/types'; 
 
 
 const apiClient = axios.create({
@@ -108,5 +108,15 @@ export const login = async (formData: FormData): Promise<Token> => {
 
 export const getForecast = async (): Promise<ForecastResponse> => {
   const response = await apiClient.get<ForecastResponse>('/expenses/forecast/');
+  return response.data;
+};
+
+export const getMonthlySummary = async (year: number, month: number): Promise<MonthlySummary> => {
+  const response = await apiClient.get<MonthlySummary>(`/summary/${year}/${month}`);
+  return response.data;
+};
+
+export const getRunningBalance = async (): Promise<RunningBalance> => {
+  const response = await apiClient.get<RunningBalance>('/summary/balance');
   return response.data;
 };
