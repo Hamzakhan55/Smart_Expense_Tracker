@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import TransactionDetailModal from "./TransactionDetailModal"
+import AddTransactionModal from "./AddTransactionModal"
 import { TrendingUp, TrendingDown, Receipt } from "lucide-react"
 import type { Expense, Income } from "@/types"
 
@@ -12,10 +13,12 @@ interface TransactionListProps {
   incomes: Income[] | undefined
   isLoading: boolean
   filter?: "income" | "expense" | "all"
+  disableClick?: boolean
 }
 
-const TransactionList = ({ expenses, incomes, isLoading, filter = "all" }: TransactionListProps) => {
+const TransactionList = ({ expenses, incomes, isLoading, filter = "all", disableClick = false }: TransactionListProps) => {
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
   const sortedTransactions = useMemo(() => {
     const incomesToShow =
@@ -67,8 +70,9 @@ const TransactionList = ({ expenses, incomes, isLoading, filter = "all" }: Trans
               <TransactionItemEnhanced
                 key={`${transaction.type}-${transaction.data.id}`}
                 transaction={transaction}
-                onClick={() => setSelectedTransaction(transaction)}
+                onClick={disableClick ? undefined : () => setSelectedTransaction(transaction)}
                 index={index}
+                disableClick={disableClick}
               />
             ))}
           </div>
@@ -97,8 +101,17 @@ const TransactionList = ({ expenses, incomes, isLoading, filter = "all" }: Trans
         transaction={selectedTransaction}
         onClose={() => setSelectedTransaction(null)}
         onEdit={() => {
-          /* This needs to be connected if not already */
+          setIsEditModalOpen(true)
         }}
+      />
+      
+      <AddTransactionModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false)
+          setSelectedTransaction(null)
+        }}
+        transactionToEdit={selectedTransaction}
       />
     </>
   )
@@ -109,10 +122,12 @@ const TransactionItemEnhanced = ({
   transaction,
   onClick,
   index,
+  disableClick = false,
 }: {
   transaction: Transaction
-  onClick: () => void
+  onClick?: () => void
   index: number
+  disableClick?: boolean
 }) => {
   const isIncome = transaction.type === "income"
   const { data } = transaction
@@ -160,8 +175,12 @@ const TransactionItemEnhanced = ({
 
   return (
     <div
-      onClick={onClick}
-      className="group cursor-pointer p-6 bg-white/50 dark:bg-slate-700/30 hover:bg-white/80 dark:hover:bg-slate-700/50 rounded-2xl border border-slate-200/50 dark:border-slate-600/50 hover:border-slate-300 dark:hover:border-slate-500 transition-all duration-200 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-900/20 hover:scale-[1.01]"
+      onClick={disableClick ? undefined : onClick}
+      className={`group p-6 bg-white/50 dark:bg-slate-700/30 rounded-2xl border border-slate-200/50 dark:border-slate-600/50 transition-all duration-200 ${
+        disableClick 
+          ? "" 
+          : "cursor-pointer hover:bg-white/80 dark:hover:bg-slate-700/50 hover:border-slate-300 dark:hover:border-slate-500 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-900/20 hover:scale-[1.01]"
+      }`}
       style={{
         animationDelay: `${index * 50}ms`,
       }}

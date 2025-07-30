@@ -250,6 +250,7 @@ export default function DashboardPage() {
               incomes={incomes?.slice(0, 10)}
               isLoading={isTransactionsLoading}
               filter="all"
+              disableClick={true}
             />
           </div>
         </div>
