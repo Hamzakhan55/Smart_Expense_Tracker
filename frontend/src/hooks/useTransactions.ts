@@ -21,10 +21,10 @@ export const useTransactions = (search?: string) => {
 
   const createExpenseMutation = useMutation({
     mutationFn: createExpense,
-    onSuccess: (newExpense) => {
-      queryClient.setQueryData(['expenses'], (old: Expense[] | undefined) => 
-        old ? [newExpense, ...old] : [newExpense]
-      );
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['summary'] });
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
     },
     onError: (error) => {
       console.error("Error creating expense:", error);
@@ -33,10 +33,10 @@ export const useTransactions = (search?: string) => {
 
   const createIncomeMutation = useMutation({
     mutationFn: createIncome,
-    onSuccess: (newIncome) => {
-      queryClient.setQueryData(['incomes'], (old: Income[] | undefined) => 
-        old ? [newIncome, ...old] : [newIncome]
-      );
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['incomes'] });
+      queryClient.invalidateQueries({ queryKey: ['summary'] });
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
     },
     onError: (error) => {
       console.error("Error creating income:", error);
@@ -47,6 +47,8 @@ export const useTransactions = (search?: string) => {
     mutationFn: deleteExpense,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['summary'] });
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
     },
   });
 
@@ -54,6 +56,8 @@ export const useTransactions = (search?: string) => {
     mutationFn: deleteIncome,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['incomes'] });
+      queryClient.invalidateQueries({ queryKey: ['summary'] });
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
     },
   });
 
@@ -72,6 +76,8 @@ export const useTransactions = (search?: string) => {
     mutationFn: updateExpense,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['summary'] });
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
     },
   });
 
@@ -79,6 +85,8 @@ export const useTransactions = (search?: string) => {
     mutationFn: updateIncome,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['incomes'] });
+      queryClient.invalidateQueries({ queryKey: ['summary'] });
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
     },
   });
 
@@ -86,9 +94,11 @@ export const useTransactions = (search?: string) => {
   const deleteAllMutation = useMutation({
     mutationFn: deleteAllTransactions,
     onSuccess: () => {
-      // Invalidate both queries to clear all data from the UI
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['incomes'] });
+      queryClient.invalidateQueries({ queryKey: ['summary'] });
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
     },
   });
 

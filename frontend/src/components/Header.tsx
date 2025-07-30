@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
-import { LogOut, User as UserIcon, Calendar, Bell, Sun, Moon, LayoutDashboard, FileText, Target, TrendingUp, PieChart, CreditCard } from 'lucide-react';
+import { LogOut, User as UserIcon, Calendar, Bell, Sun, Moon, LayoutDashboard, FileText, Target, TrendingUp, PieChart, Settings } from 'lucide-react';
 import { Wallet } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -14,7 +14,7 @@ const navItems = [
   { href: '/budgets', label: 'Budgets', icon: Target },
   { href: '/goals', label: 'Goals', icon: TrendingUp },
   { href: '/analytics', label: 'Analytics', icon: PieChart },
-  { href: '/accounts', label: 'Accounts', icon: CreditCard },
+  { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
 const Header = () => {

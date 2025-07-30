@@ -300,3 +300,9 @@ def get_historical_summary_endpoint(
     current_user: schemas.User = Depends(get_current_user)
 ):
     return summary_crud.get_historical_summary(db, user_id=current_user.id)
+
+@app.delete("/transactions/all", status_code=status.HTTP_204_NO_CONTENT)
+def delete_all_transactions_endpoint(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    crud.delete_all_expenses_for_user(db, user_id=current_user.id)
+    crud.delete_all_incomes_for_user(db, user_id=current_user.id)
+    return {"ok": True}

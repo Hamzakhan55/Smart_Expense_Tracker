@@ -4,7 +4,14 @@ import { useSummary } from '@/hooks/useSummary';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useCurrency } from '@/context/CurrencyContext';
 import TransactionList from '@/components/TransactionList';
+import QuickAddWidget from '@/components/QuickAddWidget';
+import BudgetAlertsWidget from '@/components/BudgetAlertsWidget';
+import SmartInsightsWidget from '@/components/SmartInsightsWidget';
+import VoiceRecorder from '@/components/VoiceRecorder';
+import AiConfirmationModal from '@/components/AiConfirmationModal';
 import { Wallet, TrendingUp, TrendingDown } from 'lucide-react';
+import { useState } from 'react';
+import type { AiResponse } from '@/types';
 
 const StatCard = ({ title, amount, icon: Icon, gradient, change }: { 
   title: string; 
@@ -34,13 +41,25 @@ const StatCard = ({ title, amount, icon: Icon, gradient, change }: {
 
 export default function DashboardPage() {
   const { monthlySummary, runningBalance, isLoading, error } = useSummary();
-  const { expenses, incomes, isLoading: isTransactionsLoading } = useTransactions();
+  const { expenses, incomes, isLoading: isTransactionsLoading, processVoice, isProcessingVoice } = useTransactions();
+  const [aiData, setAiData] = useState<AiResponse | null>(null);
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
   const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
   const lastMonthYear = currentMonth === 1 ? currentYear - 1 : currentYear;
   
   const { monthlySummary: lastMonthlySummary } = useSummary(lastMonthYear, lastMonth);
+
+  const handleVoiceRecording = (audioFile: File) => {
+    processVoice(audioFile, {
+      onSuccess: (data: AiResponse) => {
+        setAiData(data);
+      },
+      onError: (error) => {
+        console.error('Voice processing failed:', error);
+      }
+    });
+  };
 
   // Calculate percentage changes
   const calculateChange = (current: number, previous: number) => {
@@ -103,6 +122,12 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <QuickAddWidget />
+        <BudgetAlertsWidget />
+        <SmartInsightsWidget />
+      </div>
+
       <div>
         <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Recent Transactions</h2>
         <div className="bg-white dark:bg-gray-800 p-2 md:p-4 rounded-xl shadow-sm">
@@ -114,6 +139,18 @@ export default function DashboardPage() {
           />
         </div>
       </div>
+
+      <div className="fixed bottom-6 right-6 z-50">
+        <VoiceRecorder 
+          onRecordingComplete={handleVoiceRecording}
+          isProcessing={isProcessingVoice}
+        />
+      </div>
+
+      <AiConfirmationModal 
+        aiData={aiData}
+        onClose={() => setAiData(null)}
+      />
     </div>
   );
 }

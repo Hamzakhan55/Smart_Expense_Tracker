@@ -159,3 +159,13 @@ def get_expense_forecast(db: Session, user_id: int):
         "total_forecast": total_forecast,
         "by_category": forecast_by_category
     }
+
+def delete_all_expenses_for_user(db: Session, user_id: int):
+    deleted_rows = db.query(models.Expense).filter(models.Expense.user_id == user_id).delete()
+    db.commit()
+    return deleted_rows
+
+def delete_all_incomes_for_user(db: Session, user_id: int):
+    deleted_rows = db.query(models.Income).filter(models.Income.user_id == user_id).delete()
+    db.commit()
+    return deleted_rows
