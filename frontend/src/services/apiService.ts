@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Expense, ExpenseCreate, Income, IncomeCreate, AiResponse, Token, User, UserCreate, ForecastResponse, MonthlySummary, RunningBalance, Budget, BudgetCreate } from '@/types'; 
+import { Expense, ExpenseCreate, Income, IncomeCreate, AiResponse, Token, User, UserCreate, ForecastResponse, MonthlySummary, RunningBalance, Budget, BudgetCreate, Goal, GoalCreate } from '@/types'; 
 
 
 const apiClient = axios.create({
@@ -128,5 +128,25 @@ export const getBudgets = async (year: number, month: number): Promise<Budget[]>
 
 export const createOrUpdateBudget = async (budgetData: BudgetCreate): Promise<Budget> => {
   const response = await apiClient.post<Budget>('/budgets/', budgetData);
+  return response.data;
+};
+
+export const getGoals = async (): Promise<Goal[]> => {
+  const response = await apiClient.get<Goal[]>('/goals/');
+  return response.data;
+};
+
+export const createGoal = async (goalData: GoalCreate): Promise<Goal> => {
+  const response = await apiClient.post<Goal>('/goals/', goalData);
+  return response.data;
+};
+
+export const updateGoalProgress = async ({ id, amount }: { id: number, amount: number }): Promise<Goal> => {
+  const response = await apiClient.put<Goal>(`/goals/${id}/progress`, { amount });
+  return response.data;
+};
+
+export const deleteGoal = async (id: number): Promise<Goal> => {
+  const response = await apiClient.delete<Goal>(`/goals/${id}`);
   return response.data;
 };

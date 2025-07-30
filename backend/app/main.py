@@ -11,7 +11,7 @@ from jose import JWTError, jwt
 
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import crud, models, schemas, user_crud, security, summary_crud, budget_crud
+from . import crud, models, schemas, user_crud, security, summary_crud, budget_crud, goal_crud
 from .database import SessionLocal, engine
 from datetime import date
 
@@ -253,3 +253,43 @@ def get_budgets_for_month_endpoint(
     Retrieves all budgets set for a specific month.
     """
     return budget_crud.get_budgets_for_month(db, user_id=current_user.id, year=year, month=month)
+
+# --- NEW GOAL ENDPOINTS ---
+
+@app.post("/goals/", response_model=schemas.Goal, tags=["Goals"])
+def create_goal_endpoint(
+    goal: schemas.GoalCreate,
+    db: Session = Depends(get_db),
+    current_user: schemas.User = Depends(get_current_user)
+):
+    return goal_crud.create_goal(db, goal=goal, user_id=current_user.id)
+
+@app.get("/goals/", response_model=List[schemas.Goal], tags=["Goals"])
+def get_goals_endpoint(
+    db: Session = Depends(get_db),
+    current_user: schemas.User = Depends(get_current_user)
+):
+    return goal_crud.get_goals(db, user_id=current_user.id)
+    
+@app.put("/goals/{goal_id}/progress", response_model=schemas.Goal, tags=["Goals"])
+def update_goal_progress_endpoint(
+    goal_id: int,
+    update_data: schemas.GoalUpdate,
+    db: Session = Depends(get_db),
+    current_user: schemas.User = Depends(get_current_user)
+):
+    db_goal = goal_crud.update_goal_progress(db, goal_id=goal_id, user_id=current_user.id, amount=update_data.amount)
+    if db_goal is None:
+        raise HTTPException(status_code=404, detail="Goal not found")
+    return db_goal
+    
+@app.delete("/goals/{goal_id}", response_model=schemas.Goal, tags=["Goals"])
+def delete_goal_endpoint(
+    goal_id: int,
+    db: Session = Depends(get_db),
+    current_user: schemas.User = Depends(get_current_user)
+):
+    db_goal = goal_crud.delete_goal(db, goal_id=goal_id, user_id=current_user.id)
+    if db_goal is None:
+        raise HTTPException(status_code=404, detail="Goal not found")
+    return db_goal

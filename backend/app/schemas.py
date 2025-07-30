@@ -96,3 +96,20 @@ class Budget(BudgetBase):
     
     class Config:
         from_attributes = True
+
+class GoalBase(BaseModel):
+    name: str
+    target_amount: float
+
+class GoalCreate(GoalBase):
+    pass
+    
+class GoalUpdate(BaseModel):
+    amount: float
+
+class Goal(GoalBase):
+    id: int
+    current_amount: float
+    
+    class Config:
+        from_attributes = True

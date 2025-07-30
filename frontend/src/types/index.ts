@@ -65,3 +65,12 @@ export interface Budget {
 }
 
 export type BudgetCreate = Omit<Budget, 'id'>;
+
+export interface Goal {
+  id: number;
+  name: string;
+  target_amount: number;
+  current_amount: number;
+}
+
+export type GoalCreate = Omit<Goal, 'id' | 'current_amount'>;

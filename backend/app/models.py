@@ -70,3 +70,14 @@ class Budget(Base):
     
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     owner = relationship("User")
+
+class Goal(Base):
+    __tablename__ = "goals"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    target_amount = Column(Float, nullable=False)
+    current_amount = Column(Float, default=0.0)
+    
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    owner = relationship("User")
