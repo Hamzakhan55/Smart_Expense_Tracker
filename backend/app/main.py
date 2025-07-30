@@ -293,3 +293,10 @@ def delete_goal_endpoint(
     if db_goal is None:
         raise HTTPException(status_code=404, detail="Goal not found")
     return db_goal
+
+@app.get("/summary/historical", response_model=List[schemas.HistoricalDataPoint], tags=["Summaries"])
+def get_historical_summary_endpoint(
+    db: Session = Depends(get_db),
+    current_user: schemas.User = Depends(get_current_user)
+):
+    return summary_crud.get_historical_summary(db, user_id=current_user.id)

@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, extract
 from . import models
 from datetime import date
+from dateutil.relativedelta import relativedelta
 
 def get_or_create_monthly_summary(db: Session, user_id: int, year: int, month: int):
     """
@@ -70,3 +71,22 @@ def get_running_balance(db: Session, user_id: int):
     ).scalar() or 0.0
     
     return total_income - total_expenses
+
+def get_historical_summary(db: Session, user_id: int):
+    """
+    Retrieves total expenses for each of the last 6 months.
+    """
+    today = date.today()
+    results = []
+    for i in range(6):
+        target_date = today - relativedelta(months=i)
+        year, month = target_date.year, target_date.month
+        
+        summary = get_or_create_monthly_summary(db, user_id, year, month)
+        results.append({
+            "year": year,
+            "month": month,
+            "total_expenses": summary.total_expenses
+        })
+    
+    return results[::-1]

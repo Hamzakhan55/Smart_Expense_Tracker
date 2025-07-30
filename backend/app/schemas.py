@@ -113,3 +113,8 @@ class Goal(GoalBase):
     
     class Config:
         from_attributes = True
+
+class HistoricalDataPoint(BaseModel):
+    year: int
+    month: int
+    total_expenses: float

@@ -74,3 +74,9 @@ export interface Goal {
 }
 
 export type GoalCreate = Omit<Goal, 'id' | 'current_amount'>;
+
+export interface HistoricalDataPoint {
+  year: number;
+  month: number;
+  total_expenses: number;
+}

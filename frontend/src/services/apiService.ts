@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Expense, ExpenseCreate, Income, IncomeCreate, AiResponse, Token, User, UserCreate, ForecastResponse, MonthlySummary, RunningBalance, Budget, BudgetCreate, Goal, GoalCreate } from '@/types'; 
+import { Expense, ExpenseCreate, Income, IncomeCreate, AiResponse, Token, User, UserCreate, ForecastResponse, MonthlySummary, RunningBalance, Budget, BudgetCreate, Goal, GoalCreate, HistoricalDataPoint } from '@/types'; 
 
 
 const apiClient = axios.create({
@@ -148,5 +148,10 @@ export const updateGoalProgress = async ({ id, amount }: { id: number, amount: n
 
 export const deleteGoal = async (id: number): Promise<Goal> => {
   const response = await apiClient.delete<Goal>(`/goals/${id}`);
+  return response.data;
+};
+
+export const getHistoricalSummary = async (): Promise<HistoricalDataPoint[]> => {
+  const response = await apiClient.get<HistoricalDataPoint[]>('/summary/historical');
   return response.data;
 };
