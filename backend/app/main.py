@@ -115,16 +115,16 @@ def create_expense(expense: schemas.ExpenseCreate, db: Session = Depends(get_db)
     return crud.create_expense_for_user(db=db, expense=expense, user_id=current_user.id)
 
 @app.get("/expenses/", response_model=List[schemas.Expense])
-def read_expenses(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    return crud.get_expenses_for_user(db, user_id=current_user.id, skip=skip, limit=limit)
+def read_expenses(skip: int = 0, limit: int = 100, search: str | None = None, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    return crud.get_expenses_for_user(db, user_id=current_user.id, skip=skip, limit=limit, search=search)
 
 @app.post("/incomes/", response_model=schemas.Income)
 def create_income_endpoint(income: schemas.IncomeCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     return crud.create_income_for_user(db=db, income=income, user_id=current_user.id)
 
 @app.get("/incomes/", response_model=List[schemas.Income])
-def read_incomes_endpoint(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    return crud.get_incomes_for_user(db, user_id=current_user.id, skip=skip, limit=limit)
+def read_incomes_endpoint(skip: int = 0, limit: int = 100, search: str | None = None, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    return crud.get_incomes_for_user(db, user_id=current_user.id, skip=skip, limit=limit, search=search)
 
 @app.delete("/expenses/{expense_id}", response_model=schemas.Expense)
 def delete_expense_endpoint(expense_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):

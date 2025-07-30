@@ -1,6 +1,7 @@
 'use client';
 
 import { useSummary } from '@/hooks/useSummary';
+import { useTransactions } from '@/hooks/useTransactions';
 import { useCurrency } from '@/context/CurrencyContext';
 import TransactionList from '@/components/TransactionList';
 import { Wallet, TrendingUp, TrendingDown } from 'lucide-react';
@@ -33,6 +34,7 @@ const StatCard = ({ title, amount, icon: Icon, gradient, change }: {
 
 export default function DashboardPage() {
   const { monthlySummary, runningBalance, isLoading, error } = useSummary();
+  const { expenses, incomes, isLoading: isTransactionsLoading } = useTransactions();
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
   const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
@@ -104,7 +106,12 @@ export default function DashboardPage() {
       <div>
         <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Recent Transactions</h2>
         <div className="bg-white dark:bg-gray-800 p-2 md:p-4 rounded-xl shadow-sm">
-          <TransactionList filter="all" />
+          <TransactionList 
+            expenses={expenses?.slice(0, 10)} 
+            incomes={incomes?.slice(0, 10)} 
+            isLoading={isTransactionsLoading} 
+            filter="all" 
+          />
         </div>
       </div>
     </div>

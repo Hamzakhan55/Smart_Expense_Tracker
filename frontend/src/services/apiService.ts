@@ -23,8 +23,8 @@ apiClient.interceptors.request.use(
 
 export default apiClient;
 
-export const getExpenses = async (): Promise<Expense[]> => {
-  const response = await apiClient.get('/expenses/');
+export const getExpenses = async (search?: string): Promise<Expense[]> => {
+  const response = await apiClient.get('/expenses/', { params: { search } });
   return response.data;
 };
 
@@ -48,8 +48,8 @@ export const processVoiceExpense = async (audioFile: File): Promise<Expense> => 
 };
 
 
-export const getIncomes = async (): Promise<Income[]> => {
-  const response = await apiClient.get<Income[]>('/incomes/');
+export const getIncomes = async (search?: string): Promise<Income[]> => {
+  const response = await apiClient.get<Income[]>('/incomes/', { params: { search } });
   return response.data;
 };
 

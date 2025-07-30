@@ -1,14 +1,22 @@
 from sqlalchemy.orm import Session
 from . import models
 from . import schemas
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 import calendar
 
 # User-specific CRUD functions
-def get_expenses_for_user(db: Session, user_id: int, skip: int = 0, limit: int = 100):
-    return db.query(models.Expense).filter(models.Expense.user_id == user_id).order_by(models.Expense.date.desc()).offset(skip).limit(limit).all()
+def get_expenses_for_user(db: Session, user_id: int, skip: int = 0, limit: int = 100, search: str | None = None):
+    query = db.query(models.Expense).filter(models.Expense.user_id == user_id)
+    
+    if search:
+        query = query.filter(or_(
+            models.Expense.description.ilike(f"%{search}%"),
+            models.Expense.category.ilike(f"%{search}%")
+        ))
+        
+    return query.order_by(models.Expense.date.desc()).offset(skip).limit(limit).all()
 
 def create_expense_for_user(db: Session, expense: schemas.ExpenseCreate, user_id: int):
     db_expense = models.Expense(**expense.dict(), user_id=user_id)
@@ -17,8 +25,16 @@ def create_expense_for_user(db: Session, expense: schemas.ExpenseCreate, user_id
     db.refresh(db_expense)
     return db_expense
 
-def get_incomes_for_user(db: Session, user_id: int, skip: int = 0, limit: int = 100):
-    return db.query(models.Income).filter(models.Income.user_id == user_id).order_by(models.Income.income_date.desc()).offset(skip).limit(limit).all()
+def get_incomes_for_user(db: Session, user_id: int, skip: int = 0, limit: int = 100, search: str | None = None):
+    query = db.query(models.Income).filter(models.Income.user_id == user_id)
+    
+    if search:
+        query = query.filter(or_(
+            models.Income.description.ilike(f"%{search}%"),
+            models.Income.category.ilike(f"%{search}%")
+        ))
+        
+    return query.order_by(models.Income.income_date.desc()).offset(skip).limit(limit).all()
 
 def create_income_for_user(db: Session, income: schemas.IncomeCreate, user_id: int):
     db_income = models.Income(**income.dict(), user_id=user_id)

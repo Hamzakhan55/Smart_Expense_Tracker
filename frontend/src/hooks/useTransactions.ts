@@ -6,17 +6,17 @@ import { useMemo } from 'react';
 import type { Expense, Income, AiResponse } from '@/types';
 
 
-export const useTransactions = () => {
+export const useTransactions = (search?: string) => {
   const queryClient = useQueryClient();
 
   const { data: expenses, isLoading: isLoadingExpenses, error: errorExpenses } = useQuery({
-    queryKey: ['expenses'],
-    queryFn: getExpenses,
+    queryKey: ['expenses', search],
+    queryFn: () => getExpenses(search),
   });
 
   const { data: incomes, isLoading: isLoadingIncomes, error: errorIncomes } = useQuery({
-    queryKey: ['incomes'],
-    queryFn: getIncomes,
+    queryKey: ['incomes', search],
+    queryFn: () => getIncomes(search),
   });
 
   const createExpenseMutation = useMutation({
