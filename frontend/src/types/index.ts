@@ -55,3 +55,13 @@ export interface MonthlySummary {
 export interface RunningBalance {
   total_balance: number;
 }
+
+export interface Budget {
+  id: number;
+  category: string;
+  amount: number;
+  year: number;
+  month: number;
+}
+
+export type BudgetCreate = Omit<Budget, 'id'>;

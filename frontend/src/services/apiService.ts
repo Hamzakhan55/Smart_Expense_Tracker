@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Expense, ExpenseCreate, Income, IncomeCreate, AiResponse, Token, User, UserCreate, ForecastResponse, MonthlySummary, RunningBalance } from '@/types'; 
+import { Expense, ExpenseCreate, Income, IncomeCreate, AiResponse, Token, User, UserCreate, ForecastResponse, MonthlySummary, RunningBalance, Budget, BudgetCreate } from '@/types'; 
 
 
 const apiClient = axios.create({
@@ -118,5 +118,15 @@ export const getMonthlySummary = async (year: number, month: number): Promise<Mo
 
 export const getRunningBalance = async (): Promise<RunningBalance> => {
   const response = await apiClient.get<RunningBalance>('/summary/balance');
+  return response.data;
+};
+
+export const getBudgets = async (year: number, month: number): Promise<Budget[]> => {
+  const response = await apiClient.get<Budget[]>(`/budgets/${year}/${month}`);
+  return response.data;
+};
+
+export const createOrUpdateBudget = async (budgetData: BudgetCreate): Promise<Budget> => {
+  const response = await apiClient.post<Budget>('/budgets/', budgetData);
   return response.data;
 };
