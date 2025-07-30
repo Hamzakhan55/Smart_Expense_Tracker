@@ -18,16 +18,10 @@ const TransactionItem = ({ transaction, onClick }: TransactionItemProps) => {
   const { currency } = useCurrency();
   const isExpense = transaction.type === 'expense';
 
-  
-  const title = isExpense ? transaction.data.category : transaction.data.category;
-  
+  const title = transaction.data.description || transaction.data.category;
+  const subtitle = `${transaction.data.category} • Main Checking`;
   const amount = transaction.data.amount;
-  const description = transaction.data.description;
-  const date = new Date(transaction.data.date).toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  });
+  const date = new Date(transaction.data.date).toLocaleDateString('en-CA');
   
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -37,10 +31,9 @@ const TransactionItem = ({ transaction, onClick }: TransactionItemProps) => {
   };
 
   return (
-    <div onClick={onClick} className="flex items-center justify-between p-3 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors">
+    <div onClick={onClick} className="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0">
       <div className="flex items-center gap-4">
-     
-        <div className={`p-2 rounded-full ${isExpense ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+        <div className={`p-3 rounded-full ${isExpense ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
           {isExpense ? (
             <CategoryIcon category={transaction.data.category} size={20} />
           ) : (
@@ -49,16 +42,15 @@ const TransactionItem = ({ transaction, onClick }: TransactionItemProps) => {
         </div>
         
         <div>
-          <p className="font-bold text-gray-800">{title}</p>
-          <p className="text-sm text-gray-500">{description}</p>
+          <p className="font-semibold text-gray-900 dark:text-white">{title}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{subtitle}</p>
         </div>
       </div>
       <div className="text-right">
-        <p className={`font-bold ${isExpense ? 'text-red-600' : 'text-green-600'}`}>
-          {isExpense ? '-' : '+'}
-          {formatCurrency(amount)}
+        <p className={`font-semibold ${isExpense ? 'text-red-600' : 'text-green-600'}`}>
+          {isExpense ? '-' : '+'}{formatCurrency(amount)}
         </p>
-        <p className="text-xs text-gray-400">{date}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{date}</p>
       </div>
     </div>
   );

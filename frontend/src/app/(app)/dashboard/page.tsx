@@ -129,8 +129,11 @@ export default function DashboardPage() {
       </div>
 
       <div>
-        <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Recent Transactions</h2>
-        <div className="bg-white dark:bg-gray-800 p-2 md:p-4 rounded-xl shadow-sm">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Recent Transactions</h2>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Your latest financial activity</p>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm">
           <TransactionList 
             expenses={expenses?.slice(0, 10)} 
             incomes={incomes?.slice(0, 10)} 
