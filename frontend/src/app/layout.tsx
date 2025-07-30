@@ -20,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
    <html lang="en">
-      <body className={`${inter.className} bg-gray-50`} suppressHydrationWarning>
+      <body className={`${inter.className} min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900`} suppressHydrationWarning>
         <ThemeProvider>
           <AuthProvider>
             <CurrencyProvider>

@@ -27,6 +27,7 @@ export interface AiResponse {
 export interface User {
   id: number;
   email: string;
+  name?: string;
 }
 
 export interface UserCreate {
@@ -76,6 +77,7 @@ export interface Goal {
 export type GoalCreate = Omit<Goal, 'id' | 'current_amount'>;
 
 export interface HistoricalDataPoint {
+  total_income: number;
   year: number;
   month: number;
   total_expenses: number;

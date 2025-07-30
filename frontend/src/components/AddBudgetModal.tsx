@@ -1,56 +1,174 @@
-'use client';
-import * as Dialog from '@radix-ui/react-dialog';
-import { X } from 'lucide-react';
-import { useState, FormEvent } from 'react';
-import { EXPENSE_CATEGORIES } from '@/lib/constants';
+"use client"
+
+import * as Dialog from "@radix-ui/react-dialog"
+import { X, Target, DollarSign, Tag, Sparkles } from "lucide-react"
+import { useState, type FormEvent } from "react"
+import { EXPENSE_CATEGORIES } from "@/lib/constants"
 
 interface AddBudgetModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (data: { category: string; amount: number }) => void;
-  isSubmitting: boolean;
+  isOpen: boolean
+  onClose: () => void
+  onSubmit: (data: { category: string; amount: number }) => void
+  isSubmitting: boolean
 }
 
 const AddBudgetModal = ({ isOpen, onClose, onSubmit, isSubmitting }: AddBudgetModalProps) => {
-  const [category, setCategory] = useState(EXPENSE_CATEGORIES[0]);
-  const [amount, setAmount] = useState('');
+  const [category, setCategory] = useState(EXPENSE_CATEGORIES[0])
+  const [amount, setAmount] = useState("")
 
   const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    onSubmit({ category, amount: parseFloat(amount) });
-    setAmount('');
-    onClose();
-  };
+    e.preventDefault()
+    const numericAmount = Number.parseFloat(amount)
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      alert("Please enter a valid amount.")
+      return
+    }
+    onSubmit({ category, amount: numericAmount })
+    setAmount("")
+    onClose()
+  }
+
+  const getCategoryIcon = (category: string) => {
+    const iconMap: { [key: string]: string } = {
+      "Food & Drinks": "🍽️",
+      Transport: "🚗",
+      Shopping: "🛍️",
+      Entertainment: "🎬",
+      Bills: "📄",
+      Health: "🏥",
+      Education: "📚",
+      Travel: "✈️",
+      Other: "📦",
+    }
+    return iconMap[category] || "📦"
+  }
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={onClose}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/50" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white dark:bg-gray-800 p-6 shadow-lg">
-          <Dialog.Title className="text-xl font-bold text-gray-800 dark:text-white">Set Category Budget</Dialog.Title>
-          <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-            <div>
-              <label htmlFor="category" className="text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
-              <select id="category" value={category} onChange={e => setCategory(e.target.value)} className="mt-1 w-full p-2 border rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600">
-                {EXPENSE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+        <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 animate-in fade-in-0 duration-300" />
+        <Dialog.Content className="fixed top-1/2 left-1/2 w-[95vw] max-w-lg -translate-x-1/2 -translate-y-1/2 z-50 animate-in fade-in-0 zoom-in-95 duration-300">
+          <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 dark:border-slate-700/50 overflow-hidden">
+            {/* Header */}
+            <div className="relative p-8 pb-6 bg-gradient-to-br from-blue-500/10 via-indigo-500/10 to-purple-500/10 border-b border-slate-200/50 dark:border-slate-700/50">
+              <div className="flex items-center gap-4 mb-2">
+                <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg">
+                  <Target className="text-white" size={24} />
+                </div>
+                <div>
+                  <Dialog.Title className="text-2xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 dark:from-white dark:via-blue-100 dark:to-indigo-100 bg-clip-text text-transparent">
+                    Set Category Budget
+                  </Dialog.Title>
+                  <Dialog.Description className="text-slate-600 dark:text-slate-400 mt-1">
+                    Define spending limits for better financial control
+                  </Dialog.Description>
+                </div>
+              </div>
+
+              <Dialog.Close asChild>
+                <button className="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all duration-200">
+                  <X size={20} />
+                </button>
+              </Dialog.Close>
             </div>
-            <div>
-              <label htmlFor="amount" className="text-sm font-medium text-gray-700 dark:text-gray-300">Budget Amount</label>
-              <input type="number" id="amount" value={amount} onChange={e => setAmount(e.target.value)} className="mt-1 w-full p-2 border rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600" required />
+
+            {/* Form */}
+            <div className="p-8">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Category Selection */}
+                <div className="space-y-3">
+                  <label
+                    htmlFor="category"
+                    className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300"
+                  >
+                    <Tag size={16} className="text-blue-500" />
+                    Category
+                  </label>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-xl">{getCategoryIcon(category)}</div>
+                    <select
+                      id="category"
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                      className="w-full pl-14 pr-10 py-4 bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-2xl border border-slate-200 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none cursor-pointer"
+                    >
+                      {EXPENSE_CATEGORIES.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Budget Amount */}
+                <div className="space-y-3">
+                  <label
+                    htmlFor="amount"
+                    className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300"
+                  >
+                    <DollarSign size={16} className="text-emerald-500" />
+                    Budget Amount
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      id="amount"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      className="w-full p-4 bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-2xl border border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-lg font-semibold pr-16"
+                      placeholder="0.00"
+                      step="0.01"
+                      min="0"
+                      required
+                    />
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-sm font-medium">
+                      USD
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                    <Sparkles size={12} />
+                    This will be your monthly spending limit for {category}
+                  </p>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-4 pt-6">
+                  <Dialog.Close asChild>
+                    <button
+                      type="button"
+                      className="flex-1 py-4 px-6 text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-2xl font-semibold transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      Cancel
+                    </button>
+                  </Dialog.Close>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex-1 py-4 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-semibold hover:from-blue-700 hover:to-indigo-700 disabled:from-blue-400 disabled:to-indigo-400 disabled:cursor-not-allowed shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    {isSubmitting ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Setting Budget...
+                      </div>
+                    ) : (
+                      "Set Budget"
+                    )}
+                  </button>
+                </div>
+              </form>
             </div>
-            <div className="flex justify-end gap-4 pt-4">
-              <Dialog.Close asChild><button type="button" className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md">Cancel</button></Dialog.Close>
-              <button type="submit" disabled={isSubmitting} className="px-4 py-2 text-white bg-blue-600 rounded-md disabled:bg-blue-300">
-                {isSubmitting ? 'Saving...' : 'Set Budget'}
-              </button>
-            </div>
-          </form>
-          <Dialog.Close asChild><button className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><X size={20} /></button></Dialog.Close>
+          </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
-  );
-};
+  )
+}
 
-export default AddBudgetModal;
+export default AddBudgetModal
