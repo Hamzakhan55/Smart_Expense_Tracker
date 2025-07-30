@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface CurrencyContextType {
   currency: string;
@@ -12,9 +12,21 @@ const CurrencyContext = createContext<CurrencyContextType>(null!);
 
 // Create the Provider component
 export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
-  const [currency, setCurrency] = useState('PKR');
+  const [currency, setCurrency] = useState('USD');
 
-  const value = { currency, setCurrency };
+  useEffect(() => {
+    const savedCurrency = localStorage.getItem('currency');
+    if (savedCurrency) {
+      setCurrency(savedCurrency);
+    }
+  }, []);
+
+  const handleSetCurrency = (newCurrency: string) => {
+    setCurrency(newCurrency);
+    localStorage.setItem('currency', newCurrency);
+  };
+
+  const value = { currency, setCurrency: handleSetCurrency };
 
   return (
     <CurrencyContext.Provider value={value}>

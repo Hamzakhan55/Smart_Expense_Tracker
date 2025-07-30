@@ -155,3 +155,4 @@ export const getHistoricalSummary = async (): Promise<HistoricalDataPoint[]> => 
   const response = await apiClient.get<HistoricalDataPoint[]>('/summary/historical');
   return response.data;
 };
+

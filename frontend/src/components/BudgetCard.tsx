@@ -8,9 +8,10 @@ interface BudgetCardProps {
   category: string
   budget: number
   spent: number
+  onEdit?: () => void
 }
 
-const BudgetCard = ({ category, budget, spent }: BudgetCardProps) => {
+const BudgetCard = ({ category, budget, spent, onEdit }: BudgetCardProps) => {
   const { currency } = useCurrency()
   const [isHovered, setIsHovered] = useState(false)
 
@@ -86,10 +87,11 @@ const BudgetCard = ({ category, budget, spent }: BudgetCardProps) => {
             </div>
           </div>
           <button
-            className={`p-2 rounded-xl transition-all duration-200 ${
+            onClick={onEdit}
+            className={`p-2 rounded-xl transition-all duration-200 hover:scale-110 ${
               isHovered
                 ? "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
-                : "text-slate-400 dark:text-slate-500"
+                : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
             }`}
           >
             <Edit3 size={16} />

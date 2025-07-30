@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import TransactionDetailModal from "./TransactionDetailModal"
 import AddTransactionModal from "./AddTransactionModal"
+import { useCurrency } from "@/context/CurrencyContext"
 import { TrendingUp, TrendingDown, Receipt } from "lucide-react"
 import type { Expense, Income } from "@/types"
 
@@ -131,11 +132,12 @@ const TransactionItemEnhanced = ({
 }) => {
   const isIncome = transaction.type === "income"
   const { data } = transaction
+  const { currency } = useCurrency()
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "USD",
+      currency,
       minimumFractionDigits: 2,
     }).format(amount)
 

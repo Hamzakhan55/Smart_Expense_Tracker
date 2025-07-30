@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { useTransactions } from "@/hooks/useTransactions"
+import { useCurrency } from "@/context/CurrencyContext"
 import TransactionList from "@/components/TransactionList"
 import { generateTransactionReport } from "@/services/reportService"
 import { Search, Filter, Calendar, Download, Plus, TrendingUp, TrendingDown, Receipt } from "lucide-react"
@@ -15,6 +16,7 @@ export default function TransactionsPage() {
   const [exportYear, setExportYear] = useState(new Date().getFullYear())
 
   const { expenses, incomes, isLoading } = useTransactions(searchTerm)
+  const { currency } = useCurrency()
 
   // Calculate totals for the current filter
   const totalExpenses = expenses?.reduce((sum, expense) => sum + expense.amount, 0) || 0
@@ -24,7 +26,7 @@ export default function TransactionsPage() {
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "USD",
+      currency,
       minimumFractionDigits: 2,
     }).format(amount)
 
@@ -235,7 +237,6 @@ export default function TransactionsPage() {
                       <option value="week">This Week</option>
                       <option value="thisMonth">This Month</option>
                       <option value="lastMonth">Last Month</option>
-                      <option value="quarter">This Quarter</option>
                       <option value="year">This Year</option>
                     </select>
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -257,7 +258,6 @@ export default function TransactionsPage() {
                     <option value="date">Date</option>
                     <option value="amount">Amount</option>
                     <option value="category">Category</option>
-                    <option value="description">Description</option>
                   </select>
                 </div>
               </div>

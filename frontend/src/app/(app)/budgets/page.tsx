@@ -13,9 +13,16 @@ export default function BudgetsPage() {
 
   const { budgets, spendingByCategory, setBudget, isSettingBudget, isLoading } = useBudgets(year, month)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingBudget, setEditingBudget] = useState<{ category: string; amount: number } | null>(null)
 
   const handleSetBudget = (data: { category: string; amount: number }) => {
     setBudget({ ...data, year, month })
+    setEditingBudget(null)
+  }
+
+  const handleEditBudget = (category: string, amount: number) => {
+    setEditingBudget({ category, amount })
+    setIsModalOpen(true)
   }
 
   // Calculate budget statistics
@@ -232,6 +239,7 @@ export default function BudgetsPage() {
                   category={budget.category}
                   budget={budget.amount}
                   spent={spendingByCategory[budget.category] || 0}
+                  onEdit={() => handleEditBudget(budget.category, budget.amount)}
                 />
               ))}
             </div>
@@ -260,9 +268,13 @@ export default function BudgetsPage() {
 
       <AddBudgetModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false)
+          setEditingBudget(null)
+        }}
         onSubmit={handleSetBudget}
         isSubmitting={isSettingBudget}
+        editingBudget={editingBudget}
       />
     </>
   )

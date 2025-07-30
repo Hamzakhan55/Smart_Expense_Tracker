@@ -2,7 +2,8 @@
 
 import * as Dialog from "@radix-ui/react-dialog"
 import { X, Target, DollarSign, Tag, Sparkles } from "lucide-react"
-import { useState, type FormEvent } from "react"
+import { useState, type FormEvent, useEffect } from "react"
+import { useCurrency } from "@/context/CurrencyContext"
 import { EXPENSE_CATEGORIES } from "@/lib/constants"
 
 interface AddBudgetModalProps {
@@ -10,11 +11,24 @@ interface AddBudgetModalProps {
   onClose: () => void
   onSubmit: (data: { category: string; amount: number }) => void
   isSubmitting: boolean
+  editingBudget?: { category: string; amount: number } | null
 }
 
-const AddBudgetModal = ({ isOpen, onClose, onSubmit, isSubmitting }: AddBudgetModalProps) => {
+const AddBudgetModal = ({ isOpen, onClose, onSubmit, isSubmitting, editingBudget }: AddBudgetModalProps) => {
   const [category, setCategory] = useState(EXPENSE_CATEGORIES[0])
   const [amount, setAmount] = useState("")
+  const { currency } = useCurrency()
+  const isEditMode = !!editingBudget
+
+  useEffect(() => {
+    if (editingBudget) {
+      setCategory(editingBudget.category)
+      setAmount(String(editingBudget.amount))
+    } else {
+      setCategory(EXPENSE_CATEGORIES[0])
+      setAmount("")
+    }
+  }, [editingBudget, isOpen])
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -57,10 +71,10 @@ const AddBudgetModal = ({ isOpen, onClose, onSubmit, isSubmitting }: AddBudgetMo
                 </div>
                 <div>
                   <Dialog.Title className="text-2xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 dark:from-white dark:via-blue-100 dark:to-indigo-100 bg-clip-text text-transparent">
-                    Set Category Budget
+                    {isEditMode ? 'Edit Budget' : 'Set Category Budget'}
                   </Dialog.Title>
                   <Dialog.Description className="text-slate-600 dark:text-slate-400 mt-1">
-                    Define spending limits for better financial control
+                    {isEditMode ? 'Update your spending limit' : 'Define spending limits for better financial control'}
                   </Dialog.Description>
                 </div>
               </div>
@@ -90,7 +104,8 @@ const AddBudgetModal = ({ isOpen, onClose, onSubmit, isSubmitting }: AddBudgetMo
                       id="category"
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
-                      className="w-full pl-14 pr-10 py-4 bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-2xl border border-slate-200 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none cursor-pointer"
+                      disabled={isEditMode}
+                      className={`w-full pl-14 pr-10 py-4 bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-2xl border border-slate-200 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none ${isEditMode ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
                     >
                       {EXPENSE_CATEGORIES.map((cat) => (
                         <option key={cat} value={cat}>
@@ -128,7 +143,7 @@ const AddBudgetModal = ({ isOpen, onClose, onSubmit, isSubmitting }: AddBudgetMo
                       required
                     />
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-sm font-medium">
-                      USD
+                      {currency}
                     </div>
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
@@ -158,7 +173,7 @@ const AddBudgetModal = ({ isOpen, onClose, onSubmit, isSubmitting }: AddBudgetMo
                         Setting Budget...
                       </div>
                     ) : (
-                      "Set Budget"
+                      isEditMode ? "Update Budget" : "Set Budget"
                     )}
                   </button>
                 </div>

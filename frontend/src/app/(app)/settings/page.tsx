@@ -50,6 +50,11 @@ export default function SettingsPage() {
     shareAnalytics: false,
     dataCollection: true,
   })
+  const [showChangeEmailModal, setShowChangeEmailModal] = useState(false)
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
+  const [emailForm, setEmailForm] = useState({ newEmail: '', password: '' })
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
+  const [isUpdating, setIsUpdating] = useState(false)
 
   const allTransactions = useMemo(() => {
     const combined = [
@@ -75,6 +80,42 @@ export default function SettingsPage() {
       alert("All transaction data has been deleted.")
     } else {
       alert("Deletion cancelled.")
+    }
+  }
+
+  const handleChangeEmail = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsUpdating(true)
+    try {
+      // Mock API call - replace with actual API when backend is ready
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      alert('Email updated successfully! (Mock - Backend API needed)')
+      setShowChangeEmailModal(false)
+      setEmailForm({ newEmail: '', password: '' })
+    } catch (error: any) {
+      alert('Failed to update email')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      alert('New passwords do not match')
+      return
+    }
+    setIsUpdating(true)
+    try {
+      // Mock API call - replace with actual API when backend is ready
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      alert('Password updated successfully! (Mock - Backend API needed)')
+      setShowChangePasswordModal(false)
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+    } catch (error: any) {
+      alert('Failed to update password')
+    } finally {
+      setIsUpdating(false)
     }
   }
 
@@ -190,12 +231,18 @@ export default function SettingsPage() {
                     </div>
                   </SettingItem>
                   <SettingItem icon={Mail} title="Email" description="Update your email address">
-                    <button className="px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-xl hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-all duration-200">
+                    <button 
+                      onClick={() => setShowChangeEmailModal(true)}
+                      className="px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-xl hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-all duration-200"
+                    >
                       Change Email
                     </button>
                   </SettingItem>
                   <SettingItem icon={Lock} title="Password" description="Change your account password">
-                    <button className="px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-xl hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-all duration-200">
+                    <button 
+                      onClick={() => setShowChangePasswordModal(true)}
+                      className="px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-xl hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-all duration-200"
+                    >
                       Change Password
                     </button>
                   </SettingItem>
@@ -484,6 +531,110 @@ export default function SettingsPage() {
           {/* Main Content */}
           <div className="lg:col-span-3">{renderContent()}</div>
         </div>
+
+        {/* Change Email Modal */}
+        {showChangeEmailModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md mx-4">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Change Email</h3>
+              <form onSubmit={handleChangeEmail} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">New Email</label>
+                  <input
+                    type="email"
+                    value={emailForm.newEmail}
+                    onChange={(e) => setEmailForm({...emailForm, newEmail: e.target.value})}
+                    className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Current Password</label>
+                  <input
+                    type="password"
+                    value={emailForm.password}
+                    onChange={(e) => setEmailForm({...emailForm, password: e.target.value})}
+                    className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    required
+                  />
+                </div>
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowChangeEmailModal(false)}
+                    className="flex-1 py-2 px-4 bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-300 dark:hover:bg-slate-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isUpdating}
+                    className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:bg-blue-400"
+                  >
+                    {isUpdating ? 'Updating...' : 'Update Email'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Change Password Modal */}
+        {showChangePasswordModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md mx-4">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Change Password</h3>
+              <form onSubmit={handleChangePassword} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Current Password</label>
+                  <input
+                    type="password"
+                    value={passwordForm.currentPassword}
+                    onChange={(e) => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
+                    className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">New Password</label>
+                  <input
+                    type="password"
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
+                    className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Confirm New Password</label>
+                  <input
+                    type="password"
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
+                    className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    required
+                  />
+                </div>
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowChangePasswordModal(false)}
+                    className="flex-1 py-2 px-4 bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-300 dark:hover:bg-slate-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isUpdating}
+                    className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:bg-blue-400"
+                  >
+                    {isUpdating ? 'Updating...' : 'Update Password'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -4,8 +4,9 @@ import type React from "react"
 
 import { useState } from "react"
 import { useTransactions } from "@/hooks/useTransactions"
+import { useCurrency } from "@/context/CurrencyContext"
 import { EXPENSE_CATEGORIES } from "@/lib/constants"
-import { Plus, CreditCard, Wallet, Tag, Building } from "lucide-react"
+import { Plus, CreditCard, Wallet, Tag } from "lucide-react"
 
 const QuickAddWidget = () => {
   const [transactionType, setTransactionType] = useState<"expense" | "income">("expense")
@@ -14,6 +15,7 @@ const QuickAddWidget = () => {
   const [category, setCategory] = useState(EXPENSE_CATEGORIES[0])
 
   const { addExpense, addIncome, isCreating } = useTransactions()
+  const { currency } = useCurrency()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -83,7 +85,7 @@ const QuickAddWidget = () => {
                 required
               />
               <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-sm font-medium">
-                USD
+                {currency}
               </div>
             </div>
 
@@ -110,24 +112,6 @@ const QuickAddWidget = () => {
                 ))}
               </select>
             </div>
-
-            <div className="relative">
-              <Building
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
-                size={18}
-              />
-              <input
-                type="text"
-                placeholder="Account (optional)"
-                className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-2xl border border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-              />
-            </div>
-
-            <input
-              type="text"
-              placeholder="Tags (comma separated)"
-              className="w-full p-4 bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-2xl border border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-            />
           </div>
 
           <button
