@@ -5,6 +5,7 @@ import { useBudgets } from "@/hooks/useBudgets"
 import BudgetCard from "@/components/BudgetCard"
 import AddBudgetModal from "@/components/AddBudgetModal"
 import { PlusCircle, Target, Calendar, TrendingUp, AlertTriangle, CheckCircle } from "lucide-react"
+import { useCurrency } from "@/context/CurrencyContext"
 
 export default function BudgetsPage() {
   const today = new Date()
@@ -14,6 +15,7 @@ export default function BudgetsPage() {
   const { budgets, spendingByCategory, setBudget, isSettingBudget, isLoading } = useBudgets(year, month)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingBudget, setEditingBudget] = useState<{ category: string; amount: number } | null>(null)
+  const {currency} = useCurrency();
 
   const handleSetBudget = (data: { category: string; amount: number }) => {
     setBudget({ ...data, year, month })
@@ -49,8 +51,8 @@ export default function BudgetsPage() {
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
+      currency,
+      // minimumFractionDigits: 0,
     }).format(amount)
 
   const getMonthName = (monthNum: number) => {

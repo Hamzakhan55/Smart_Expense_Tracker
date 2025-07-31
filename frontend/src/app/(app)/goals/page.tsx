@@ -6,11 +6,13 @@ import GoalCard from "@/components/GoalCard"
 import ManageGoalModal from "@/components/ManageGoalModal"
 import { PlusCircle, Target, TrendingUp, Award } from "lucide-react"
 import type { Goal } from "@/types"
+import { useCurrency } from "@/context/CurrencyContext"
 
 export default function GoalsPage() {
   const { goals, isLoading, createGoal, updateGoal, deleteGoal, isMutating } = useGoals()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null)
+  const {currency} = useCurrency()
 
   const handleCardClick = (goal: Goal) => {
     setSelectedGoal(goal)
@@ -32,7 +34,7 @@ export default function GoalsPage() {
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "USD",
+      currency,
       minimumFractionDigits: 0,
     }).format(amount)
 

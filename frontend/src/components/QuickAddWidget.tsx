@@ -12,7 +12,7 @@ const QuickAddWidget = () => {
   const [transactionType, setTransactionType] = useState<"expense" | "income">("expense")
   const [amount, setAmount] = useState("")
   const [description, setDescription] = useState("")
-  const [category, setCategory] = useState(EXPENSE_CATEGORIES[0])
+  const [category, setCategory] = useState("")
 
   const { addExpense, addIncome, isCreating } = useTransactions()
   const { currency } = useCurrency()
@@ -91,11 +91,10 @@ const QuickAddWidget = () => {
 
             <input
               type="text"
-              placeholder="What was this for?"
+              placeholder="Description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full p-4 bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-2xl border border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-              required
             />
 
             <div className="relative">
@@ -105,7 +104,11 @@ const QuickAddWidget = () => {
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-2xl border border-slate-200 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none cursor-pointer"
               >
+                  <option value="" disabled hidden >
+        Select a category
+      </option>
                 {EXPENSE_CATEGORIES.map((cat) => (
+                  
                   <option key={cat} value={cat}>
                     {cat}
                   </option>

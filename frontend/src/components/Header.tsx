@@ -2,13 +2,18 @@
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/context/AuthContext"
 import { useTheme } from "@/context/ThemeContext"
-import { LogOut, UserIcon, Calendar, Bell, Sun, Moon, Wallet, ChevronDown, Search } from "lucide-react"
+import { LogOut, UserIcon, Calendar, Sun, Moon, Wallet, ChevronDown, Search } from "lucide-react"
+import NotificationDropdown from "@/components/NotificationDropdown"
+import { useNotificationTriggers } from "@/hooks/useNotificationTriggers"
 import { useState, useEffect } from "react"
 
 const Header = () => {
   const { user, logout } = useAuth()
   const { isDark, toggleTheme } = useTheme()
   const pathname = usePathname()
+  
+  // Initialize notification triggers
+  useNotificationTriggers()
 
   const [currentDate, setCurrentDate] = useState("")
   const [currentTime, setCurrentTime] = useState("")
@@ -57,26 +62,13 @@ const Header = () => {
             </div>
             <div>
               <h1 className="text-xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 dark:from-white dark:via-blue-100 dark:to-indigo-100 bg-clip-text text-transparent">
-                SmartExpense Pro
+                Smart Expense Tracker
               </h1>
               <p className="text-sm text-slate-500 dark:text-slate-400">Advanced Finance Manager</p>
             </div>
           </div>
 
-          {/* Search Bar */}
-          <div className="hidden md:flex flex-1 max-w-md mx-8">
-            <div className="relative w-full">
-              <Search
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
-                size={18}
-              />
-              <input
-                type="text"
-                placeholder="Search transactions, budgets..."
-                className="w-full pl-12 pr-4 py-3 bg-slate-50/50 dark:bg-slate-800/50 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 rounded-2xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-200"
-              />
-            </div>
-          </div>
+          
 
           {/* Right Side Actions */}
           <div className="flex items-center gap-3">
@@ -90,13 +82,7 @@ const Header = () => {
             </div>
 
             {/* Notifications */}
-            <button className="relative p-3 bg-slate-50/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-slate-700/50 text-slate-600 dark:text-slate-300 hover:bg-slate-100/50 dark:hover:bg-slate-700/50 transition-all duration-200 group">
-              <Bell size={18} />
-              <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-red-500 to-pink-600 rounded-full flex items-center justify-center">
-                <span className="text-xs font-bold text-white">3</span>
-              </div>
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
-            </button>
+            <NotificationDropdown />
 
             {/* Theme Toggle */}
             <button

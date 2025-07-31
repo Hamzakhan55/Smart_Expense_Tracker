@@ -40,10 +40,26 @@ class AIProcessor:
         print(f"💡 Using device: {self.device}")
 
         self.whisper_processor = WhisperProcessor.from_pretrained(str(whisper_model_path))
-        self.whisper_model = WhisperForConditionalGeneration.from_pretrained(str(whisper_model_path)).to(self.device)
+        self.whisper_model = WhisperForConditionalGeneration.from_pretrained(
+            str(whisper_model_path),
+            torch_dtype=torch.float16 if self.device == "cuda" else torch.float32  # Use half precision on GPU
+        ).to(self.device)
+        
+        # Optimize model for inference
+        self.whisper_model.eval()
+        if self.device == "cuda":
+            self.whisper_model = torch.compile(self.whisper_model, mode="max-autotune")  # Compile for speed
 
         self.classifier_tokenizer = AutoTokenizer.from_pretrained(str(classifier_model_path))
-        self.classifier_model = AutoModelForSequenceClassification.from_pretrained(str(classifier_model_path)).to(self.device)
+        self.classifier_model = AutoModelForSequenceClassification.from_pretrained(
+            str(classifier_model_path),
+            torch_dtype=torch.float16 if self.device == "cuda" else torch.float32
+        ).to(self.device)
+        
+        # Optimize classifier for inference
+        self.classifier_model.eval()
+        if self.device == "cuda":
+            self.classifier_model = torch.compile(self.classifier_model, mode="max-autotune")
 
         import warnings
         with warnings.catch_warnings():
@@ -60,12 +76,16 @@ class AIProcessor:
         Transcribes any audio file to text by converting it to the format Whisper needs.
         """
         try:
-            # 1. Load the audio file using pydub (handles MP3, M4A, etc.)
+            # 1. Load and optimize audio for speed
             audio = AudioSegment.from_file(audio_file_path)
             
-            # 2. Convert to the format Whisper needs: 16kHz sample rate, mono channel
+            # 2. Aggressive audio optimization for speed
             audio = audio.set_frame_rate(16000)
             audio = audio.set_channels(1)
+            
+            # Limit audio length to 10 seconds for faster processing
+            if len(audio) > 10000:  # 10 seconds in milliseconds
+                audio = audio[:10000]
 
             # 3. Convert audio data to a PyTorch tensor
             samples = np.array(audio.get_array_of_samples()).astype(np.float32)
@@ -74,22 +94,35 @@ class AIProcessor:
             
             waveform = torch.from_numpy(samples).float()
 
-            # 4. Process the audio with the Whisper model
-            inputs = self.whisper_processor(waveform, sampling_rate=16000, return_tensors="pt")
-            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+            # 4. Process the audio with optimized settings
+            inputs = self.whisper_processor(
+                waveform, 
+                sampling_rate=16000, 
+                return_tensors="pt",
+                padding=True,
+                truncation=True
+            )
+            # Use half precision on GPU for speed
+            if self.device == "cuda":
+                inputs = {k: v.to(self.device).half() if v.dtype == torch.float32 else v.to(self.device) for k, v in inputs.items()}
+            else:
+                inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
             # --- FIX: Use generation_config for forced_decoder_ids ---
             forced_decoder_ids = self.whisper_processor.get_decoder_prompt_ids(language="en", task="transcribe")
             generation_config = self.whisper_model.generation_config
             generation_config.forced_decoder_ids = forced_decoder_ids
 
-            # Optimize for faster processing
+            # Maximum speed optimizations
             predicted_ids = self.whisper_model.generate(
                 **inputs,
                 generation_config=generation_config,
-                max_length=50,  # Limit output length for faster processing
-                num_beams=1,    # Use greedy decoding instead of beam search
-                do_sample=False # Disable sampling for consistency
+                max_length=30,      # Even shorter output
+                num_beams=1,        # Greedy decoding
+                do_sample=False,    # No sampling
+                early_stopping=True, # Stop as soon as possible
+                use_cache=True,     # Use KV cache
+                pad_token_id=self.whisper_processor.tokenizer.eos_token_id
             )
             transcription = self.whisper_processor.batch_decode(predicted_ids, skip_special_tokens=True)[0]
             
@@ -105,16 +138,16 @@ class AIProcessor:
         """Classifies text into an expense category."""
         if not text:
             return "Uncategorized"
-        # Optimize tokenization for faster processing
+        # Maximum speed tokenization
         inputs = self.classifier_tokenizer(
             text, 
             return_tensors="pt", 
             padding=True, 
             truncation=True, 
-            max_length=128  # Limit input length
+            max_length=64   # Much shorter input
         ).to(self.device)
         
-        with torch.no_grad():
+        with torch.no_grad(), torch.autocast(device_type=self.device, enabled=self.device=="cuda"):
             logits = self.classifier_model(**inputs).logits
         predicted_class_id = torch.argmax(logits, dim=1).item()
         category = self.id2label.get(predicted_class_id, "Uncategorized")

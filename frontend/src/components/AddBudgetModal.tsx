@@ -64,24 +64,24 @@ const AddBudgetModal = ({ isOpen, onClose, onSubmit, isSubmitting, editingBudget
         <Dialog.Content className="fixed top-1/2 left-1/2 w-[95vw] max-w-lg -translate-x-1/2 -translate-y-1/2 z-50 animate-in fade-in-0 zoom-in-95 duration-300">
           <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 dark:border-slate-700/50 overflow-hidden">
             {/* Header */}
-            <div className="relative p-8 pb-6 bg-gradient-to-br from-blue-500/10 via-indigo-500/10 to-purple-500/10 border-b border-slate-200/50 dark:border-slate-700/50">
+            <div className="relative p-8 pb-6 bg-gradient-to-br from-slate-50/80 via-white/60 to-blue-50/40 dark:from-slate-800/80 dark:via-slate-700/60 dark:to-slate-800/40 border-b border-slate-200/30 dark:border-slate-600/30">
               <div className="flex items-center gap-4 mb-2">
-                <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg">
-                  <Target className="text-white" size={24} />
+                <div className="p-4 bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 rounded-3xl shadow-xl shadow-blue-500/20 dark:shadow-blue-600/30">
+                  <Target className="text-white" size={28} />
                 </div>
                 <div>
-                  <Dialog.Title className="text-2xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 dark:from-white dark:via-blue-100 dark:to-indigo-100 bg-clip-text text-transparent">
-                    {isEditMode ? 'Edit Budget' : 'Set Category Budget'}
+                  <Dialog.Title className="text-3xl font-bold text-slate-900 dark:text-white mb-1">
+                    {isEditMode ? `Edit "${category}" Budget` : 'Set Category Budget'}
                   </Dialog.Title>
-                  <Dialog.Description className="text-slate-600 dark:text-slate-400 mt-1">
+                  <Dialog.Description className="text-slate-500 dark:text-slate-400 text-base">
                     {isEditMode ? 'Update your spending limit' : 'Define spending limits for better financial control'}
                   </Dialog.Description>
                 </div>
               </div>
 
               <Dialog.Close asChild>
-                <button className="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all duration-200">
-                  <X size={20} />
+                <button className="absolute top-6 right-6 p-3 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-100/80 dark:hover:bg-slate-700/80 rounded-2xl transition-all duration-200 hover:scale-110">
+                  <X size={24} />
                 </button>
               </Dialog.Close>
             </div>
@@ -105,7 +105,7 @@ const AddBudgetModal = ({ isOpen, onClose, onSubmit, isSubmitting, editingBudget
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
                       disabled={isEditMode}
-                      className={`w-full pl-14 pr-10 py-4 bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-2xl border border-slate-200 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none ${isEditMode ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                      className={`w-full pl-16 pr-12 py-5 bg-slate-50/80 dark:bg-slate-700/60 text-slate-900 dark:text-white rounded-3xl border border-slate-200/60 dark:border-slate-600/60 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 dark:focus:ring-blue-400/50 dark:focus:border-blue-400/50 transition-all duration-300 appearance-none text-lg font-medium shadow-sm hover:shadow-md ${isEditMode ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-slate-100/80 dark:hover:bg-slate-600/60'}`}
                     >
                       {EXPENSE_CATEGORIES.map((cat) => (
                         <option key={cat} value={cat}>
@@ -136,28 +136,28 @@ const AddBudgetModal = ({ isOpen, onClose, onSubmit, isSubmitting, editingBudget
                       id="amount"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
-                      className="w-full p-4 bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-2xl border border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-lg font-semibold pr-16"
+                      className="w-full p-5 bg-slate-50/80 dark:bg-slate-700/60 text-slate-900 dark:text-white rounded-3xl border border-slate-200/60 dark:border-slate-600/60 placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 dark:focus:ring-blue-400/50 dark:focus:border-blue-400/50 transition-all duration-300 text-xl font-bold pr-20 shadow-sm hover:shadow-md hover:bg-slate-100/80 dark:hover:bg-slate-600/60"
                       placeholder="0.00"
                       step="0.01"
                       min="0"
                       required
                     />
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-sm font-medium">
+                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 text-base font-bold bg-slate-100/80 dark:bg-slate-600/80 px-3 py-1 rounded-xl">
                       {currency}
                     </div>
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                    <Sparkles size={12} />
+                  <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2 bg-blue-50/50 dark:bg-blue-900/20 p-3 rounded-2xl border border-blue-200/30 dark:border-blue-700/30">
+                    <Sparkles size={16} className="text-blue-500 dark:text-blue-400" />
                     This will be your monthly spending limit for {category}
                   </p>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-4 pt-6">
+                <div className="flex gap-4 pt-8">
                   <Dialog.Close asChild>
                     <button
                       type="button"
-                      className="flex-1 py-4 px-6 text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-2xl font-semibold transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                      className="flex-1 py-5 px-8 text-slate-700 dark:text-slate-300 bg-slate-100/80 dark:bg-slate-700/80 hover:bg-slate-200/80 dark:hover:bg-slate-600/80 rounded-3xl font-bold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg text-lg"
                     >
                       Cancel
                     </button>
@@ -165,7 +165,7 @@ const AddBudgetModal = ({ isOpen, onClose, onSubmit, isSubmitting, editingBudget
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex-1 py-4 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-semibold hover:from-blue-700 hover:to-indigo-700 disabled:from-blue-400 disabled:to-indigo-400 disabled:cursor-not-allowed shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
+                    className="flex-1 py-5 px-8 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white rounded-3xl font-bold hover:from-blue-700 hover:to-indigo-700 dark:hover:from-blue-600 dark:hover:to-indigo-600 disabled:from-blue-400 disabled:to-indigo-400 disabled:cursor-not-allowed shadow-xl shadow-blue-500/30 dark:shadow-blue-400/20 hover:shadow-2xl hover:shadow-blue-500/40 dark:hover:shadow-blue-400/30 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] text-lg"
                   >
                     {isSubmitting ? (
                       <div className="flex items-center justify-center gap-2">

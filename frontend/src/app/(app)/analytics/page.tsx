@@ -9,6 +9,7 @@ import { CategoryBreakdownChart } from "@/components/charts/CategoryBreakdownCha
 import { FinancialHealthScore } from "@/components/FinancialHealthScore"
 import { BarChart3, PieChart, TrendingUp, Activity, Calendar, Filter } from "lucide-react"
 import { useState } from "react"
+import { useCurrency } from "@/context/CurrencyContext"
 
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState("6months")
@@ -21,6 +22,7 @@ export default function AnalyticsPage() {
 
   const { expenses, isLoading: isLoadingTransactions } = useTransactions()
   const { monthlySummary, isLoading: isLoadingSummary } = useSummary()
+  const {currency}= useCurrency()
 
   const isLoading = isLoadingHistory || isLoadingTransactions || isLoadingSummary
 
@@ -38,6 +40,13 @@ export default function AnalyticsPage() {
       {} as Record<string, number>,
     ) || {}
   const topCategory = Object.entries(expenseCategories).sort(([, a], [, b]) => b - a)[0]?.[0] || "N/A"
+
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+      minimumFractionDigits: 0,
+    }).format(amount)
 
   if (isLoading) {
     return (
@@ -74,7 +83,7 @@ export default function AnalyticsPage() {
                   <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                     Total Expenses
                   </h3>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white">${totalExpenses.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white">{formatCurrency(totalExpenses)}</p>
                 </div>
               </div>
             </div>
@@ -91,7 +100,7 @@ export default function AnalyticsPage() {
                     Avg Monthly
                   </h3>
                   <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                    ${avgMonthlyExpenses.toLocaleString()}
+                    {formatCurrency(avgMonthlyExpenses)}
                   </p>
                 </div>
               </div>

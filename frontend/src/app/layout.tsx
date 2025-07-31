@@ -5,6 +5,7 @@ import QueryProvider from '@/providers/QueryProvider';
 import { CurrencyProvider } from '@/context/CurrencyContext'
 import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { NotificationProvider } from '@/context/NotificationContext';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -24,9 +25,11 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <CurrencyProvider>
-              <QueryProvider>
-                {children}
-              </QueryProvider>
+              <NotificationProvider>
+                <QueryProvider>
+                  {children}
+                </QueryProvider>
+              </NotificationProvider>
             </CurrencyProvider>
           </AuthProvider>
         </ThemeProvider>
