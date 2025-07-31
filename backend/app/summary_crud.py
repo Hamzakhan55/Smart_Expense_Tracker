@@ -6,21 +6,17 @@ from dateutil.relativedelta import relativedelta
 
 def get_or_create_monthly_summary(db: Session, user_id: int, year: int, month: int):
     """
-    This function tries to find an existing summary for a user for a given month.
-    If it doesn't find one, it calculates it from scratch, saves it, and then returns it.
-    This is the core caching mechanism.
+    This function calculates monthly summary fresh each time to ensure real-time updates.
     """
     
-    # 1. Try to fetch an existing summary
-    summary = db.query(models.MonthlySummary).filter(
+    # Always calculate fresh to ensure real-time updates
+    # Delete existing cached summary if it exists
+    db.query(models.MonthlySummary).filter(
         models.MonthlySummary.user_id == user_id,
         models.MonthlySummary.year == year,
         models.MonthlySummary.month == month
-    ).first()
-    
-    if summary:
-        # If we found one, return it immediately. Fast path!
-        return summary
+    ).delete()
+    db.commit()
 
     # 2. If no summary exists, we must calculate it.
     # Calculate total income for the given month and year
