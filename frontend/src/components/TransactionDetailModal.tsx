@@ -42,31 +42,63 @@ const TransactionDetailModal = ({ transaction, onClose, onEdit }: TransactionDet
   return (
     <Dialog.Root open={!!transaction} onOpenChange={onClose}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/50" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-lg">
-          <Dialog.Title className="text-xl font-bold text-gray-800">{title}</Dialog.Title>
-          <Dialog.Description className="text-sm text-gray-500 mt-1 mb-4">
-            Transaction Details
-          </Dialog.Description>
+        <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50" />
+        <Dialog.Content className="fixed top-1/2 left-1/2 w-[90vw] max-w-lg -translate-x-1/2 -translate-y-1/2 z-50">
+          <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
+            {/* Header */}
+            <div className="relative p-8 pb-6 bg-gradient-to-br from-slate-50 to-white border-b border-slate-200/50">
+              <Dialog.Title className="text-2xl font-bold text-slate-900 mb-1">{title}</Dialog.Title>
+              <Dialog.Description className="text-slate-600">
+                Transaction Details
+              </Dialog.Description>
+              
+              <Dialog.Close asChild>
+                <button className="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all duration-200">
+                  <X size={20} />
+                </button>
+              </Dialog.Close>
+            </div>
 
-          <div className="space-y-3 text-gray-700">
-            <p><strong>Amount:</strong> <span className={isExpense ? 'text-red-600' : 'text-green-600'}>{formatCurrency(transaction.data.amount)}</span></p>
-            <p><strong>Description:</strong> {transaction.data.description}</p>
-            <p><strong>Date:</strong> {formatDate(transaction.data.date)}</p>
+            {/* Content */}
+            <div className="p-8 space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-semibold text-slate-700">Amount:</span>
+                  <span className={`text-2xl font-bold ${isExpense ? 'text-red-600' : 'text-emerald-600'}`}>
+                    {formatCurrency(transaction.data.amount)}
+                  </span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-semibold text-slate-700">Description:</span>
+                  <span className="text-slate-900 font-medium">{transaction.data.description}</span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-semibold text-slate-700">Date:</span>
+                  <span className="text-slate-900 font-medium">{formatDate(transaction.data.date)}</span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4">
+                <button 
+                  onClick={onEdit} 
+                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-2xl font-semibold transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <Edit size={18}/> 
+                  Edit
+                </button>
+                <button 
+                  onClick={handleDelete} 
+                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 text-white bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 rounded-2xl font-semibold shadow-lg shadow-red-500/25 hover:shadow-xl hover:shadow-red-500/30 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <Trash2 size={18}/> 
+                  Delete
+                </button>
+              </div>
+            </div>
           </div>
-
-          <div className="flex justify-end gap-4 mt-6">
-            <button onClick={onEdit} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
-              <Edit size={16}/> Edit
-            </button>
-            <button onClick={handleDelete} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700">
-              <Trash2 size={16}/> Delete
-            </button>
-          </div>
-
-          <Dialog.Close asChild>
-            <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><X size={20} /></button>
-          </Dialog.Close>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

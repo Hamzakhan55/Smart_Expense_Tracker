@@ -98,7 +98,7 @@ export default function LoginPage() {
               <Wallet size={32} className="text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">SmartExpense Pro</h1>
+              <h1 className="text-3xl font-bold">Smart Expense Tracker</h1>
               <p className="text-white/80 text-lg">Advanced Finance Manager</p>
             </div>
           </div>

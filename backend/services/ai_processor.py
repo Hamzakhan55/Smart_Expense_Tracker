@@ -83,9 +83,13 @@ class AIProcessor:
             generation_config = self.whisper_model.generation_config
             generation_config.forced_decoder_ids = forced_decoder_ids
 
+            # Optimize for faster processing
             predicted_ids = self.whisper_model.generate(
                 **inputs,
-                generation_config=generation_config
+                generation_config=generation_config,
+                max_length=50,  # Limit output length for faster processing
+                num_beams=1,    # Use greedy decoding instead of beam search
+                do_sample=False # Disable sampling for consistency
             )
             transcription = self.whisper_processor.batch_decode(predicted_ids, skip_special_tokens=True)[0]
             
@@ -101,7 +105,15 @@ class AIProcessor:
         """Classifies text into an expense category."""
         if not text:
             return "Uncategorized"
-        inputs = self.classifier_tokenizer(text, return_tensors="pt", padding=True, truncation=True).to(self.device)
+        # Optimize tokenization for faster processing
+        inputs = self.classifier_tokenizer(
+            text, 
+            return_tensors="pt", 
+            padding=True, 
+            truncation=True, 
+            max_length=128  # Limit input length
+        ).to(self.device)
+        
         with torch.no_grad():
             logits = self.classifier_model(**inputs).logits
         predicted_class_id = torch.argmax(logits, dim=1).item()
@@ -110,12 +122,28 @@ class AIProcessor:
         return category
 
     def extract_amount(self, text: str) -> float:
-        """Extracts the first numerical amount from text."""
-        matches = re.findall(r'\b\d+\.?\d*\b', text)
-        if matches:
-            amount = float(matches[0])
+        """Extracts numerical amount from text, handling commas and various formats."""
+        # Remove common currency words and symbols
+        text = re.sub(r'\b(rupees?|dollars?|usd|pkr|inr)\b', '', text, flags=re.IGNORECASE)
+        
+        # Look for numbers with commas (e.g., "50,000", "1,234.56")
+        comma_matches = re.findall(r'\b\d{1,3}(?:,\d{3})+(?:\.\d+)?\b', text)
+        if comma_matches:
+            # Remove commas and convert to float
+            amount_str = comma_matches[0].replace(',', '')
+            amount = float(amount_str)
+            print(f"💰 Extracted Amount (with commas): {amount}")
+            return amount
+        
+        # Look for regular numbers (e.g., "50000", "123.45")
+        regular_matches = re.findall(r'\b\d+(?:\.\d+)?\b', text)
+        if regular_matches:
+            # Get the largest number (likely the amount)
+            amounts = [float(match) for match in regular_matches]
+            amount = max(amounts)
             print(f"💰 Extracted Amount: {amount}")
             return amount
+            
         print("💰 No amount found, defaulting to 0.0")
         return 0.0
 

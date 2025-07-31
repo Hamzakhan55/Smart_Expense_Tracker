@@ -46,6 +46,7 @@ const VoiceRecorder = ({ onRecordingComplete, isProcessing }: VoiceRecorderProps
           onRecordingComplete(audioFile)
         }
         stream.getTracks().forEach((track) => track.stop())
+        setStatus("processing")
       }
 
       recorder.start()
@@ -59,6 +60,7 @@ const VoiceRecorder = ({ onRecordingComplete, isProcessing }: VoiceRecorderProps
   const stopRecording = () => {
     if (status !== "recording" || !mediaRecorderRef.current) return
     mediaRecorderRef.current.stop()
+    // Don't set status here, let onstop handler do it
   }
 
   const isDisabled = status === "processing"
