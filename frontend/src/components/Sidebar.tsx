@@ -31,9 +31,9 @@ const NavigationBar = () => {
   return (
     <nav className="fixed top-20 left-0 right-0 z-40 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-white/20 dark:border-slate-700/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between w-full">
           {/* Navigation Items */}
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-1 flex-1 justify-evenly">
             {navItems.map((item) => {
               const isActive = pathname === item.href
               const isHovered = hoveredItem === item.href
@@ -45,7 +45,7 @@ const NavigationBar = () => {
                   href={item.href}
                   onMouseEnter={() => setHoveredItem(item.href)}
                   onMouseLeave={() => setHoveredItem(null)}
-                  className={`relative flex items-center gap-3 px-6 py-4 text-sm font-medium transition-all duration-300 rounded-2xl group ${
+                  className={`relative flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all duration-300 rounded-2xl group ${
                     isActive
                       ? "text-white"
                       : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
