@@ -2,6 +2,17 @@
 
 import re
 from pathlib import Path
+import os
+import tempfile
+
+# Try to import speech recognition dependencies with fallback
+try:
+    import speech_recognition as sr
+    from pydub import AudioSegment
+    SPEECH_RECOGNITION_AVAILABLE = True
+except ImportError:
+    SPEECH_RECOGNITION_AVAILABLE = False
+    print("Speech recognition dependencies not available. Audio processing will be disabled.")
 
 class AIProcessor:
     def __init__(self):
@@ -25,13 +36,67 @@ class AIProcessor:
         
         print("Simplified AIProcessor initialized successfully.")
 
+    def convert_to_wav(self, audio_file_path: str) -> str:
+        """
+        Convert audio file to WAV format for speech recognition.
+        """
+        if not SPEECH_RECOGNITION_AVAILABLE:
+            return audio_file_path
+            
+        try:
+            file_ext = Path(audio_file_path).suffix.lower()
+            if file_ext == '.wav':
+                return audio_file_path
+            
+            audio = AudioSegment.from_file(audio_file_path)
+            with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_wav:
+                audio.export(temp_wav.name, format='wav')
+                return temp_wav.name
+        except Exception as e:
+            print(f"Error converting audio: {e}")
+            return audio_file_path
+    
     def transcribe_audio(self, audio_file_path: str) -> str:
         """
-        Simplified transcription - returns a placeholder message.
-        In a real implementation, this would use speech-to-text.
+        Transcribe audio file to text using speech recognition.
         """
-        print(f"Simulated transcription for: {audio_file_path}")
-        return "Audio transcription not available in simplified mode"
+        if not SPEECH_RECOGNITION_AVAILABLE:
+            print("Speech recognition not available - install dependencies: pip install speechrecognition pydub pyaudio")
+            return ""
+            
+        wav_file = None
+        try:
+            r = sr.Recognizer()
+            
+            if not os.path.exists(audio_file_path):
+                print(f"Audio file not found: {audio_file_path}")
+                return ""
+            
+            wav_file = self.convert_to_wav(audio_file_path)
+            
+            with sr.AudioFile(wav_file) as source:
+                r.adjust_for_ambient_noise(source, duration=0.5)
+                audio = r.record(source)
+            
+            text = r.recognize_google(audio)
+            print(f"Transcribed text: {text}")
+            return text
+            
+        except sr.UnknownValueError:
+            print("Could not understand audio")
+            return ""
+        except sr.RequestError as e:
+            print(f"Error with speech recognition service: {e}")
+            return ""
+        except Exception as e:
+            print(f"Error transcribing audio: {e}")
+            return ""
+        finally:
+            if wav_file and wav_file != audio_file_path and os.path.exists(wav_file):
+                try:
+                    os.unlink(wav_file)
+                except:
+                    pass
 
     def classify_text(self, text: str) -> str:
         """Classifies text into an expense category using keyword matching."""
@@ -77,15 +142,17 @@ class AIProcessor:
     def process_expense_audio(self, audio_file_path: str) -> dict:
         """The main function to process an audio file into structured expense data."""
         transcription = self.transcribe_audio(audio_file_path)
-        if not transcription or transcription == "Audio transcription not available in simplified mode":
+        
+        if not transcription:
             return {
-                "description": "Please enter expense details manually - audio processing unavailable",
+                "description": "Could not transcribe audio. Please try again or enter manually.",
                 "category": "other",
                 "amount": 0.0
             }
         
         category = self.classify_text(transcription)
         amount = self.extract_amount(transcription)
+        
         return {
             "description": transcription,
             "category": category,
