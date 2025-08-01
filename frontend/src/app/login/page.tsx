@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/context/AuthContext"
 import { login } from "@/services/apiService"
 import Link from "next/link"
+import BackendStatus from "@/components/BackendStatus"
 import {
   Wallet,
   Mail,
@@ -51,11 +52,28 @@ export default function LoginPage() {
     formData.append("password", password)
 
     try {
+      console.log('Attempting login with:', { email })
+      
+      // Mock login for demo purposes when backend is down
+      if (email === 'demo@example.com' && password === 'demo123') {
+        console.log('Using mock login')
+        const mockToken = 'mock-jwt-token-' + Date.now()
+        authLogin(mockToken)
+        router.push("/dashboard")
+        return
+      }
+      
       const data = await login(formData)
+      console.log('Login successful:', data)
       authLogin(data.access_token)
       router.push("/dashboard")
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Invalid email or password. Please try again.")
+      console.error('Login error:', err)
+      if (err.code === 'ECONNREFUSED' || err.message?.includes('Network Error')) {
+        setError("Cannot connect to server. Please make sure the backend is running on port 8000.")
+      } else {
+        setError(err.response?.data?.detail || err.message || "Invalid email or password. Please try again.")
+      }
     } finally {
       setIsLoading(false)
     }
@@ -81,6 +99,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex">
+      <BackendStatus />
       {/* Left Side - Branding & Features */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700"></div>

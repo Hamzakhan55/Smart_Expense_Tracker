@@ -18,7 +18,7 @@ from datetime import date
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 sys.path.append(str(Path(__file__).parent.parent))
-from services.ai_processor import ai_processor
+from services.ai_processor_simple import ai_processor
 
 app = FastAPI(
     title="Expense Tracker API",
@@ -26,12 +26,17 @@ app = FastAPI(
     version="1.0.0",
 )
 
-origins = ["http://localhost:3000"]
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3001"
+]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 

@@ -118,3 +118,55 @@ class HistoricalDataPoint(BaseModel):
     year: int
     month: int
     total_expenses: float
+
+class AssetBase(BaseModel):
+    name: str
+    category: str
+    current_value: float
+    description: Optional[str] = None
+
+class AssetCreate(AssetBase):
+    pass
+
+class Asset(AssetBase):
+    id: int
+    date_added: datetime
+    
+    class Config:
+        from_attributes = True
+
+class LiabilityBase(BaseModel):
+    name: str
+    category: str
+    current_amount: float
+    description: Optional[str] = None
+
+class LiabilityCreate(LiabilityBase):
+    pass
+
+class Liability(LiabilityBase):
+    id: int
+    date_added: datetime
+    
+    class Config:
+        from_attributes = True
+
+class NetWorthSnapshot(BaseModel):
+    id: int
+    total_assets: float
+    total_liabilities: float
+    net_worth: float
+    snapshot_date: datetime
+    
+    class Config:
+        from_attributes = True
+
+class NetWorthSummary(BaseModel):
+    current_net_worth: float
+    total_assets: float
+    total_liabilities: float
+    assets_breakdown: Dict[str, float]
+    liabilities_breakdown: Dict[str, float]
+    
+    class Config:
+        from_attributes = True

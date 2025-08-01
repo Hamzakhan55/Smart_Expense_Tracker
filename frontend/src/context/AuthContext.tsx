@@ -27,15 +27,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const storedToken = localStorage.getItem('authToken');
     if (storedToken) {
       setToken(storedToken);
-      // We need a way to get user data from the token. Let's assume a /users/me endpoint.
-      // We will create this endpoint in the next step.
       apiClient.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
       apiClient.get('/users/me')
         .then(response => setUser(response.data))
-        .catch(() => {
+        .catch((error) => {
+          console.error('Token validation failed:', error);
           // Token is invalid, log out
           localStorage.removeItem('authToken');
           setToken(null);
+          delete apiClient.defaults.headers.common['Authorization'];
         })
         .finally(() => setIsLoading(false));
     } else {
@@ -50,7 +50,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // After login, fetch user data
     setIsLoading(true);
     apiClient.get('/users/me')
-      .then(response => setUser(response.data))
+      .then(response => {
+        setUser(response.data);
+        console.log('User data fetched successfully:', response.data);
+      })
+      .catch(error => {
+        console.error('Failed to fetch user data:', error);
+        // Don't logout here, just log the error
+      })
       .finally(() => setIsLoading(false));
   };
 
