@@ -83,6 +83,45 @@ export default function SettingsPage() {
     }
   }
 
+  const handleCreateBackup = () => {
+    if (allTransactions.length > 0) {
+      generateTransactionReport(allTransactions, "Backup_" + new Date().toISOString().split('T')[0], currency)
+      alert("Backup created successfully!")
+    } else {
+      alert("No data to backup.")
+    }
+  }
+
+  const handleResetSettings = () => {
+    const confirmation = window.confirm("Are you sure you want to reset all settings to default values?")
+    if (confirmation) {
+      setNotifications({
+        budgetAlerts: true,
+        goalReminders: true,
+        weeklyReports: false,
+        emailNotifications: true,
+      })
+      setPrivacy({
+        showBalance: true,
+        shareAnalytics: false,
+        dataCollection: true,
+      })
+      alert("Settings have been reset to default values.")
+    }
+  }
+
+  const handleLeaveReview = () => {
+    window.open('https://github.com/Hamzakhan55/Smart_Expense_Tracker/issues/new?template=review.md&title=App%20Review', '_blank')
+  }
+
+  const handleUserGuide = () => {
+    alert('User Guide: This feature will be available soon. For now, explore the app to learn about its features!')
+  }
+
+  const handleFAQ = () => {
+    alert('FAQ: Common questions and answers will be available soon. Contact the developer for immediate help.')
+  }
+
   const handleChangeEmail = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsUpdating(true)
@@ -92,7 +131,7 @@ export default function SettingsPage() {
       alert('Email updated successfully! (Mock - Backend API needed)')
       setShowChangeEmailModal(false)
       setEmailForm({ newEmail: '', password: '' })
-    } catch (error: any) {
+    } catch (error) {
       alert('Failed to update email')
     } finally {
       setIsUpdating(false)
@@ -112,7 +151,7 @@ export default function SettingsPage() {
       alert('Password updated successfully! (Mock - Backend API needed)')
       setShowChangePasswordModal(false)
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
-    } catch (error: any) {
+    } catch (error) {
       alert('Failed to update password')
     } finally {
       setIsUpdating(false)
@@ -148,17 +187,17 @@ export default function SettingsPage() {
     description: string
     children: React.ReactNode
   }) => (
-    <div className="flex items-center justify-between p-6 border-b border-slate-200/50 dark:border-slate-700/50 last:border-b-0">
-      <div className="flex items-center gap-4">
-        <div className="p-3 bg-gradient-to-br from-blue-500/10 to-indigo-500/10 rounded-2xl">
-          <Icon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+    <div className="flex items-center justify-between p-8 border-b border-slate-200/30 dark:border-slate-700/30 last:border-b-0 hover:bg-slate-50/50 dark:hover:bg-slate-700/20 transition-all duration-200 group">
+      <div className="flex items-center gap-6">
+        <div className="p-4 bg-gradient-to-br from-blue-500/10 to-indigo-500/10 rounded-2xl group-hover:from-blue-500/20 group-hover:to-indigo-500/20 transition-all duration-200">
+          <Icon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
         </div>
-        <div>
-          <h4 className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h4>
-          <p className="text-sm text-slate-600 dark:text-slate-400">{description}</p>
+        <div className="space-y-1">
+          <h4 className="text-xl font-bold text-slate-900 dark:text-white">{title}</h4>
+          <p className="text-base text-slate-600 dark:text-slate-400">{description}</p>
         </div>
       </div>
-      <div>{children}</div>
+      <div className="flex-shrink-0">{children}</div>
     </div>
   )
 
@@ -184,7 +223,15 @@ export default function SettingsPage() {
           <div className="space-y-6">
             <SettingCard>
               <div className="p-8">
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">General Settings</h3>
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg">
+                    <SettingsIcon className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white">General Settings</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Configure your basic preferences</p>
+                  </div>
+                </div>
                 <div className="space-y-0">
                   <SettingItem icon={Globe} title="Currency" description="Choose your preferred currency">
                     <CurrencySelector />
@@ -202,14 +249,7 @@ export default function SettingsPage() {
                       {isDark ? "Light Mode" : "Dark Mode"}
                     </button>
                   </SettingItem>
-                  <SettingItem icon={Palette} title="Language" description="Select your preferred language">
-                    <select className="px-4 py-2 bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
-                      <option value="en">English</option>
-                      <option value="es">Español</option>
-                      <option value="fr">Français</option>
-                      <option value="de">Deutsch</option>
-                    </select>
-                  </SettingItem>
+                  
                 </div>
               </div>
             </SettingCard>
@@ -221,7 +261,15 @@ export default function SettingsPage() {
           <div className="space-y-6">
             <SettingCard>
               <div className="p-8">
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Account Information</h3>
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="p-3 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg">
+                    <User className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Account Information</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Manage your profile and security</p>
+                  </div>
+                </div>
                 <div className="space-y-0">
                   <SettingItem icon={User} title="Profile" description="Manage your profile information">
                     <div className="text-right">
@@ -264,7 +312,15 @@ export default function SettingsPage() {
           <div className="space-y-6">
             <SettingCard>
               <div className="p-8">
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Notification Preferences</h3>
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl shadow-lg">
+                    <Bell className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Notification Preferences</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Control how you receive updates</p>
+                  </div>
+                </div>
                 <div className="space-y-0">
                   <SettingItem
                     icon={Bell}
@@ -317,7 +373,15 @@ export default function SettingsPage() {
           <div className="space-y-6">
             <SettingCard>
               <div className="p-8">
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Privacy & Security</h3>
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="p-3 bg-gradient-to-br from-purple-500 to-violet-600 rounded-2xl shadow-lg">
+                    <Shield className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Privacy & Security</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Protect your data and privacy</p>
+                  </div>
+                </div>
                 <div className="space-y-0">
                   <SettingItem
                     icon={privacy.showBalance ? Eye : EyeOff}
@@ -360,7 +424,15 @@ export default function SettingsPage() {
           <div className="space-y-6">
             <SettingCard>
               <div className="p-8">
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Data Management</h3>
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="p-3 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl shadow-lg">
+                    <Database className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Data Management</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Export and backup your information</p>
+                  </div>
+                </div>
                 <div className="space-y-6">
                   <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl border border-blue-200/50 dark:border-blue-700/50">
                     <div className="flex items-center gap-4 mb-4">
@@ -402,7 +474,9 @@ export default function SettingsPage() {
                         </p>
                       </div>
                     </div>
-                    <button className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl font-semibold hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]">
+                    <button 
+                      onClick={handleCreateBackup}
+                      className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl font-semibold hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]">
                       <Database size={18} />
                       Create Backup
                     </button>
@@ -418,7 +492,15 @@ export default function SettingsPage() {
           <div className="space-y-6">
             <SettingCard>
               <div className="p-8">
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Support & Contact</h3>
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg">
+                    <Mail className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Support & Contact</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Get help and provide feedback</p>
+                  </div>
+                </div>
                 <div className="space-y-6">
                   <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl border border-blue-200/50 dark:border-blue-700/50">
                     <div className="flex items-center gap-4 mb-4">
@@ -435,13 +517,13 @@ export default function SettingsPage() {
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
                         <Mail className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                        <span className="text-sm text-blue-800 dark:text-blue-200">developer@smartexpense.com</span>
+                        <a href="mailto:hamzakhan127109@gmail.com" className="text-sm text-blue-800 dark:text-blue-200 hover:text-blue-600 dark:hover:text-blue-300 transition-colors duration-200">hamzakhan127109@gmail.com</a>
                       </div>
                       <div className="flex items-center gap-3">
                         <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
                         </svg>
-                        <span className="text-sm text-blue-800 dark:text-blue-200">github.com/smartexpense</span>
+                        <a href="https://github.com/Hamzakhan55" target="_blank" rel="noopener noreferrer" className="text-sm text-blue-800 dark:text-blue-200 hover:text-blue-600 dark:hover:text-blue-300 transition-colors duration-200">https://github.com/Hamzakhan55</a>
                       </div>
                     </div>
                   </div>
@@ -460,7 +542,9 @@ export default function SettingsPage() {
                         </p>
                       </div>
                     </div>
-                    <button className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl font-semibold hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]">
+                    <button 
+                      onClick={handleLeaveReview}
+                      className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl font-semibold hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]">
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                       </svg>
@@ -481,10 +565,14 @@ export default function SettingsPage() {
                       </div>
                     </div>
                     <div className="flex gap-3">
-                      <button className="flex items-center gap-2 px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-xl hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-all duration-200">
+                      <button 
+                        onClick={handleUserGuide}
+                        className="flex items-center gap-2 px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-xl hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-all duration-200">
                         User Guide
                       </button>
-                      <button className="flex items-center gap-2 px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-xl hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-all duration-200">
+                      <button 
+                        onClick={handleFAQ}
+                        className="flex items-center gap-2 px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-xl hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-all duration-200">
                         FAQ
                       </button>
                     </div>
@@ -553,7 +641,9 @@ export default function SettingsPage() {
                           <p>• You will need to reconfigure your preferences</p>
                         </div>
                       </div>
-                      <button className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-2xl font-semibold hover:from-amber-700 hover:to-orange-700 shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/30 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]">
+                      <button 
+                        onClick={handleResetSettings}
+                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-2xl font-semibold hover:from-amber-700 hover:to-orange-700 shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/30 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]">
                         <SettingsIcon size={18} />
                         Reset Settings
                       </button>
@@ -586,23 +676,42 @@ export default function SettingsPage() {
           {/* Sidebar Navigation */}
           <div className="lg:col-span-1">
             <SettingCard>
-              <div className="p-6">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Settings Menu</h3>
-                <nav className="space-y-2">
+              <div className="p-8">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg">
+                    <SettingsIcon className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Settings Menu</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Manage your preferences</p>
+                  </div>
+                </div>
+                <nav className="space-y-3">
                   {settingSections.map((section) => {
                     const Icon = section.icon
                     return (
                       <button
                         key={section.id}
                         onClick={() => setActiveSection(section.id)}
-                        className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-2xl transition-all duration-200 ${
+                        className={`w-full flex items-center gap-4 px-5 py-4 text-left rounded-2xl transition-all duration-300 group ${
                           activeSection === section.id
-                            ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25"
-                            : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50"
+                            ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-xl shadow-blue-500/30 scale-[1.02]"
+                            : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:scale-[1.01]"
                         }`}
                       >
-                        <Icon size={18} />
-                        <span className="font-medium">{section.label}</span>
+                        <div className={`p-2 rounded-xl transition-all duration-300 ${
+                          activeSection === section.id
+                            ? "bg-white/20"
+                            : "bg-slate-100 dark:bg-slate-600 group-hover:bg-slate-200 dark:group-hover:bg-slate-500"
+                        }`}>
+                          <Icon size={20} className={activeSection === section.id ? "text-white" : "text-slate-600 dark:text-slate-400"} />
+                        </div>
+                        <div className="flex-1">
+                          <span className="font-semibold text-base">{section.label}</span>
+                        </div>
+                        {activeSection === section.id && (
+                          <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                        )}
                       </button>
                     )
                   })}

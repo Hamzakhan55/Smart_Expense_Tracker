@@ -3,6 +3,7 @@
 import * as Dialog from "@radix-ui/react-dialog"
 import { X, Trash2, Target, DollarSign, Plus, Minus, Award, Sparkles } from "lucide-react"
 import { useState, type FormEvent, useEffect } from "react"
+import { useCurrency } from "@/context/CurrencyContext"
 import type { Goal, GoalCreate } from "@/types"
 
 interface ManageGoalModalProps {
@@ -16,6 +17,7 @@ interface ManageGoalModalProps {
 }
 
 const ManageGoalModal = ({ isOpen, onClose, goal, onCreate, onUpdate, onDelete, isMutating }: ManageGoalModalProps) => {
+  const { currency } = useCurrency()
   const isEditMode = !!goal
   const [name, setName] = useState("")
   const [targetAmount, setTargetAmount] = useState("")
@@ -61,7 +63,7 @@ const ManageGoalModal = ({ isOpen, onClose, goal, onCreate, onUpdate, onDelete, 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "USD",
+      currency,
       minimumFractionDigits: 0,
     }).format(amount)
 
@@ -178,7 +180,7 @@ const ManageGoalModal = ({ isOpen, onClose, goal, onCreate, onUpdate, onDelete, 
                         required
                       />
                       <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-sm font-medium">
-                        USD
+                        {currency}
                       </div>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
@@ -212,39 +214,41 @@ const ManageGoalModal = ({ isOpen, onClose, goal, onCreate, onUpdate, onDelete, 
                         <DollarSign size={16} className="text-blue-500" />
                         Manage Funds
                       </label>
-                      <div className="flex gap-3">
+                      <div className="space-y-3">
                         <input
                           type="number"
                           value={contributionAmount}
                           onChange={(e) => setContributionAmount(e.target.value)}
-                          className="flex-1 p-4 bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-2xl border border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                          className="w-full p-4 bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-2xl border border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                           placeholder="Amount"
                           step="0.01"
                           min="0"
                         />
-                        <button
-                          onClick={() => handleUpdate("add")}
-                          disabled={!contributionAmount || Number.parseFloat(contributionAmount) <= 0}
-                          className="flex items-center gap-2 px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl font-semibold hover:from-emerald-700 hover:to-teal-700 disabled:from-emerald-400 disabled:to-teal-400 disabled:cursor-not-allowed shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
-                        >
-                          <Plus size={16} />
-                          Add
-                        </button>
-                        <button
-                          onClick={() => handleUpdate("withdraw")}
-                          disabled={!contributionAmount || Number.parseFloat(contributionAmount) <= 0}
-                          className="flex items-center gap-2 px-6 py-4 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-2xl font-semibold hover:from-amber-700 hover:to-orange-700 disabled:from-amber-400 disabled:to-orange-400 disabled:cursor-not-allowed shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/30 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
-                        >
-                          <Minus size={16} />
-                          Withdraw
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleUpdate("add")}
+                            disabled={!contributionAmount || Number.parseFloat(contributionAmount) <= 0}
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-semibold hover:from-emerald-700 hover:to-teal-700 disabled:from-emerald-400 disabled:to-teal-400 disabled:cursor-not-allowed shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-200 text-sm"
+                          >
+                            <Plus size={14} />
+                            Add
+                          </button>
+                          <button
+                            onClick={() => handleUpdate("withdraw")}
+                            disabled={!contributionAmount || Number.parseFloat(contributionAmount) <= 0}
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-xl font-semibold hover:from-amber-700 hover:to-orange-700 disabled:from-amber-400 disabled:to-orange-400 disabled:cursor-not-allowed shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/30 transition-all duration-200 text-sm"
+                          >
+                            <Minus size={14} />
+                            Withdraw
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
 
                   {/* Delete Section */}
                   <div className="pt-6 border-t border-slate-200/50 dark:border-slate-700/50">
-                    <div className="flex justify-between items-center">
+                    <div className="space-y-4">
                       <div>
                         <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
                           {isCompleted ? "Goal completed!" : "Finished with this goal?"}
@@ -257,7 +261,7 @@ const ManageGoalModal = ({ isOpen, onClose, goal, onCreate, onUpdate, onDelete, 
                       </div>
                       <button
                         onClick={handleDelete}
-                        className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-2xl font-semibold hover:from-red-700 hover:to-rose-700 shadow-lg shadow-red-500/25 hover:shadow-xl hover:shadow-red-500/30 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl font-semibold hover:from-red-700 hover:to-rose-700 shadow-lg shadow-red-500/25 hover:shadow-xl hover:shadow-red-500/30 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
                       >
                         <Trash2 size={16} />
                         Delete Goal
