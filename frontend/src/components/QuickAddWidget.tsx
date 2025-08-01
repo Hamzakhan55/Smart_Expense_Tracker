@@ -5,7 +5,7 @@ import type React from "react"
 import { useState } from "react"
 import { useTransactions } from "@/hooks/useTransactions"
 import { useCurrency } from "@/context/CurrencyContext"
-import { EXPENSE_CATEGORIES } from "@/lib/constants"
+import { EXPENSE_CATEGORIES, INCOME_SOURCES } from "@/lib/constants"
 import { Plus, CreditCard, Wallet, Tag } from "lucide-react"
 
 const QuickAddWidget = () => {
@@ -13,6 +13,7 @@ const QuickAddWidget = () => {
   const [amount, setAmount] = useState("")
   const [description, setDescription] = useState("")
   const [category, setCategory] = useState("")
+  const [source, setSource] = useState("")
 
   const { addExpense, addIncome, isCreating } = useTransactions()
   const { currency } = useCurrency()
@@ -26,11 +27,13 @@ const QuickAddWidget = () => {
     if (transactionType === "expense") {
       addExpense({ amount: numericAmount, category, description })
     } else {
-      addIncome({ amount: numericAmount, category, description })
+      addIncome({ amount: numericAmount, category: source, description })
     }
 
     setAmount("")
     setDescription("")
+    setCategory("")
+    setSource("")
   }
 
   return (
@@ -99,21 +102,37 @@ const QuickAddWidget = () => {
 
             <div className="relative">
               <Tag className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={18} />
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-2xl border border-slate-200 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none cursor-pointer"
-              >
-                  <option value="" disabled hidden >
-        Select a category
-      </option>
-                {EXPENSE_CATEGORIES.map((cat) => (
-                  
-                  <option key={cat} value={cat}>
-                    {cat}
+              {transactionType === "expense" ? (
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-2xl border border-slate-200 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none cursor-pointer"
+                >
+                  <option value="" disabled hidden>
+                    Select a category
                   </option>
-                ))}
-              </select>
+                  {EXPENSE_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <select
+                  value={source}
+                  onChange={(e) => setSource(e.target.value)}
+                  className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-2xl border border-slate-200 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none cursor-pointer"
+                >
+                  <option value="" disabled hidden>
+                    Select a source
+                  </option>
+                  {INCOME_SOURCES.map((src) => (
+                    <option key={src} value={src}>
+                      {src}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
           </div>
 
