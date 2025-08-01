@@ -26,13 +26,28 @@ export default function AnalyticsPage() {
 
   const isLoading = isLoadingHistory || isLoadingTransactions || isLoadingSummary
 
+  // Filter data based on selected filters
+  const filteredHistoricalData = historicalData?.slice(timeRange === "3months" ? -3 : timeRange === "6months" ? -6 : -12)
+  
+  const filteredExpenses = expenses?.filter(expense => {
+    const expenseDate = new Date(expense.date)
+    const now = new Date()
+    const monthsBack = timeRange === "3months" ? 3 : timeRange === "6months" ? 6 : 12
+    const cutoffDate = new Date(now.getFullYear(), now.getMonth() - monthsBack, 1)
+    
+    const isInTimeRange = expenseDate >= cutoffDate
+    const isInCategory = selectedCategory === "all" || expense.category === selectedCategory
+    
+    return isInTimeRange && isInCategory
+  })
+
   // Calculate analytics insights
-  const totalExpenses = expenses?.reduce((sum, expense) => sum + expense.amount, 0) || 0
-  const avgMonthlyExpenses = historicalData
-    ? historicalData.reduce((sum, d) => sum + d.total_expenses, 0) / historicalData.length
+  const totalExpenses = filteredExpenses?.reduce((sum, expense) => sum + expense.amount, 0) || 0
+  const avgMonthlyExpenses = filteredHistoricalData
+    ? filteredHistoricalData.reduce((sum, d) => sum + d.total_expenses, 0) / filteredHistoricalData.length
     : 0
   const expenseCategories =
-    expenses?.reduce(
+    filteredExpenses?.reduce(
       (acc, expense) => {
         acc[expense.category] = (acc[expense.category] || 0) + 1
         return acc
@@ -133,7 +148,7 @@ export default function AnalyticsPage() {
                   <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                     Transactions
                   </h3>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white">{expenses?.length || 0}</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white">{filteredExpenses?.length || 0}</p>
                 </div>
               </div>
             </div>
@@ -173,6 +188,11 @@ export default function AnalyticsPage() {
                     <option value="Transport">Transport</option>
                     <option value="Shopping">Shopping</option>
                     <option value="Entertainment">Entertainment</option>
+                    <option value="Bills">Bills</option>
+                    <option value="Health">Health</option>
+                    <option value="Education">Education</option>
+                    <option value="Travel">Travel</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
               </div>
@@ -182,8 +202,8 @@ export default function AnalyticsPage() {
 
         {/* Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-          <div className="lg:col-span-3">{historicalData && <SpendingTrendChart data={historicalData} />}</div>
-          <div className="lg:col-span-2">{expenses && <CategoryBreakdownChart expenses={expenses} />}</div>
+          <div className="lg:col-span-3">{filteredHistoricalData && <SpendingTrendChart data={filteredHistoricalData} />}</div>
+          <div className="lg:col-span-2">{filteredExpenses && <CategoryBreakdownChart expenses={filteredExpenses} />}</div>
         </div>
 
         {/* Financial Health Score */}

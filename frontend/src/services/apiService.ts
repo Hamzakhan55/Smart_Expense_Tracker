@@ -310,10 +310,30 @@ export const getHistoricalSummary = async (): Promise<HistoricalDataPoint[]> => 
     return response.data;
   } catch (error) {
     console.log('Using mock historical data');
-    return [
-      { year: 2024, month: 1, total_income: 3000, total_expenses: 1400, net_balance: 1600 },
-      { year: 2024, month: 2, total_income: 3000, total_expenses: 1500, net_balance: 1500 }
-    ];
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth() + 1;
+    const currentYear = currentDate.getFullYear();
+    
+    const data = [];
+    for (let i = 5; i >= 0; i--) {
+      let month = currentMonth - i;
+      let year = currentYear;
+      
+      if (month <= 0) {
+        month += 12;
+        year -= 1;
+      }
+      
+      data.push({
+        year,
+        month,
+        total_income: 3000 + Math.random() * 1000,
+        total_expenses: 1200 + Math.random() * 800,
+        net_balance: data[data.length - 1]?.total_income - data[data.length - 1]?.total_expenses || 0
+      });
+    }
+    
+    return data;
   }
 };
 

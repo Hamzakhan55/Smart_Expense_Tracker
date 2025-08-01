@@ -34,20 +34,13 @@ export const SpendingTrendChart = ({ data }: { data: HistoricalDataPoint[] }) =>
               <TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Spending Trend</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">6-month expense overview</p>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Income vs Expenses</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">6-month financial overview</p>
             </div>
           </div>
           <div className="text-right">
             <div className="text-2xl font-bold text-slate-900 dark:text-white">{formatCurrency(avgExpenses)}</div>
-            <div
-              className={`text-sm font-medium flex items-center gap-1 ${
-                trend >= 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"
-              }`}
-            >
-              <TrendingUp size={14} className={trend < 0 ? "rotate-180" : ""} />
-              {Math.abs(trend).toFixed(1)}% {trend >= 0 ? "increase" : "decrease"}
-            </div>
+            <div className="text-sm text-slate-600 dark:text-slate-400">Average Monthly</div>
           </div>
         </div>
         <div className="h-80">
@@ -58,7 +51,7 @@ export const SpendingTrendChart = ({ data }: { data: HistoricalDataPoint[] }) =>
               <YAxis stroke="#64748b" fontSize={12} tickFormatter={formatCurrency} tickLine={false} axisLine={false} />
               <Tooltip
                 cursor={{ fill: "rgba(59, 130, 246, 0.1)", radius: 8 }}
-                formatter={(value: number) => [formatCurrency(value), "Expenses"]}
+                formatter={(value: number, name: string) => [formatCurrency(value), name]}
                 labelStyle={{ color: "#1e293b" }}
                 contentStyle={{
                   backgroundColor: "rgba(255, 255, 255, 0.95)",
@@ -67,11 +60,16 @@ export const SpendingTrendChart = ({ data }: { data: HistoricalDataPoint[] }) =>
                   boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)",
                 }}
               />
-              <Bar dataKey="Expenses" fill="url(#expenseGradient)" radius={[8, 8, 0, 0]} maxBarSize={60} />
+              <Bar dataKey="Income" fill="url(#incomeGradient)" radius={[8, 8, 0, 0]} maxBarSize={40} />
+              <Bar dataKey="Expenses" fill="url(#expenseGradient)" radius={[8, 8, 0, 0]} maxBarSize={40} />
               <defs>
+                <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#10b981" />
+                  <stop offset="100%" stopColor="#059669" />
+                </linearGradient>
                 <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#3b82f6" />
-                  <stop offset="100%" stopColor="#1d4ed8" />
+                  <stop offset="0%" stopColor="#ef4444" />
+                  <stop offset="100%" stopColor="#dc2626" />
                 </linearGradient>
               </defs>
             </BarChart>
