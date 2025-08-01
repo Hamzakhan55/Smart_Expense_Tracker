@@ -133,7 +133,7 @@ export default function TransactionsPage() {
     
     if (exportTransactions.length > 0) {
       const monthName = new Date(exportYear, exportMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-      generateTransactionReport(exportTransactions, monthName)
+      generateTransactionReport(exportTransactions, monthName, currency)
     } else {
       alert('No transactions found for the selected month.')
     }
