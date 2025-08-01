@@ -5,7 +5,7 @@ from pathlib import Path
 import os
 import tempfile
 
-# Try to import speech recognition dependencies with fallback
+# Try to import dependencies with fallback
 try:
     import speech_recognition as sr
     from pydub import AudioSegment
@@ -13,6 +13,13 @@ try:
 except ImportError:
     SPEECH_RECOGNITION_AVAILABLE = False
     print("Speech recognition dependencies not available. Audio processing will be disabled.")
+
+try:
+    from transformers import pipeline
+    AI_CLASSIFICATION_AVAILABLE = True
+except ImportError:
+    AI_CLASSIFICATION_AVAILABLE = False
+    print("Transformers not available. Using keyword-based classification.")
 
 class AIProcessor:
     def __init__(self):
@@ -22,15 +29,48 @@ class AIProcessor:
         """
         print("Initializing Simplified AIProcessor...")
         
-        # Simple category mapping based on keywords
+        # Initialize AI classifier if available
+        self.classifier = None
+        self.ai_available = AI_CLASSIFICATION_AVAILABLE
+        if self.ai_available:
+            try:
+                self.classifier = pipeline(
+                    "zero-shot-classification",
+                    model="facebook/bart-large-mnli"
+                )
+                print("AI classification model loaded successfully.")
+            except Exception as e:
+                print(f"Failed to load AI model: {e}")
+                self.ai_available = False
+        
+        # Expense categories for classification
+        self.expense_categories = [
+            "food and dining",
+            "transportation", 
+            "shopping",
+            "entertainment",
+            "utilities and bills",
+            "healthcare and medical",
+            "education",
+            "groceries",
+            "travel",
+            "personal care",
+            "home and garden",
+            "insurance",
+            "other"
+        ]
+        
+        # Fallback keyword mapping
         self.category_keywords = {
-            "food": ["food", "restaurant", "meal", "lunch", "dinner", "breakfast", "eat", "pizza", "burger"],
-            "transport": ["transport", "taxi", "bus", "train", "fuel", "gas", "uber", "lyft", "metro"],
-            "shopping": ["shopping", "store", "buy", "purchase", "market", "mall", "clothes", "shirt"],
-            "entertainment": ["movie", "cinema", "game", "entertainment", "fun", "party", "concert"],
-            "utilities": ["electricity", "water", "gas", "internet", "phone", "bill", "utility"],
-            "healthcare": ["doctor", "medicine", "hospital", "pharmacy", "health", "medical"],
-            "education": ["book", "course", "school", "education", "tuition", "study"],
+            "food": ["food", "restaurant", "meal", "lunch", "dinner", "breakfast", "eat", "pizza", "burger", "coffee", "snack"],
+            "transport": ["transport", "taxi", "bus", "train", "fuel", "gas", "uber", "lyft", "metro", "parking", "toll"],
+            "shopping": ["shopping", "store", "buy", "purchase", "market", "mall", "clothes", "shirt", "amazon", "online"],
+            "entertainment": ["movie", "cinema", "game", "entertainment", "fun", "party", "concert", "netflix", "spotify"],
+            "utilities": ["electricity", "water", "gas", "internet", "phone", "bill", "utility", "wifi", "mobile"],
+            "healthcare": ["doctor", "medicine", "hospital", "pharmacy", "health", "medical", "dentist", "clinic"],
+            "education": ["book", "course", "school", "education", "tuition", "study", "university", "college"],
+            "groceries": ["grocery", "supermarket", "vegetables", "fruits", "milk", "bread", "walmart", "target"],
+            "travel": ["hotel", "flight", "vacation", "trip", "airbnb", "booking", "travel", "airline"],
             "other": []
         }
         
@@ -98,8 +138,43 @@ class AIProcessor:
                 except:
                     pass
 
-    def classify_text(self, text: str) -> str:
-        """Classifies text into an expense category using keyword matching."""
+    def classify_text_ai(self, text: str) -> str:
+        """Classify text using AI model."""
+        if not self.classifier or not text:
+            return None
+            
+        try:
+            result = self.classifier(text, self.expense_categories)
+            predicted_category = result['labels'][0]
+            confidence = result['scores'][0]
+            
+            print(f"AI Classification: '{predicted_category}' (confidence: {confidence:.2f})")
+            
+            # Map AI categories to our simplified categories
+            category_mapping = {
+                "food and dining": "food",
+                "transportation": "transport", 
+                "shopping": "shopping",
+                "entertainment": "entertainment",
+                "utilities and bills": "utilities",
+                "healthcare and medical": "healthcare",
+                "education": "education",
+                "groceries": "groceries",
+                "travel": "travel",
+                "personal care": "other",
+                "home and garden": "other",
+                "insurance": "other",
+                "other": "other"
+            }
+            
+            return category_mapping.get(predicted_category, "other")
+            
+        except Exception as e:
+            print(f"AI classification failed: {e}")
+            return None
+    
+    def classify_text_keywords(self, text: str) -> str:
+        """Fallback keyword-based classification."""
         if not text:
             return "other"
         
@@ -107,33 +182,64 @@ class AIProcessor:
         
         for category, keywords in self.category_keywords.items():
             if any(keyword in text_lower for keyword in keywords):
-                print(f"Classified Category: '{category}'")
+                print(f"Keyword Classification: '{category}'")
                 return category
         
-        print(f"Classified Category: 'other'")
+        print(f"Keyword Classification: 'other'")
         return "other"
+    
+    def classify_text(self, text: str) -> str:
+        """Classify text using AI model with keyword fallback."""
+        if not text:
+            return "other"
+            
+        # Try AI classification first
+        if self.ai_available and self.classifier:
+            ai_result = self.classify_text_ai(text)
+            if ai_result:
+                return ai_result
+        
+        # Fallback to keyword matching
+        return self.classify_text_keywords(text)
 
     def extract_amount(self, text: str) -> float:
-        """Extracts numerical amount from text, handling commas and various formats."""
+        """Enhanced amount extraction with better patterns."""
+        if not text:
+            return 0.0
+            
         # Remove common currency words and symbols
-        text = re.sub(r'\b(rupees?|dollars?|usd|pkr|inr)\b', '', text, flags=re.IGNORECASE)
+        text = re.sub(r'\b(rupees?|dollars?|usd|pkr|inr|rs\.?|\$)\b', '', text, flags=re.IGNORECASE)
+        
+        # Look for currency symbols followed by numbers
+        currency_matches = re.findall(r'[\$₹]\s*([\d,]+(?:\.\d{1,2})?)', text)
+        if currency_matches:
+            amount_str = currency_matches[0].replace(',', '')
+            amount = float(amount_str)
+            print(f"Extracted Amount (currency symbol): {amount}")
+            return amount
         
         # Look for numbers with commas (e.g., "50,000", "1,234.56")
-        comma_matches = re.findall(r'\b\d{1,3}(?:,\d{3})+(?:\.\d+)?\b', text)
+        comma_matches = re.findall(r'\b\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?\b', text)
         if comma_matches:
-            # Remove commas and convert to float
             amount_str = comma_matches[0].replace(',', '')
             amount = float(amount_str)
             print(f"Extracted Amount (with commas): {amount}")
             return amount
         
-        # Look for regular numbers (e.g., "50000", "123.45")
-        regular_matches = re.findall(r'\b\d+(?:\.\d+)?\b', text)
+        # Look for decimal numbers
+        decimal_matches = re.findall(r'\b\d+\.\d{1,2}\b', text)
+        if decimal_matches:
+            amount = float(decimal_matches[0])
+            print(f"Extracted Amount (decimal): {amount}")
+            return amount
+        
+        # Look for regular numbers
+        regular_matches = re.findall(r'\b\d+\b', text)
         if regular_matches:
             # Get the largest number (likely the amount)
             amounts = [float(match) for match in regular_matches]
             amount = max(amounts)
-            print(f"Extracted Amount: {amount}")
+            print(f"Extracted Amount (regular): {amount}")
             return amount
             
         print("No amount found, defaulting to 0.0")

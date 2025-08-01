@@ -15,6 +15,8 @@ class Expense(Base):
     description = Column(String(255), nullable=False)
     date = Column(DateTime, default=datetime.now, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    
+    owner = relationship("User")
 
 
 
@@ -29,6 +31,8 @@ class Income(Base):
     description = Column(String(255), nullable=True)
     income_date = Column(DateTime, default=datetime.now, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    
+    owner = relationship("User")
 
 
     
@@ -56,6 +60,7 @@ class MonthlySummary(Base):
     total_expenses = Column(Float, default=0.0)
     
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    owner = relationship("User")
 
 class Budget(Base):
     __tablename__ = "budgets"

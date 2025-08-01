@@ -18,7 +18,7 @@ from datetime import date
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 sys.path.append(str(Path(__file__).parent.parent))
-from services.ai_processor_simple import ai_processor
+from services.ai_processor_local import ai_processor
 
 app = FastAPI(
     title="Expense Tracker API",
@@ -177,6 +177,29 @@ async def process_voice_dry_run(file: UploadFile = File(...)):
         if expense_data.get("category") == "Error":
             raise HTTPException(status_code=400, detail=expense_data.get("description"))
         return AiResponse(**expense_data)
+    finally:
+        if temp_file_path.exists():
+            temp_file_path.unlink()
+
+@app.post("/process-voice/", response_model=schemas.Expense)
+async def process_voice(file: UploadFile = File(...), db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    temp_dir = Path("temp_audio")
+    temp_dir.mkdir(exist_ok=True)
+    temp_file_path = temp_dir / file.filename
+    try:
+        with temp_file_path.open("wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        expense_data = ai_processor.process_expense_audio(str(temp_file_path))
+        if expense_data.get("category") == "Error":
+            raise HTTPException(status_code=400, detail=expense_data.get("description"))
+        
+        # Create expense from AI data
+        expense_create = schemas.ExpenseCreate(
+            amount=expense_data["amount"],
+            category=expense_data["category"],
+            description=expense_data["description"]
+        )
+        return crud.create_expense_for_user(db=db, expense=expense_create, user_id=current_user.id)
     finally:
         if temp_file_path.exists():
             temp_file_path.unlink()
