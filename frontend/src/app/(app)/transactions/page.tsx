@@ -74,8 +74,15 @@ export default function TransactionsPage() {
       ...(expenses?.map(expense => ({ type: 'expense' as const, data: expense })) ?? [])
     ]
     
+    // Apply transaction type filter
+    const typeFiltered = combined.filter(t => {
+      if (filter === 'income') return t.type === 'income'
+      if (filter === 'expense') return t.type === 'expense'
+      return true
+    })
+    
     // Apply date range filter
-    const dateFiltered = combined.filter(t => {
+    const dateFiltered = typeFiltered.filter(t => {
       const transactionDate = new Date(t.data.date)
       switch (dateRange) {
         case 'today':
@@ -85,6 +92,9 @@ export default function TransactionsPage() {
           return transactionDate >= oneWeekAgo
         case 'month':
           return transactionDate.getMonth() === now.getMonth() && transactionDate.getFullYear() === now.getFullYear()
+        case 'lastMonth':
+          const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+          return transactionDate.getMonth() === lastMonth.getMonth() && transactionDate.getFullYear() === lastMonth.getFullYear()
         case 'quarter':
           const currentQuarter = Math.floor(now.getMonth() / 3)
           const transactionQuarter = Math.floor(transactionDate.getMonth() / 3)
@@ -104,13 +114,13 @@ export default function TransactionsPage() {
         case 'category':
           return a.data.category.localeCompare(b.data.category)
         case 'description':
-          return a.data.description.localeCompare(b.data.description)
+          return (a.data.description || '').localeCompare(b.data.description || '')
         case 'date':
         default:
           return new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
       }
     })
-  }, [incomes, expenses, dateRange, sortBy])
+  }, [incomes, expenses, dateRange, sortBy, filter])
 
   const handleExportData = () => {
     const exportTransactions = [
@@ -235,7 +245,7 @@ export default function TransactionsPage() {
                       <option value="all">All Time</option>
                       <option value="today">Today</option>
                       <option value="week">This Week</option>
-                      <option value="thisMonth">This Month</option>
+                      <option value="month">This Month</option>
                       <option value="lastMonth">Last Month</option>
                       <option value="year">This Year</option>
                     </select>
@@ -250,15 +260,23 @@ export default function TransactionsPage() {
                 {/* Sort By */}
                 <div className="min-w-[160px]">
                   <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Sort By</label>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-2xl border border-slate-200 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none cursor-pointer"
-                  >
-                    <option value="date">Date</option>
-                    <option value="amount">Amount</option>
-                    <option value="category">Category</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="w-full px-4 pr-10 py-4 bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-2xl border border-slate-200 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none cursor-pointer"
+                    >
+                      <option value="date">Date</option>
+                      <option value="amount">Amount</option>
+                      <option value="category">Category</option>
+                      <option value="description">Description</option>
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
