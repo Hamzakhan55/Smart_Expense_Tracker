@@ -125,6 +125,7 @@ export default function SettingsPage() {
     { id: "notifications", label: "Notifications", icon: Bell },
     { id: "privacy", label: "Privacy", icon: Shield },
     { id: "data", label: "Data Management", icon: Database },
+    { id: "support", label: "Support", icon: Mail },
     { id: "danger", label: "Danger Zone", icon: AlertTriangle },
   ]
 
@@ -405,6 +406,88 @@ export default function SettingsPage() {
                       <Database size={18} />
                       Create Backup
                     </button>
+                  </div>
+                </div>
+              </div>
+            </SettingCard>
+          </div>
+        )
+
+      case "support":
+        return (
+          <div className="space-y-6">
+            <SettingCard>
+              <div className="p-8">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Support & Contact</h3>
+                <div className="space-y-6">
+                  <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl border border-blue-200/50 dark:border-blue-700/50">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl">
+                        <Mail className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-semibold text-blue-900 dark:text-blue-100">Contact Developer</h4>
+                        <p className="text-sm text-blue-700 dark:text-blue-200">
+                          Get in touch for support, feedback, or feature requests
+                        </p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Mail className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        <span className="text-sm text-blue-800 dark:text-blue-200">developer@smartexpense.com</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                        </svg>
+                        <span className="text-sm text-blue-800 dark:text-blue-200">github.com/smartexpense</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-6 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-2xl border border-emerald-200/50 dark:border-emerald-700/50">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="p-3 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl">
+                        <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-semibold text-emerald-900 dark:text-emerald-100">Rate & Review</h4>
+                        <p className="text-sm text-emerald-700 dark:text-emerald-200">
+                          Help us improve by sharing your experience
+                        </p>
+                      </div>
+                    </div>
+                    <button className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl font-semibold hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                      </svg>
+                      Leave a Review
+                    </button>
+                  </div>
+
+                  <div className="p-6 bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 rounded-2xl border border-purple-200/50 dark:border-purple-700/50">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="p-3 bg-gradient-to-br from-purple-500 to-violet-600 rounded-2xl">
+                        <FileText className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-semibold text-purple-900 dark:text-purple-100">Documentation</h4>
+                        <p className="text-sm text-purple-700 dark:text-purple-200">
+                          Learn how to use all features effectively
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-3">
+                      <button className="flex items-center gap-2 px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-xl hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-all duration-200">
+                        User Guide
+                      </button>
+                      <button className="flex items-center gap-2 px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-xl hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-all duration-200">
+                        FAQ
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
