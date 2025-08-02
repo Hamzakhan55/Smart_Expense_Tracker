@@ -169,3 +169,10 @@ def delete_all_incomes_for_user(db: Session, user_id: int):
     deleted_rows = db.query(models.Income).filter(models.Income.user_id == user_id).delete()
     db.commit()
     return deleted_rows
+
+def get_expenses_by_month(db: Session, user_id: int, year: int, month: int):
+    return db.query(models.Expense).filter(
+        models.Expense.user_id == user_id,
+        func.extract('year', models.Expense.date) == year,
+        func.extract('month', models.Expense.date) == month
+    ).all()

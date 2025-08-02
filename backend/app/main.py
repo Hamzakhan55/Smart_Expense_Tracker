@@ -329,6 +329,85 @@ def get_historical_summary_endpoint(
 ):
     return summary_crud.get_historical_summary(db, user_id=current_user.id)
 
+@app.get("/expenses/{year}/{month}", response_model=List[schemas.Expense], tags=["Expenses"])
+def get_expenses_by_month(
+    year: int,
+    month: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """
+    Get expenses for a specific month and year.
+    """
+    return crud.get_expenses_by_month(db, user_id=current_user.id, year=year, month=month)
+
+@app.get("/insights/smart", tags=["Insights"])
+def get_smart_insights(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """
+    Generate AI-powered smart insights based on user's spending patterns.
+    """
+    from datetime import datetime
+    
+    current_date = datetime.now()
+    current_month = current_date.month
+    current_year = current_date.year
+    
+    # Get previous month
+    if current_month == 1:
+        previous_month = 12
+        previous_year = current_year - 1
+    else:
+        previous_month = current_month - 1
+        previous_year = current_year
+    
+    # Get current and previous month data
+    current_expenses = crud.get_expenses_by_month(db, user_id=current_user.id, year=current_year, month=current_month)
+    previous_expenses = crud.get_expenses_by_month(db, user_id=current_user.id, year=previous_year, month=previous_month)
+    
+    current_summary = summary_crud.get_or_create_monthly_summary(db, user_id=current_user.id, year=current_year, month=current_month)
+    previous_summary = summary_crud.get_or_create_monthly_summary(db, user_id=current_user.id, year=previous_year, month=previous_month)
+    
+    # Calculate category analysis
+    current_categories = {}
+    previous_categories = {}
+    
+    for expense in current_expenses:
+        current_categories[expense.category] = current_categories.get(expense.category, 0) + expense.amount
+    
+    for expense in previous_expenses:
+        previous_categories[expense.category] = previous_categories.get(expense.category, 0) + expense.amount
+    
+    # Generate insights
+    insights = []
+    
+    # Prediction insight
+    if previous_summary.total_expenses > 0:
+        trend = (current_summary.total_expenses - previous_summary.total_expenses) / previous_summary.total_expenses
+        seasonal_factor = 1 + (0.15 * (current_month / 12))
+        prediction = current_summary.total_expenses * (1 + trend * 0.7) * seasonal_factor
+        
+        insights.append({
+            "type": "prediction",
+            "title": "Next Month Forecast",
+            "message": f"Based on your spending pattern, next month's expenses are predicted to be ${prediction:.0f}",
+            "value": prediction,
+            "confidence": 0.75
+        })
+    
+    return {
+        "insights": insights,
+        "current_month_total": current_summary.total_expenses,
+        "previous_month_total": previous_summary.total_expenses,
+        "category_analysis": {
+            "current": current_categories,
+            "previous": previous_categories
+        },
+        "generated_at": current_date.isoformat()
+    }
+
 @app.delete("/transactions/all", status_code=status.HTTP_204_NO_CONTENT)
 def delete_all_transactions_endpoint(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     crud.delete_all_expenses_for_user(db, user_id=current_user.id)

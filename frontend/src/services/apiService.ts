@@ -337,3 +337,28 @@ export const getHistoricalSummary = async (): Promise<HistoricalDataPoint[]> => 
   }
 };
 
+export const getExpensesByMonth = async (year: number, month: number): Promise<Expense[]> => {
+  try {
+    const response = await apiClient.get<Expense[]>(`/expenses/${year}/${month}`);
+    return response.data;
+  } catch (error) {
+    console.log('Using filtered expenses for month');
+    // Fallback to filtering all expenses
+    const allExpenses = await getExpenses();
+    return allExpenses.filter(expense => {
+      const expenseDate = new Date(expense.date);
+      return expenseDate.getFullYear() === year && expenseDate.getMonth() + 1 === month;
+    });
+  }
+};
+
+export const getSmartInsights = async (): Promise<any> => {
+  try {
+    const response = await apiClient.get('/insights/smart');
+    return response.data;
+  } catch (error) {
+    console.log('Backend insights not available, using client-side analysis');
+    return null;
+  }
+};
+
