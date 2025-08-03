@@ -10,12 +10,14 @@ import {
   SafeAreaView,
   TextInput,
   Alert,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Modal from 'react-native-modal';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
 import { getExpenses, getIncomes, exportTransactionsPDF, exportFilteredTransactionsPDF } from '../services/apiService';
 import { Expense, Income } from '../types';
 
@@ -246,16 +248,23 @@ const TransactionsScreen = () => {
     try {
       const { uri } = await Print.printToFileAsync({ html });
       
+      // Save to app's document directory (always writable)
+      const fileName = `transaction_report_${new Date().toISOString().split('T')[0]}.pdf`;
+      const localUri = `${FileSystem.documentDirectory}${fileName}`;
+      
+      await FileSystem.copyAsync({ from: uri, to: localUri });
+      console.log('PDF saved to app directory:', localUri);
+      
       Alert.alert(
         'PDF Generated Successfully! 📄', 
-        'Your transaction report has been created. Would you like to share it?',
+        `Your transaction report has been saved to device storage as ${fileName}. Would you like to share it?`,
         [
           { text: 'Just Save', style: 'cancel' },
           { 
             text: 'Share', 
             onPress: async () => {
               if (await Sharing.isAvailableAsync()) {
-                await Sharing.shareAsync(uri, {
+                await Sharing.shareAsync(localUri, {
                   mimeType: 'application/pdf',
                   dialogTitle: 'Share Transaction Report'
                 });
@@ -274,6 +283,7 @@ const TransactionsScreen = () => {
 
   const handleExportPDF = async () => {
     setIsExporting(true);
+    Alert.alert('Export Started', 'Generating PDF report...');
     try {
       const filteredTransactions = getFilteredTransactions();
       if (filteredTransactions.length === 0) {
@@ -291,6 +301,7 @@ const TransactionsScreen = () => {
   
   const handleExportFiltered = async () => {
     setIsExporting(true);
+    Alert.alert('Export Started', 'Generating filtered PDF report...');
     try {
       const filteredTransactions = getFilteredTransactions();
       if (filteredTransactions.length === 0) {
