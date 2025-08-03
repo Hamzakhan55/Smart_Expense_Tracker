@@ -13,7 +13,7 @@ def create_demo_user():
         # Check if demo user already exists
         existing_user = user_crud.get_user_by_email(db, email="demo@example.com")
         if existing_user:
-            print("✅ Demo user already exists!")
+            print("Demo user already exists!")
             return
         
         # Create demo user
@@ -24,13 +24,13 @@ def create_demo_user():
         )
         
         user = user_crud.create_user(db=db, user=demo_user)
-        print(f"✅ Demo user created successfully!")
+        print(f"Demo user created successfully!")
         print(f"   Email: {user.email}")
         print(f"   Name: {user.full_name}")
         print(f"   Password: demo123")
         
     except Exception as e:
-        print(f"❌ Error creating demo user: {e}")
+        print(f"Error creating demo user: {e}")
     finally:
         db.close()
 
