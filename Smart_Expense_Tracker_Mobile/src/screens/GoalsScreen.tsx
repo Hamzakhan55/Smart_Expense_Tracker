@@ -10,14 +10,17 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { getGoals } from '../services/apiService';
+import { getGoals, updateGoalProgress, deleteGoal } from '../services/apiService';
 import { Goal } from '../types';
+import CreateGoalModal from '../components/CreateGoalModal';
 
 interface GoalCardProps {
   goal: Goal;
+  onPress?: () => void;
+  onLongPress?: () => void;
 }
 
-const GoalCard: React.FC<GoalCardProps> = ({ goal }) => {
+const GoalCard: React.FC<GoalCardProps> = ({ goal, onPress, onLongPress }) => {
   const percentage = (goal.current_amount / goal.target_amount) * 100;
   const remaining = goal.target_amount - goal.current_amount;
   
@@ -36,7 +39,12 @@ const GoalCard: React.FC<GoalCardProps> = ({ goal }) => {
     }).format(value);
 
   return (
-    <View style={styles.goalCard}>
+    <TouchableOpacity 
+      style={styles.goalCard} 
+      onPress={onPress}
+      onLongPress={onLongPress}
+      activeOpacity={0.7}
+    >
       <View style={styles.goalHeader}>
         <View style={styles.goalInfo}>
           <Text style={styles.goalName}>{goal.name}</Text>
@@ -85,7 +93,7 @@ const GoalCard: React.FC<GoalCardProps> = ({ goal }) => {
           <Text style={styles.completedText}>Goal Achieved!</Text>
         </View>
       )}
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -93,6 +101,8 @@ const GoalsScreen = () => {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
 
   useEffect(() => {
     loadGoals();
@@ -113,6 +123,34 @@ const GoalsScreen = () => {
     setRefreshing(true);
     await loadGoals();
     setRefreshing(false);
+  };
+
+  const handleEditGoal = (goal: Goal) => {
+    setSelectedGoal(goal);
+    setShowCreateModal(true);
+  };
+
+  const handleDeleteGoal = (goal: Goal) => {
+    Alert.alert(
+      'Delete Goal',
+      `Are you sure you want to delete "${goal.name}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteGoal(goal.id);
+              await loadGoals();
+            } catch (error) {
+              console.error('Error deleting goal:', error);
+              Alert.alert('Error', 'Failed to delete goal.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const totalSaved = goals.reduce((sum, goal) => sum + goal.current_amount, 0);
@@ -140,8 +178,15 @@ const GoalsScreen = () => {
         colors={['#F8FAFC', '#E2E8F0']}
         style={styles.header}
       >
-        <Text style={styles.headerTitle}>Financial Goals</Text>
-        <Text style={styles.headerSubtitle}>Track your savings progress</Text>
+        <View style={styles.headerContent}>
+          <View>
+            <Text style={styles.headerTitle}>Goals</Text>
+          </View>
+          <TouchableOpacity style={styles.createNewGoalButton} onPress={() => setShowCreateModal(true)}>
+            <Ionicons name="add-circle" size={20} color="#FFFFFF" />
+            <Text style={styles.createNewGoalText}>Create New Goal</Text>
+          </TouchableOpacity>
+        </View>
         
         {goals.length > 0 && (
           <View style={styles.overallProgress}>
@@ -179,7 +224,7 @@ const GoalsScreen = () => {
             <Ionicons name="trophy-outline" size={64} color="#9CA3AF" />
             <Text style={styles.emptyText}>No goals set</Text>
             <Text style={styles.emptySubtext}>Create your first financial goal</Text>
-            <TouchableOpacity style={styles.createButton}>
+            <TouchableOpacity style={styles.createButton} onPress={() => setShowCreateModal(true)}>
               <LinearGradient colors={['#8B5CF6', '#7C3AED']} style={styles.createButtonGradient}>
                 <Text style={styles.createButtonText}>Create Goal</Text>
               </LinearGradient>
@@ -188,11 +233,26 @@ const GoalsScreen = () => {
         ) : (
           <View style={styles.goalsList}>
             {goals.map((goal) => (
-              <GoalCard key={goal.id} goal={goal} />
+              <GoalCard 
+                key={goal.id} 
+                goal={goal} 
+                onPress={() => handleEditGoal(goal)}
+                onLongPress={() => handleDeleteGoal(goal)}
+              />
             ))}
           </View>
         )}
       </ScrollView>
+      
+      <CreateGoalModal
+        isVisible={showCreateModal}
+        onClose={() => {
+          setShowCreateModal(false);
+          setSelectedGoal(null);
+        }}
+        onSuccess={loadGoals}
+        goal={selectedGoal}
+      />
     </SafeAreaView>
   );
 };
@@ -227,7 +287,26 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 16,
     color: '#6B7280',
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 20,
+  },
+  createNewGoalButton: {
+    backgroundColor: '#8B5CF6',
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  createNewGoalText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
   },
   overallProgress: {
     marginTop: 10,
