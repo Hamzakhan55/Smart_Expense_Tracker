@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { TouchableOpacity, StyleSheet, Alert, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +15,8 @@ export const VoiceInputFAB: React.FC<VoiceInputFABProps> = ({ onPress }) => {
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [aiData, setAiData] = useState<AiResponse | null>(null);
+  const pressTimer = useRef<NodeJS.Timeout | null>(null);
+  const isLongPress = useRef(false);
 
   const startRecording = async () => {
     try {
@@ -84,19 +86,30 @@ export const VoiceInputFAB: React.FC<VoiceInputFABProps> = ({ onPress }) => {
   };
 
   const handlePressIn = () => {
-    if (onPress) {
-      onPress();
-    } else {
+    if (onPress) return;
+    
+    isLongPress.current = false;
+    pressTimer.current = setTimeout(() => {
+      isLongPress.current = true;
       console.log('Starting recording...');
       startRecording();
-    }
+    }, 200); // 200ms delay for long press detection
   };
 
   const handlePressOut = () => {
-    if (!onPress && isRecording) {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+    
+    if (onPress) return;
+    
+    if (isLongPress.current && isRecording) {
       console.log('Stopping recording...');
       stopRecording();
     }
+    
+    isLongPress.current = false;
   };
 
   return (
@@ -105,6 +118,7 @@ export const VoiceInputFAB: React.FC<VoiceInputFABProps> = ({ onPress }) => {
         style={styles.fab} 
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
+        activeOpacity={0.8}
       >
         <LinearGradient colors={isRecording ? ['#EF4444', '#DC2626'] : ['#8B5CF6', '#7C3AED']} style={styles.fabGradient}>
           <Ionicons name={isRecording ? "stop" : "mic"} size={24} color="#FFFFFF" />
