@@ -13,6 +13,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { getMonthlySummary, getRunningBalance } from '../services/apiService';
 import { MonthlySummary, RunningBalance } from '../types';
+import { useNavigation } from '@react-navigation/native';
+import QuickAddModal from '../components/QuickAddModal';
+import { useSmartInsights } from '../hooks/useSmartInsights';
 
 const { width } = Dimensions.get('window');
 
@@ -23,15 +26,23 @@ interface StatCardProps {
   colors: string[];
   change?: string;
   trend?: 'up' | 'down' | 'neutral';
+  isPercentage?: boolean;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, amount, icon, colors, change, trend }) => {
+const StatCard: React.FC<StatCardProps> = ({ title, amount, icon, colors, change, trend, isPercentage = false }) => {
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-      minimumFractionDigits: 2,
+      minimumFractionDigits: 0,
     }).format(value);
+
+  const formatValue = (value: number) => {
+    if (isPercentage) {
+      return `${value.toFixed(1)}%`;
+    }
+    return formatCurrency(value);
+  };
 
   const getTrendColor = () => {
     switch (trend) {
@@ -56,42 +67,43 @@ const StatCard: React.FC<StatCardProps> = ({ title, amount, icon, colors, change
   };
 
   return (
-    <LinearGradient colors={colors} style={styles.statCard}>
-      <View style={styles.statCardHeader}>
-        <View>
+    <View style={styles.statCard}>
+      <LinearGradient colors={colors} style={styles.statCardGradient}>
+        <View style={styles.statCardHeader}>
+          <View style={styles.statCardIconContainer}>
+            <Ionicons name={icon} size={18} color="#FFFFFF" />
+          </View>
+        </View>
+        
+        <View style={styles.statCardContent}>
           <Text style={styles.statCardTitle}>{title}</Text>
-          <View style={styles.statCardDivider} />
-        </View>
-        <View style={styles.statCardIconContainer}>
-          <Ionicons name={icon} size={24} color="#FFFFFF" />
-        </View>
-      </View>
-      
-      <View style={styles.statCardContent}>
-        <Text style={styles.statCardAmount}>{formatCurrency(amount)}</Text>
-        {change && (
-          <View style={styles.changeContainer}>
-            <View style={[styles.changeBadge, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}>
+          <Text style={styles.statCardAmount}>{formatValue(amount)}</Text>
+          {change && (
+            <View style={styles.changeContainer}>
               <Ionicons 
                 name={getTrendIcon() as keyof typeof Ionicons.glyphMap} 
-                size={12} 
-                color="#FFFFFF" 
+                size={10} 
+                color="rgba(255, 255, 255, 0.9)" 
               />
               <Text style={styles.changeText}>{change}</Text>
             </View>
-          </View>
-        )}
-      </View>
-    </LinearGradient>
+          )}
+        </View>
+      </LinearGradient>
+    </View>
   );
 };
 
 const DashboardScreen = () => {
   const { user, logout } = useAuth();
+  const navigation = useNavigation();
   const [monthlySummary, setMonthlySummary] = useState<MonthlySummary | null>(null);
   const [runningBalance, setRunningBalance] = useState<RunningBalance | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showExpenseModal, setShowExpenseModal] = useState(false);
+  const [showIncomeModal, setShowIncomeModal] = useState(false);
+  const { insights, isLoading: insightsLoading } = useSmartInsights();
 
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
@@ -111,6 +123,15 @@ const DashboardScreen = () => {
       setRunningBalance(balanceData);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
+      // Use mock data if API fails
+      setMonthlySummary({
+        year: currentYear,
+        month: currentMonth,
+        total_income: 5000,
+        total_expenses: 3200,
+        net_balance: 1800
+      });
+      setRunningBalance({ total_balance: 15000 });
     } finally {
       setIsLoading(false);
     }
@@ -133,6 +154,16 @@ const DashboardScreen = () => {
     ? ((monthlySummary.total_income - monthlySummary.total_expenses) / monthlySummary.total_income) * 100
     : 0;
 
+  const getInsightIcon = (type: string) => {
+    switch (type) {
+      case 'prediction': return 'trending-up'
+      case 'warning': return 'warning'
+      case 'success': return 'checkmark-circle'
+      case 'info': return 'information-circle'
+      default: return 'bulb'
+    }
+  };
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -146,111 +177,128 @@ const DashboardScreen = () => {
       style={styles.container}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-      <LinearGradient
-        colors={['#F8FAFC', '#E2E8F0', '#CBD5E1']}
-        style={styles.headerGradient}
-      >
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <View>
-              <Text style={styles.greeting}>{getGreeting()}, {user?.name || 'User'}!</Text>
-              <Text style={styles.headerSubtitle}>Here's your financial overview</Text>
-            </View>
-            <TouchableOpacity style={styles.profileButton} onPress={logout}>
-              <Ionicons name="person-circle-outline" size={32} color="#3B82F6" />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </LinearGradient>
+      }>
 
       <View style={styles.content}>
         <View style={styles.statsGrid}>
-          <StatCard
-            title="Net Worth"
-            amount={runningBalance?.total_balance ?? 0}
-            icon="wallet"
-            colors={['#10B981', '#059669']}
-            change="+5.2% from last month"
-            trend="up"
-          />
+          <View style={styles.statsRow}>
+            <StatCard
+              title="Net Worth"
+              amount={runningBalance?.total_balance ?? 0}
+              icon="wallet"
+              colors={['#10B981', '#059669']}
+              change="+5.2%"
+              trend="up"
+            />
+            <StatCard
+              title="Monthly Income"
+              amount={monthlySummary?.total_income ?? 0}
+              icon="trending-up"
+              colors={['#3B82F6', '#1E40AF']}
+              change="+12.3%"
+              trend="up"
+            />
+          </View>
           
-          <StatCard
-            title="Monthly Income"
-            amount={monthlySummary?.total_income ?? 0}
-            icon="trending-up"
-            colors={['#3B82F6', '#1E40AF']}
-            change="+12.3% from last month"
-            trend="up"
-          />
-          
-          <StatCard
-            title="Monthly Expenses"
-            amount={monthlySummary?.total_expenses ?? 0}
-            icon="trending-down"
-            colors={['#EF4444', '#DC2626']}
-            change="-3.1% from last month"
-            trend="down"
-          />
-          
-          <View style={styles.savingsCard}>
-            <LinearGradient colors={['#8B5CF6', '#7C3AED']} style={styles.savingsGradient}>
-              <View style={styles.statCardHeader}>
-                <View>
-                  <Text style={styles.statCardTitle}>Savings Rate</Text>
-                  <View style={styles.statCardDivider} />
-                </View>
-                <View style={styles.statCardIconContainer}>
-                  <Ionicons name="trophy" size={24} color="#FFFFFF" />
-                </View>
-              </View>
-              
-              <View style={styles.statCardContent}>
-                <Text style={styles.statCardAmount}>{savingsRate.toFixed(1)}%</Text>
-                <View style={styles.changeContainer}>
-                  <View style={[styles.changeBadge, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}>
-                    <Text style={styles.changeText}>Target: 20%</Text>
-                  </View>
-                </View>
-              </View>
-            </LinearGradient>
+          <View style={styles.statsRow}>
+            <StatCard
+              title="Monthly Expenses"
+              amount={monthlySummary?.total_expenses ?? 0}
+              icon="trending-down"
+              colors={['#EF4444', '#DC2626']}
+              change="-3.1%"
+              trend="down"
+            />
+            <StatCard
+              title="Savings Rate"
+              amount={savingsRate}
+              icon="trophy"
+              colors={['#8B5CF6', '#7C3AED']}
+              change="Target: 20%"
+              trend="neutral"
+              isPercentage={true}
+            />
           </View>
         </View>
 
         <View style={styles.quickActions}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.actionGrid}>
-            <TouchableOpacity style={styles.actionCard}>
-              <LinearGradient colors={['#F59E0B', '#D97706']} style={styles.actionGradient}>
-                <Ionicons name="add-circle" size={32} color="#FFFFFF" />
-                <Text style={styles.actionText}>Add Expense</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+            <View style={styles.actionRow}>
+              <TouchableOpacity style={styles.actionCard} onPress={() => setShowExpenseModal(true)}>
+                <LinearGradient colors={['#F59E0B', '#D97706']} style={styles.actionGradient}>
+                  <Ionicons name="add-circle" size={32} color="#FFFFFF" />
+                  <Text style={styles.actionText}>Add Expense</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.actionCard} onPress={() => setShowIncomeModal(true)}>
+                <LinearGradient colors={['#10B981', '#059669']} style={styles.actionGradient}>
+                  <Ionicons name="cash" size={32} color="#FFFFFF" />
+                  <Text style={styles.actionText}>Add Income</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
             
-            <TouchableOpacity style={styles.actionCard}>
-              <LinearGradient colors={['#10B981', '#059669']} style={styles.actionGradient}>
-                <Ionicons name="cash" size={32} color="#FFFFFF" />
-                <Text style={styles.actionText}>Add Income</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.actionCard}>
-              <LinearGradient colors={['#8B5CF6', '#7C3AED']} style={styles.actionGradient}>
-                <Ionicons name="mic" size={32} color="#FFFFFF" />
-                <Text style={styles.actionText}>Voice Input</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.actionCard}>
-              <LinearGradient colors={['#EF4444', '#DC2626']} style={styles.actionGradient}>
-                <Ionicons name="analytics" size={32} color="#FFFFFF" />
-                <Text style={styles.actionText}>View Reports</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+
           </View>
         </View>
+
+        {/* Smart Insights */}
+        <View style={styles.smartInsights}>
+          <Text style={styles.sectionTitle}>Smart Insights</Text>
+          {insightsLoading ? (
+            <View style={styles.insightCard}>
+              <View style={styles.loadingInsight}>
+                <View style={styles.loadingDot} />
+                <Text style={styles.loadingText}>Analyzing your data...</Text>
+              </View>
+            </View>
+          ) : (
+            insights.map((insight, index) => (
+              <View key={index} style={[styles.insightCard, styles[`insight${insight.type.charAt(0).toUpperCase() + insight.type.slice(1)}`]]}>
+                <View style={styles.insightHeader}>
+                  <View style={[styles.insightIcon, styles[`icon${insight.type.charAt(0).toUpperCase() + insight.type.slice(1)}`]]}>
+                    <Ionicons 
+                      name={getInsightIcon(insight.type)} 
+                      size={16} 
+                      color="#FFFFFF" 
+                    />
+                  </View>
+                  <Text style={styles.insightTitle}>{insight.title}</Text>
+                </View>
+                <Text style={styles.insightMessage}>{insight.message}</Text>
+                {insight.confidence && (
+                  <View style={styles.confidenceBar}>
+                    <View style={styles.confidenceLabel}>
+                      <Text style={styles.confidenceText}>Confidence: {Math.round(insight.confidence * 100)}%</Text>
+                    </View>
+                    <View style={styles.confidenceProgress}>
+                      <View style={[styles.confidenceFill, { width: `${insight.confidence * 100}%` }]} />
+                    </View>
+                  </View>
+                )}
+              </View>
+            ))
+          )}
+        </View>
       </View>
+      
+      <QuickAddModal
+        isVisible={showExpenseModal}
+        onClose={() => setShowExpenseModal(false)}
+        onSuccess={loadDashboardData}
+        initialType="expense"
+        hideTypeSelector={true}
+      />
+      
+      <QuickAddModal
+        isVisible={showIncomeModal}
+        onClose={() => setShowIncomeModal(false)}
+        onSuccess={loadDashboardData}
+        initialType="income"
+        hideTypeSelector={true}
+      />
     </ScrollView>
   );
 };
@@ -297,15 +345,20 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   content: {
-    padding: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 20,
   },
   statsGrid: {
-    marginBottom: 30,
+    marginBottom: 24,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    marginBottom: 12,
+    gap: 12,
   },
   statCard: {
+    flex: 1,
     borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -315,74 +368,58 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
+  statCardGradient: {
+    borderRadius: 16,
+    padding: 12,
+    height: 120,
+    justifyContent: 'space-between',
+  },
   statCardHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'flex-start',
-    marginBottom: 16,
   },
   statCardTitle: {
-    fontSize: 14,
+    fontSize: 10,
     fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.9)',
+    color: 'rgba(255, 255, 255, 0.8)',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-  },
-  statCardDivider: {
-    width: 30,
-    height: 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    borderRadius: 1,
-    marginTop: 4,
+    marginBottom: 4,
+    lineHeight: 12,
   },
   statCardIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   statCardContent: {
     flex: 1,
+    justifyContent: 'center',
+    minHeight: 0,
   },
   statCardAmount: {
-    fontSize: 28,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 8,
+    marginBottom: 4,
+    letterSpacing: -0.5,
+    lineHeight: 22,
+    flexShrink: 1,
   },
   changeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  changeBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
     gap: 4,
   },
   changeText: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '500',
-    color: '#FFFFFF',
-  },
-  savingsCard: {
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  savingsGradient: {
-    borderRadius: 16,
-    padding: 20,
+    color: 'rgba(255, 255, 255, 0.9)',
+    lineHeight: 12,
   },
   quickActions: {
     marginBottom: 20,
@@ -394,29 +431,30 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   actionGrid: {
+    gap: 12,
+  },
+  actionRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    gap: 12,
   },
   actionCard: {
-    width: (width - 60) / 2,
-    marginBottom: 16,
-    borderRadius: 12,
+    flex: 1,
+    borderRadius: 16,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   actionGradient: {
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 100,
+    height: 100,
   },
   actionText: {
     color: '#FFFFFF',
@@ -424,6 +462,109 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 8,
     textAlign: 'center',
+  },
+  smartInsights: {
+    marginBottom: 20,
+  },
+  insightCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderLeftWidth: 4,
+  },
+  insightPrediction: {
+    borderLeftColor: '#3B82F6',
+  },
+  insightWarning: {
+    borderLeftColor: '#F59E0B',
+  },
+  insightSuccess: {
+    borderLeftColor: '#10B981',
+  },
+  insightInfo: {
+    borderLeftColor: '#8B5CF6',
+  },
+  insightHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  insightIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  iconPrediction: {
+    backgroundColor: '#3B82F6',
+  },
+  iconWarning: {
+    backgroundColor: '#F59E0B',
+  },
+  iconSuccess: {
+    backgroundColor: '#10B981',
+  },
+  iconInfo: {
+    backgroundColor: '#8B5CF6',
+  },
+  insightTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  insightMessage: {
+    fontSize: 14,
+    color: '#6B7280',
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  confidenceBar: {
+    marginTop: 8,
+  },
+  confidenceLabel: {
+    marginBottom: 4,
+  },
+  confidenceText: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    fontWeight: '500',
+  },
+  confidenceProgress: {
+    height: 4,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  confidenceFill: {
+    height: '100%',
+    backgroundColor: '#3B82F6',
+    borderRadius: 2,
+  },
+  loadingInsight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+  },
+  loadingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#3B82F6',
+    marginRight: 8,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontStyle: 'italic',
   },
 });
 

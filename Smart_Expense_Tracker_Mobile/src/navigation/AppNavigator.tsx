@@ -4,6 +4,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
+import VoiceInputFAB from '../components/VoiceInputFAB';
+import MobileNavbar from '../components/MobileNavbar';
+import { View } from 'react-native';
 
 // Screens
 import LoginScreen from '../screens/LoginScreen';
@@ -22,7 +25,9 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 
 const MainTabNavigator = () => {
   return (
-    <Tab.Navigator
+    <View style={{ flex: 1 }}>
+      <MobileNavbar />
+      <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap;
@@ -60,7 +65,7 @@ const MainTabNavigator = () => {
           borderTopColor: '#E5E7EB',
           paddingBottom: 5,
           paddingTop: 5,
-          height: 60,
+          height: 70,
         },
         headerShown: false,
       })}
@@ -72,6 +77,8 @@ const MainTabNavigator = () => {
       <Tab.Screen name="Analytics" component={AnalyticsScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
+    <VoiceInputFAB />
+    </View>
   );
 };
 

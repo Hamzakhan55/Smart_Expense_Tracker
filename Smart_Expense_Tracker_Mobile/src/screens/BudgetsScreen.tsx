@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Dimensions,
+  SafeAreaView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -128,7 +129,7 @@ const BudgetsScreen = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <LinearGradient
         colors={['#F8FAFC', '#E2E8F0']}
         style={styles.header}
@@ -168,13 +169,7 @@ const BudgetsScreen = () => {
           </View>
         )}
       </ScrollView>
-
-      <TouchableOpacity style={styles.fab}>
-        <LinearGradient colors={['#3B82F6', '#1E40AF']} style={styles.fabGradient}>
-          <Ionicons name="add" size={24} color="#FFFFFF" />
-        </LinearGradient>
-      </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -195,7 +190,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   header: {
-    paddingTop: 50,
+    paddingTop: 20,
     paddingBottom: 20,
     paddingHorizontal: 20,
   },
@@ -212,6 +207,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 20,
+    paddingBottom: 100,
   },
   budgetsList: {
     paddingVertical: 10,
@@ -325,7 +321,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 90,
     right: 20,
     width: 56,
     height: 56,
@@ -338,6 +334,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+    zIndex: 1,
   },
   fabGradient: {
     width: 56,

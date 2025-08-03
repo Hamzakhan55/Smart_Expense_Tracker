@@ -351,11 +351,14 @@ def get_smart_insights(
     """
     Generate AI-powered smart insights based on user's spending patterns.
     """
-    from datetime import datetime
+    from datetime import datetime, timedelta
+    import calendar
     
     current_date = datetime.now()
     current_month = current_date.month
     current_year = current_date.year
+    days_in_month = calendar.monthrange(current_year, current_month)[1]
+    days_passed = current_date.day
     
     # Get previous month
     if current_month == 1:
@@ -372,6 +375,9 @@ def get_smart_insights(
     current_summary = summary_crud.get_or_create_monthly_summary(db, user_id=current_user.id, year=current_year, month=current_month)
     previous_summary = summary_crud.get_or_create_monthly_summary(db, user_id=current_user.id, year=previous_year, month=previous_month)
     
+    # Get budgets for current month
+    budgets = budget_crud.get_budgets_for_month(db, user_id=current_user.id, year=current_year, month=current_month)
+    
     # Calculate category analysis
     current_categories = {}
     previous_categories = {}
@@ -385,7 +391,7 @@ def get_smart_insights(
     # Generate insights
     insights = []
     
-    # Prediction insight
+    # 1. Prediction insight
     if previous_summary.total_expenses > 0:
         trend = (current_summary.total_expenses - previous_summary.total_expenses) / previous_summary.total_expenses
         seasonal_factor = 1 + (0.15 * (current_month / 12))
@@ -397,6 +403,53 @@ def get_smart_insights(
             "message": f"Based on your spending pattern, next month's expenses are predicted to be ${prediction:.0f}",
             "value": prediction,
             "confidence": 0.75
+        })
+    
+    # 2. Budget alerts
+    for budget in budgets:
+        spent = current_categories.get(budget.category, 0)
+        if spent > 0:
+            percentage = (spent / budget.amount) * 100
+            days_remaining = days_in_month - days_passed
+            
+            if percentage >= 85:
+                insights.append({
+                    "type": "warning",
+                    "title": "Budget Alert",
+                    "message": f"You're {percentage:.0f}% through your {budget.category} budget with {days_remaining} days left this month",
+                })
+            elif percentage >= 50 and days_passed < (days_in_month * 0.5):
+                insights.append({
+                    "type": "info",
+                    "title": "Budget Watch",
+                    "message": f"You've used {percentage:.0f}% of your {budget.category} budget in the first half of the month",
+                })
+    
+    # 3. Category insights
+    if current_categories:
+        top_category = max(current_categories, key=current_categories.get)
+        top_amount = current_categories[top_category]
+        
+        insights.append({
+            "type": "info",
+            "title": "Top Spending Category",
+            "message": f"{top_category} is your highest spending category this month at ${top_amount:.0f}",
+        })
+    
+    # 4. Savings opportunity
+    if previous_summary.total_expenses > 0 and current_summary.total_expenses > previous_summary.total_expenses:
+        increase = current_summary.total_expenses - previous_summary.total_expenses
+        insights.append({
+            "type": "warning",
+            "title": "Spending Increase",
+            "message": f"Your spending increased by ${increase:.0f} compared to last month",
+        })
+    elif previous_summary.total_expenses > 0 and current_summary.total_expenses < previous_summary.total_expenses:
+        savings = previous_summary.total_expenses - current_summary.total_expenses
+        insights.append({
+            "type": "success",
+            "title": "Great Savings!",
+            "message": f"You saved ${savings:.0f} compared to last month. Keep it up!",
         })
     
     return {
