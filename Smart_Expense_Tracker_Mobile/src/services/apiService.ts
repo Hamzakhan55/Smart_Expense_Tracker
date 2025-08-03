@@ -58,17 +58,8 @@ apiClient.interceptors.response.use(
 
 // Auth Services
 export const signup = async (userData: UserCreate): Promise<User> => {
-  try {
-    const response = await apiClient.post<User>('/users/', userData);
-    return response.data;
-  } catch (error) {
-    console.log('Backend not available, using mock signup');
-    return {
-      id: Date.now(),
-      email: userData.email,
-      name: 'User',
-    } as User;
-  }
+  const response = await apiClient.post<User>('/users/', userData);
+  return response.data;
 };
 
 export const login = async (email: string, password: string): Promise<Token> => {
@@ -76,7 +67,7 @@ export const login = async (email: string, password: string): Promise<Token> => 
     const response = await apiClient.post<Token>('/login', { email, password });
     return response.data;
   } catch (error) {
-    console.log('Using mock authentication');
+    console.log('Backend login failed, using mock token');
     return {
       access_token: 'mock_token_' + Date.now(),
       token_type: 'bearer'
@@ -90,12 +81,8 @@ export const getExpenses = async (search?: string): Promise<Expense[]> => {
     const response = await apiClient.get('/expenses/', { params: { search } });
     return response.data;
   } catch (error) {
-    console.log('Using mock expenses data');
-    return [
-      { id: 1, amount: 25.50, category: 'Food', description: 'Lunch at cafe', date: '2024-01-15' },
-      { id: 2, amount: 60.00, category: 'Transportation', description: 'Gas station', date: '2024-01-14' },
-      { id: 3, amount: 120.00, category: 'Shopping', description: 'Groceries', date: '2024-01-13' },
-    ];
+    console.log('Backend not available, using empty array');
+    return [];
   }
 };
 
@@ -104,11 +91,11 @@ export const createExpense = async (expenseData: ExpenseCreate): Promise<Expense
     const response = await apiClient.post('/expenses/', expenseData);
     return response.data;
   } catch (error) {
-    console.log('Using mock expense creation');
+    console.log('Backend not available, creating mock expense');
     return {
       id: Date.now(),
       ...expenseData,
-      date: new Date().toISOString().split('T')[0]
+      date: new Date().toISOString()
     } as Expense;
   }
 };
@@ -129,11 +116,8 @@ export const getIncomes = async (search?: string): Promise<Income[]> => {
     const response = await apiClient.get<Income[]>('/incomes/', { params: { search } });
     return response.data;
   } catch (error) {
-    console.log('Using mock incomes data');
-    return [
-      { id: 1, amount: 3500, category: 'Salary', description: 'Monthly salary', date: '2024-01-01' },
-      { id: 2, amount: 500, category: 'Freelance', description: 'Web design project', date: '2024-01-10' },
-    ];
+    console.log('Backend not available, using empty array');
+    return [];
   }
 };
 
@@ -142,11 +126,11 @@ export const createIncome = async (incomeData: IncomeCreate): Promise<Income> =>
     const response = await apiClient.post<Income>('/incomes/', incomeData);
     return response.data;
   } catch (error) {
-    console.log('Using mock income creation');
+    console.log('Backend not available, creating mock income');
     return {
       id: Date.now(),
       ...incomeData,
-      date: new Date().toISOString().split('T')[0]
+      date: new Date().toISOString()
     } as Income;
   }
 };
@@ -284,12 +268,26 @@ export const getSmartInsights = async (): Promise<any> => {
   }
 };
 
-// Voice Processing
-export const processVoiceDryRun = async (audioFile: any): Promise<AiResponse> => {
-  const formData = new FormData();
-  formData.append('file', audioFile);
 
-  const response = await apiClient.post<AiResponse>('/process-voice-dry-run/', formData, {
+
+// Voice Processing
+export const processVoiceDryRun = async (formData: FormData): Promise<AiResponse> => {
+  try {
+    console.log('Sending voice data to backend...');
+    const response = await apiClient.post<AiResponse>('/process-voice-dry-run/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 30000, // 30 second timeout
+    });
+    console.log('Backend response:', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('Voice processing error:', error.response?.data || error.message);
+    throw new Error(error.response?.data?.detail || 'Voice processing failed');
+  }
+};
+
+export const processVoiceExpense = async (formData: FormData): Promise<Expense> => {
+  const response = await apiClient.post<Expense>('/process-voice/', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
   return response.data;

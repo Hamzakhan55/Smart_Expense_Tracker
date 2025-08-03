@@ -1,10 +1,13 @@
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from typing import List
 import shutil
 from pathlib import Path
 from pydantic import BaseModel
 import sys
+import io
+from datetime import datetime
 
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
@@ -32,6 +35,8 @@ origins = [
     "http://localhost:3001",
     "http://127.0.0.1:3001",
     "http://192.168.1.17:8000",
+    "http://localhost:8081",
+    "http://127.0.0.1:8081",
     "*"  # Allow all origins for mobile development
 ]
 app.add_middleware(
@@ -122,7 +127,7 @@ def create_expense(expense: schemas.ExpenseCreate, db: Session = Depends(get_db)
     return crud.create_expense_for_user(db=db, expense=expense, user_id=current_user.id)
 
 @app.get("/expenses/", response_model=List[schemas.Expense])
-def read_expenses(skip: int = 0, limit: int = 100, search: str | None = None, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+def read_expenses(skip: int = 0, limit: int = 1000, search: str | None = None, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     return crud.get_expenses_for_user(db, user_id=current_user.id, skip=skip, limit=limit, search=search)
 
 @app.post("/incomes/", response_model=schemas.Income)
@@ -130,7 +135,7 @@ def create_income_endpoint(income: schemas.IncomeCreate, db: Session = Depends(g
     return crud.create_income_for_user(db=db, income=income, user_id=current_user.id)
 
 @app.get("/incomes/", response_model=List[schemas.Income])
-def read_incomes_endpoint(skip: int = 0, limit: int = 100, search: str | None = None, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+def read_incomes_endpoint(skip: int = 0, limit: int = 1000, search: str | None = None, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     return crud.get_incomes_for_user(db, user_id=current_user.id, skip=skip, limit=limit, search=search)
 
 @app.delete("/expenses/{expense_id}", response_model=schemas.Expense)
@@ -342,6 +347,107 @@ def get_expenses_by_month(
     Get expenses for a specific month and year.
     """
     return crud.get_expenses_by_month(db, user_id=current_user.id, year=year, month=month)
+
+class TransactionExport(BaseModel):
+    transactions: List[dict]
+
+class TransactionFilter(BaseModel):
+    search: str = None
+    category: str = None
+    startDate: str = None
+    endDate: str = None
+    type: str = None
+
+@app.post("/transactions/export/pdf", tags=["Transactions"])
+def export_transactions_pdf(
+    export_data: TransactionExport,
+    current_user: models.User = Depends(get_current_user)
+):
+    """Export transactions as CSV file."""
+    try:
+        content = "Date,Type,Category,Description,Amount\n"
+        
+        for transaction in export_data.transactions:
+            item = transaction['item']
+            trans_type = transaction['type']
+            date_str = item['date']
+            amount_str = f"-${item['amount']:.2f}" if trans_type == 'expense' else f"+${item['amount']:.2f}"
+            
+            content += f"{date_str},{trans_type.title()},{item['category']},{item['description']},{amount_str}\n"
+        
+        return StreamingResponse(
+            io.BytesIO(content.encode()),
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=transactions.csv"}
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
+
+@app.post("/transactions/export/filtered", tags=["Transactions"])
+def export_filtered_transactions(
+    filters: TransactionFilter,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """Export filtered transactions as CSV file."""
+    try:
+        # Get all transactions
+        expenses = crud.get_expenses_for_user(db, user_id=current_user.id, search=filters.search)
+        incomes = crud.get_incomes_for_user(db, user_id=current_user.id, search=filters.search)
+        
+        transactions = []
+        
+        # Filter expenses
+        if not filters.type or filters.type in ['all', 'expenses']:
+            for expense in expenses:
+                if filters.category and expense.category != filters.category:
+                    continue
+                if filters.startDate and expense.date.date() < datetime.fromisoformat(filters.startDate).date():
+                    continue
+                if filters.endDate and expense.date.date() > datetime.fromisoformat(filters.endDate).date():
+                    continue
+                transactions.append({
+                    'date': expense.date.strftime('%Y-%m-%d'),
+                    'type': 'Expense',
+                    'category': expense.category,
+                    'description': expense.description,
+                    'amount': f"-${expense.amount:.2f}"
+                })
+        
+        # Filter incomes
+        if not filters.type or filters.type in ['all', 'incomes']:
+            for income in incomes:
+                if filters.category and income.category != filters.category:
+                    continue
+                if filters.startDate and income.income_date.date() < datetime.fromisoformat(filters.startDate).date():
+                    continue
+                if filters.endDate and income.income_date.date() > datetime.fromisoformat(filters.endDate).date():
+                    continue
+                transactions.append({
+                    'date': income.income_date.strftime('%Y-%m-%d'),
+                    'type': 'Income',
+                    'category': income.category,
+                    'description': income.description,
+                    'amount': f"+${income.amount:.2f}"
+                })
+        
+        # Sort by date
+        transactions.sort(key=lambda x: x['date'], reverse=True)
+        
+        # Generate CSV content
+        content = "Date,Type,Category,Description,Amount\n"
+        for transaction in transactions:
+            content += f"{transaction['date']},{transaction['type']},{transaction['category']},{transaction['description']},{transaction['amount']}\n"
+        
+        return StreamingResponse(
+            io.BytesIO(content.encode()),
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=filtered_transactions.csv"}
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Filtered export failed: {str(e)}")
 
 @app.get("/insights/smart", tags=["Insights"])
 def get_smart_insights(

@@ -1,27 +1,121 @@
-import React from 'react';
-import { TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { TouchableOpacity, StyleSheet, Alert, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { Audio } from 'expo-av';
+import { processVoiceDryRun } from '../services/apiService';
+import { AiResponse } from '../types';
+import AiConfirmationModal from './AiConfirmationModal';
 
 interface VoiceInputFABProps {
   onPress?: () => void;
 }
 
 export const VoiceInputFAB: React.FC<VoiceInputFABProps> = ({ onPress }) => {
-  const handlePress = () => {
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [aiData, setAiData] = useState<AiResponse | null>(null);
+
+  const startRecording = async () => {
+    try {
+      const { granted } = await Audio.requestPermissionsAsync();
+      if (!granted) {
+        Alert.alert('Permission Required', 'Please allow microphone access.');
+        return;
+      }
+
+      const newRecording = new Audio.Recording();
+      await newRecording.prepareToRecordAsync({
+        android: {
+          extension: '.m4a',
+          outputFormat: Audio.AndroidOutputFormat.MPEG_4,
+          audioEncoder: Audio.AndroidAudioEncoder.AAC,
+          sampleRate: 44100,
+          numberOfChannels: 2,
+          bitRate: 128000,
+        },
+        ios: {
+          extension: '.m4a',
+          outputFormat: Audio.IOSOutputFormat.MPEG4AAC,
+          audioQuality: Audio.IOSAudioQuality.MAX,
+          sampleRate: 44100,
+          numberOfChannels: 2,
+          bitRate: 128000,
+        },
+      });
+
+      await newRecording.startAsync();
+      setRecording(newRecording);
+      setIsRecording(true);
+      console.log('Recording started successfully');
+    } catch (error) {
+      console.error('Failed to start recording:', error);
+      Alert.alert('Error', 'Failed to start recording.');
+    }
+  };
+
+  const stopRecording = async () => {
+    if (!recording) return;
+
+    try {
+      await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
+      setIsRecording(false);
+      setRecording(null);
+      console.log('Recording stopped, processing audio...');
+
+      if (uri) {
+        const formData = new FormData();
+        formData.append('file', {
+          uri,
+          type: 'audio/m4a',
+          name: 'voice-expense.m4a',
+        } as any);
+
+        const aiResponse = await processVoiceDryRun(formData);
+        setAiData(aiResponse);
+      }
+    } catch (error) {
+      console.error('Failed to process recording:', error);
+      Alert.alert('Error', 'Failed to process voice recording.');
+      setIsRecording(false);
+      setRecording(null);
+    }
+  };
+
+  const handlePressIn = () => {
     if (onPress) {
       onPress();
     } else {
-      Alert.alert('Voice Input', 'Voice input feature coming soon!');
+      console.log('Starting recording...');
+      startRecording();
+    }
+  };
+
+  const handlePressOut = () => {
+    if (!onPress && isRecording) {
+      console.log('Stopping recording...');
+      stopRecording();
     }
   };
 
   return (
-    <TouchableOpacity style={styles.fab} onPress={handlePress}>
-      <LinearGradient colors={['#8B5CF6', '#7C3AED']} style={styles.fabGradient}>
-        <Ionicons name="mic" size={24} color="#FFFFFF" />
-      </LinearGradient>
-    </TouchableOpacity>
+    <View>
+      <TouchableOpacity 
+        style={styles.fab} 
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+      >
+        <LinearGradient colors={isRecording ? ['#EF4444', '#DC2626'] : ['#8B5CF6', '#7C3AED']} style={styles.fabGradient}>
+          <Ionicons name={isRecording ? "stop" : "mic"} size={24} color="#FFFFFF" />
+        </LinearGradient>
+      </TouchableOpacity>
+      
+      <AiConfirmationModal 
+        aiData={aiData}
+        onClose={() => setAiData(null)}
+      />
+    </View>
   );
 };
 

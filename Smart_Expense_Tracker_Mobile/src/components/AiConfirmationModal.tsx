@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,20 +10,19 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Modal from 'react-native-modal';
-import { createExpense, createIncome } from '../services/apiService';
+import { AiResponse } from '../types';
+import { createExpense } from '../services/apiService';
 
-interface QuickAddModalProps {
-  isVisible: boolean;
+interface AiConfirmationModalProps {
+  aiData: AiResponse | null;
   onClose: () => void;
   onSuccess?: () => void;
-  initialType?: 'expense' | 'income';
-  hideTypeSelector?: boolean;
 }
 
 const EXPENSE_CATEGORIES = [
   'Food & Drinks',
-  'Transport',
-  'Shopping', 
+  'Transport', 
+  'Shopping',
   'Entertainment',
   'Bills & Fees',
   'Healthcare',
@@ -31,29 +30,27 @@ const EXPENSE_CATEGORIES = [
   'Other'
 ];
 
-const INCOME_CATEGORIES = [
-  'Salary',
-  'Freelance', 
-  'Investment',
-  'Business',
-  'Gift',
-  'Other'
-];
-
-const QuickAddModal: React.FC<QuickAddModalProps> = ({
-  isVisible,
+const AiConfirmationModal: React.FC<AiConfirmationModalProps> = ({
+  aiData,
   onClose,
-  onSuccess,
-  initialType = 'expense',
-  hideTypeSelector = false
+  onSuccess
 }) => {
-  const [type, setType] = useState<'expense' | 'income'>(initialType);
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState(EXPENSE_CATEGORIES[0]);
   const [description, setDescription] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
-  const categories = type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
+  useEffect(() => {
+    if (aiData) {
+      setAmount(String(aiData.amount));
+      setDescription(aiData.description);
+      // Find matching category or use Other
+      const matchedCategory = EXPENSE_CATEGORIES.find(cat => 
+        cat.toLowerCase() === aiData.category.toLowerCase()
+      );
+      setCategory(matchedCategory || EXPENSE_CATEGORIES[0]);
+    }
+  }, [aiData]);
 
   const handleSubmit = async () => {
     const numericAmount = parseFloat(amount);
@@ -62,38 +59,20 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
       return;
     }
 
-    if (!category) {
-      Alert.alert('Missing Category', 'Please select a category.');
-      return;
-    }
-
     setIsCreating(true);
     try {
-      if (type === 'expense') {
-        await createExpense({
-          amount: numericAmount,
-          category,
-          description,
-        });
-      } else {
-        await createIncome({
-          amount: numericAmount,
-          category,
-          description,
-        });
-      }
+      await createExpense({
+        amount: numericAmount,
+        category,
+        description,
+      });
       
-      Alert.alert('Success', `${type === 'expense' ? 'Expense' : 'Income'} added successfully!`);
+      Alert.alert('Success', 'Expense saved successfully!');
       onSuccess?.();
       onClose();
-      
-      // Reset form
-      setAmount('');
-      setDescription('');
-      setCategory(categories[0]);
     } catch (error) {
-      console.error(`Failed to create ${type}:`, error);
-      Alert.alert('Error', `Failed to add ${type}. Please try again.`);
+      console.error('Failed to create expense:', error);
+      Alert.alert('Error', 'Failed to save expense. Please try again.');
     } finally {
       setIsCreating(false);
     }
@@ -101,7 +80,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
 
   return (
     <Modal
-      isVisible={isVisible}
+      isVisible={!!aiData}
       onBackdropPress={onClose}
       style={styles.modal}
       animationIn="slideInUp"
@@ -111,12 +90,12 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <View style={[styles.iconContainer, type === 'expense' ? styles.expenseIcon : styles.incomeIcon]}>
-              <Ionicons name={type === 'expense' ? 'remove-circle' : 'add-circle'} size={24} color="#FFFFFF" />
+            <View style={styles.iconContainer}>
+              <Ionicons name="sparkles" size={24} color="#FFFFFF" />
             </View>
             <View>
-              <Text style={styles.title}>Add {type === 'expense' ? 'Expense' : 'Income'}</Text>
-              <Text style={styles.subtitle}>Track your {type}</Text>
+              <Text style={styles.title}>AI Expense Detected</Text>
+              <Text style={styles.subtitle}>Review and confirm the details</Text>
             </View>
           </View>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -125,34 +104,11 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
         </View>
 
         <ScrollView style={styles.form} showsVerticalScrollIndicator={false}>
-          {/* Type Selector */}
-          {!hideTypeSelector && (
-            <View style={styles.fieldContainer}>
-              <Text style={styles.label}>Type</Text>
-              <View style={styles.typeSelector}>
-                <TouchableOpacity
-                  style={[styles.typeButton, type === 'expense' && styles.typeButtonActive]}
-                  onPress={() => setType('expense')}
-                >
-                  <Text style={[styles.typeButtonText, type === 'expense' && styles.typeButtonTextActive]}>
-                    Expense
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.typeButton, type === 'income' && styles.typeButtonActive]}
-                  onPress={() => setType('income')}
-                >
-                  <Text style={[styles.typeButtonText, type === 'income' && styles.typeButtonTextActive]}>
-                    Income
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-
           {/* Amount Field */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Amount</Text>
+            <Text style={styles.label}>
+              <Ionicons name="cash" size={16} color="#10B981" /> Amount
+            </Text>
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.input}
@@ -168,9 +124,11 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
 
           {/* Category Field */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Category</Text>
+            <Text style={styles.label}>
+              <Ionicons name="pricetag" size={16} color="#3B82F6" /> Category
+            </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
-              {categories.map((cat) => (
+              {EXPENSE_CATEGORIES.map((cat) => (
                 <TouchableOpacity
                   key={cat}
                   style={[
@@ -192,12 +150,14 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
 
           {/* Description Field */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Description</Text>
+            <Text style={styles.label}>
+              <Ionicons name="document-text" size={16} color="#8B5CF6" /> Description
+            </Text>
             <TextInput
               style={styles.input}
               value={description}
               onChangeText={setDescription}
-              placeholder="Optional description"
+              placeholder="What was this expense for?"
               placeholderTextColor="#9CA3AF"
               multiline
             />
@@ -221,12 +181,12 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
             {isCreating ? (
               <View style={styles.loadingContainer}>
                 <Ionicons name="hourglass" size={18} color="#FFFFFF" />
-                <Text style={styles.saveButtonText}>Adding...</Text>
+                <Text style={styles.saveButtonText}>Saving...</Text>
               </View>
             ) : (
               <View style={styles.loadingContainer}>
                 <Ionicons name="checkmark" size={18} color="#FFFFFF" />
-                <Text style={styles.saveButtonText}>Add {type === 'expense' ? 'Expense' : 'Income'}</Text>
+                <Text style={styles.saveButtonText}>Save Expense</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -267,15 +227,10 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
+    backgroundColor: '#3B82F6',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
-  },
-  expenseIcon: {
-    backgroundColor: '#EF4444',
-  },
-  incomeIcon: {
-    backgroundColor: '#10B981',
   },
   title: {
     fontSize: 18,
@@ -306,35 +261,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#374151',
     marginBottom: 8,
-  },
-  typeSelector: {
-    flexDirection: 'row',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    padding: 4,
-  },
-  typeButton: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderRadius: 8,
-  },
-  typeButtonActive: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  typeButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6B7280',
-  },
-  typeButtonTextActive: {
-    color: '#1F2937',
-    fontWeight: '600',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -423,4 +349,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default QuickAddModal;
+export default AiConfirmationModal;

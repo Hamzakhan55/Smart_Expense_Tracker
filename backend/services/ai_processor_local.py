@@ -99,7 +99,7 @@ class AIProcessor:
     
     def classify_text(self, text: str) -> str:
         if not text:
-            return "other"
+            return "Other"
         
         # Use local DistilBERT model if available
         if self.category_model and self.category_tokenizer and self.label_encoder:
@@ -119,13 +119,13 @@ class AIProcessor:
                     "education": "Education", 
                     "food & drinks": "Food & Drinks",
                     "healthcare": "Healthcare",
-                    "rent": "Rent",
+                    "rent": "Other",
                     "shopping": "Shopping",
                     "transport": "Transport",
-                    "utilities": "Utilities"
+                    "utilities": "Bills & Fees"
                 }
                 
-                mapped_category = category_mapping.get(predicted_label.lower(), "other")
+                mapped_category = category_mapping.get(predicted_label.lower(), "Other")
                 print(f"Mapped to: {mapped_category}")
                 return mapped_category
             except Exception as e:
@@ -140,7 +140,7 @@ class AIProcessor:
             "Transport": ["transport", "taxi", "bus", "train", "fuel", "gas", "uber", "lyft", "metro", "parking"],
             "Shopping": ["shopping", "store", "buy", "purchase", "market", "mall", "clothes", "shirt", "amazon"],
             "Entertainment": ["movie", "cinema", "game", "entertainment", "fun", "party", "concert", "netflix"],
-            "Utilities": ["electricity", "water", "gas", "internet", "phone", "bill", "utility", "wifi"],
+            "Bills & Fees": ["electricity", "water", "gas", "internet", "phone", "bill", "utility", "wifi"],
             "Healthcare": ["doctor", "medicine", "hospital", "pharmacy", "health", "medical", "dentist"],
             "Education": ["book", "course", "school", "education", "tuition", "study", "university"],
             "Other": []
@@ -183,7 +183,7 @@ class AIProcessor:
         if not transcription:
             return {
                 "description": "Could not transcribe audio. Please try again.",
-                "category": "other",
+                "category": "Other",
                 "amount": 0.0
             }
         

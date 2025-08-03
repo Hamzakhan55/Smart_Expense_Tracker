@@ -12,10 +12,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { getMonthlySummary, getRunningBalance } from '../services/apiService';
-import { MonthlySummary, RunningBalance } from '../types';
+import { MonthlySummary, RunningBalance, AiResponse } from '../types';
 import { useNavigation } from '@react-navigation/native';
 import QuickAddModal from '../components/QuickAddModal';
 import { useSmartInsights } from '../hooks/useSmartInsights';
+
+import AiConfirmationModal from '../components/AiConfirmationModal';
 
 const { width } = Dimensions.get('window');
 
@@ -103,6 +105,8 @@ const DashboardScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [showExpenseModal, setShowExpenseModal] = useState(false);
   const [showIncomeModal, setShowIncomeModal] = useState(false);
+  const [aiData, setAiData] = useState<AiResponse | null>(null);
+  const [isProcessingVoice, setIsProcessingVoice] = useState(false);
   const { insights, isLoading: insightsLoading } = useSmartInsights();
 
   const currentMonth = new Date().getMonth() + 1;
@@ -141,6 +145,19 @@ const DashboardScreen = () => {
     setRefreshing(true);
     await loadDashboardData();
     setRefreshing(false);
+  };
+
+  const handleVoiceRecording = (aiResponse: AiResponse) => {
+    setAiData(aiResponse);
+    setIsProcessingVoice(false);
+  };
+
+  const handleModalClose = () => {
+    setAiData(null);
+  };
+
+  const handleExpenseSuccess = () => {
+    loadDashboardData();
   };
 
   const getGreeting = () => {
@@ -298,6 +315,15 @@ const DashboardScreen = () => {
         onSuccess={loadDashboardData}
         initialType="income"
         hideTypeSelector={true}
+      />
+      
+
+      
+      {/* AI Confirmation Modal */}
+      <AiConfirmationModal 
+        aiData={aiData}
+        onClose={handleModalClose}
+        onSuccess={handleExpenseSuccess}
       />
     </ScrollView>
   );
@@ -566,6 +592,7 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     fontStyle: 'italic',
   },
+
 });
 
 export default DashboardScreen;

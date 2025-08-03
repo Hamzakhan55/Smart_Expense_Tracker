@@ -4,9 +4,10 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
-import VoiceInputFAB from '../components/VoiceInputFAB';
+
 import MobileNavbar from '../components/MobileNavbar';
 import { View } from 'react-native';
+import VoiceInputFAB from '../components/VoiceInputFAB';
 
 // Screens
 import LoginScreen from '../screens/LoginScreen';
