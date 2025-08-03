@@ -186,13 +186,45 @@ export const getBudgets = async (year: number, month: number): Promise<Budget[]>
       { id: 1, category: 'Food', amount: 500, year, month },
       { id: 2, category: 'Transportation', amount: 300, year, month },
       { id: 3, category: 'Entertainment', amount: 200, year, month },
+      { id: 4, category: 'Shopping', amount: 400, year, month },
+      { id: 5, category: 'Bills', amount: 1000, year, month },
     ];
   }
 };
 
 export const createOrUpdateBudget = async (budgetData: BudgetCreate): Promise<Budget> => {
-  const response = await apiClient.post<Budget>('/budgets/', budgetData);
-  return response.data;
+  try {
+    const response = await apiClient.post<Budget>('/budgets/', budgetData);
+    return response.data;
+  } catch (error) {
+    console.log('Backend not available, creating mock budget');
+    return {
+      id: Date.now(),
+      ...budgetData
+    };
+  }
+};
+
+export const deleteBudget = async (id: number): Promise<void> => {
+  try {
+    await apiClient.delete(`/budgets/${id}`);
+  } catch (error) {
+    console.log('Backend not available, mock delete');
+  }
+};
+
+export const getExpensesByMonth = async (year: number, month: number): Promise<Expense[]> => {
+  try {
+    const response = await apiClient.get<Expense[]>(`/expenses/${year}/${month}`);
+    return response.data;
+  } catch (error) {
+    console.log('Backend not available, using filtered expenses');
+    const allExpenses = await getExpenses();
+    return allExpenses.filter(expense => {
+      const expenseDate = new Date(expense.date);
+      return expenseDate.getMonth() + 1 === month && expenseDate.getFullYear() === year;
+    });
+  }
 };
 
 // Goal Services

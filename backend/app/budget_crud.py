@@ -28,3 +28,15 @@ def get_budgets_for_month(db: Session, user_id: int, year: int, month: int):
         models.Budget.year == year,
         models.Budget.month == month
     ).all()
+
+def delete_budget(db: Session, budget_id: int, user_id: int):
+    db_budget = db.query(models.Budget).filter(
+        models.Budget.id == budget_id,
+        models.Budget.user_id == user_id
+    ).first()
+    
+    if db_budget:
+        db.delete(db_budget)
+        db.commit()
+        return db_budget
+    return None

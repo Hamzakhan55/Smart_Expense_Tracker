@@ -8,94 +8,48 @@ import {
   RefreshControl,
   Dimensions,
   SafeAreaView,
+  Modal,
+  TextInput,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { getBudgets } from '../services/apiService';
-import { Budget } from '../types';
+import { getBudgets, createOrUpdateBudget, getExpenses, deleteBudget } from '../services/apiService';
+import { Budget, BudgetCreate, Expense } from '../types';
+import BudgetProgressCard from '../components/BudgetProgressCard';
+import BudgetSummary from '../components/BudgetSummary';
+import CategoryPicker from '../components/CategoryPicker';
 
 const { width } = Dimensions.get('window');
 
-interface BudgetCardProps {
-  budget: Budget;
-  spent: number;
-}
 
-const BudgetCard: React.FC<BudgetCardProps> = ({ budget, spent }) => {
-  const percentage = (spent / budget.amount) * 100;
-  const remaining = budget.amount - spent;
-  
-  const getProgressColor = () => {
-    if (percentage >= 90) return '#EF4444';
-    if (percentage >= 75) return '#F59E0B';
-    return '#10B981';
-  };
-
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(value);
-
-  return (
-    <View style={styles.budgetCard}>
-      <View style={styles.budgetHeader}>
-        <Text style={styles.budgetCategory}>{budget.category}</Text>
-        <Text style={styles.budgetAmount}>{formatCurrency(budget.amount)}</Text>
-      </View>
-      
-      <View style={styles.progressContainer}>
-        <View style={styles.progressBar}>
-          <View 
-            style={[
-              styles.progressFill, 
-              { 
-                width: `${Math.min(percentage, 100)}%`,
-                backgroundColor: getProgressColor()
-              }
-            ]} 
-          />
-        </View>
-        <Text style={styles.progressText}>{percentage.toFixed(0)}%</Text>
-      </View>
-      
-      <View style={styles.budgetFooter}>
-        <View style={styles.budgetStat}>
-          <Text style={styles.budgetStatLabel}>Spent</Text>
-          <Text style={[styles.budgetStatValue, { color: '#EF4444' }]}>
-            {formatCurrency(spent)}
-          </Text>
-        </View>
-        <View style={styles.budgetStat}>
-          <Text style={styles.budgetStatLabel}>Remaining</Text>
-          <Text style={[styles.budgetStatValue, { color: getProgressColor() }]}>
-            {formatCurrency(remaining)}
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
-};
 
 const BudgetsScreen = () => {
   const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
+  const [formData, setFormData] = useState({ category: '', amount: '' });
 
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
 
   useEffect(() => {
-    loadBudgets();
+    loadData();
   }, []);
 
-  const loadBudgets = async () => {
+  const loadData = async () => {
     try {
-      const budgetData = await getBudgets(currentYear, currentMonth);
+      const [budgetData, expenseData] = await Promise.all([
+        getBudgets(currentYear, currentMonth),
+        getExpenses()
+      ]);
       setBudgets(budgetData);
+      setExpenses(expenseData);
     } catch (error) {
-      console.error('Error loading budgets:', error);
+      console.error('Error loading data:', error);
     } finally {
       setIsLoading(false);
     }
@@ -103,21 +57,82 @@ const BudgetsScreen = () => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadBudgets();
+    await loadData();
     setRefreshing(false);
   };
 
-  // Mock spent data - in real app, this would come from expenses
   const getSpentAmount = (category: string) => {
-    const mockSpent: { [key: string]: number } = {
-      'Food': 450,
-      'Transportation': 200,
-      'Entertainment': 150,
-      'Shopping': 300,
-      'Bills': 800,
-      'Healthcare': 100,
-    };
-    return mockSpent[category] || 0;
+    const currentMonthExpenses = expenses.filter(expense => {
+      const expenseDate = new Date(expense.date);
+      return expenseDate.getMonth() + 1 === currentMonth && 
+             expenseDate.getFullYear() === currentYear &&
+             expense.category === category;
+    });
+    return currentMonthExpenses.reduce((total, expense) => total + expense.amount, 0);
+  };
+
+  const handleCreateBudget = () => {
+    setEditingBudget(null);
+    setFormData({ category: '', amount: '' });
+    setShowCreateModal(true);
+  };
+
+  const handleEditBudget = (budget: Budget) => {
+    setEditingBudget(budget);
+    setFormData({ category: budget.category, amount: budget.amount.toString() });
+    setShowCreateModal(true);
+  };
+
+  const handleSaveBudget = async () => {
+    if (!formData.category.trim() || !formData.amount.trim()) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    const amount = parseFloat(formData.amount);
+    if (isNaN(amount) || amount <= 0) {
+      Alert.alert('Error', 'Please enter a valid amount');
+      return;
+    }
+
+    try {
+      const budgetData: BudgetCreate = {
+        category: formData.category.trim(),
+        amount,
+        year: currentYear,
+        month: currentMonth,
+      };
+
+      await createOrUpdateBudget(budgetData);
+      setShowCreateModal(false);
+      await loadData();
+    } catch (error) {
+      console.error('Error saving budget:', error);
+      Alert.alert('Error', 'Failed to save budget');
+    }
+  };
+
+  const handleDeleteBudget = (budget: Budget) => {
+    Alert.alert(
+      'Delete Budget',
+      `Are you sure you want to delete the ${budget.category} budget?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteBudget(budget.id);
+              await loadData();
+            } catch (error) {
+              console.error('Error deleting budget:', error);
+              Alert.alert('Error', 'Failed to delete budget');
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (isLoading) {
@@ -134,10 +149,18 @@ const BudgetsScreen = () => {
         colors={['#F8FAFC', '#E2E8F0']}
         style={styles.header}
       >
-        <Text style={styles.headerTitle}>Budgets</Text>
-        <Text style={styles.headerSubtitle}>
-          {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-        </Text>
+        <View style={styles.headerContent}>
+          <View>
+            <Text style={styles.headerTitle}>Budgets</Text>
+            <Text style={styles.headerSubtitle}>
+              {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </Text>
+          </View>
+          <TouchableOpacity style={styles.setNewBudgetButton} onPress={handleCreateBudget}>
+            <Ionicons name="add-circle" size={20} color="#FFFFFF" />
+            <Text style={styles.setNewBudgetText}>Set New Budget</Text>
+          </TouchableOpacity>
+        </View>
       </LinearGradient>
 
       <ScrollView
@@ -146,12 +169,14 @@ const BudgetsScreen = () => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
+        <BudgetSummary budgets={budgets} getSpentAmount={getSpentAmount} />
+        
         {budgets.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="wallet-outline" size={64} color="#9CA3AF" />
             <Text style={styles.emptyText}>No budgets set</Text>
             <Text style={styles.emptySubtext}>Create your first budget to start tracking</Text>
-            <TouchableOpacity style={styles.createButton}>
+            <TouchableOpacity style={styles.createButton} onPress={handleCreateBudget}>
               <LinearGradient colors={['#3B82F6', '#1E40AF']} style={styles.createButtonGradient}>
                 <Text style={styles.createButtonText}>Create Budget</Text>
               </LinearGradient>
@@ -160,15 +185,65 @@ const BudgetsScreen = () => {
         ) : (
           <View style={styles.budgetsList}>
             {budgets.map((budget) => (
-              <BudgetCard
+              <BudgetProgressCard
                 key={budget.id}
                 budget={budget}
                 spent={getSpentAmount(budget.category)}
+                onPress={() => handleEditBudget(budget)}
+                onLongPress={() => handleDeleteBudget(budget)}
               />
             ))}
           </View>
         )}
       </ScrollView>
+
+
+
+      <Modal
+        visible={showCreateModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowCreateModal(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowCreateModal(false)}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>
+              {editingBudget ? 'Edit Budget' : 'Create Budget'}
+            </Text>
+            <TouchableOpacity onPress={handleSaveBudget}>
+              <Text style={styles.modalSaveText}>Save</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.modalContent}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Category</Text>
+              <CategoryPicker
+                selectedCategory={formData.category}
+                onCategorySelect={(category) => setFormData({ ...formData, category })}
+                disabled={!!editingBudget}
+              />
+              {editingBudget && (
+                <Text style={styles.helperText}>Category cannot be changed when editing</Text>
+              )}
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Budget Amount</Text>
+              <TextInput
+                style={styles.textInput}
+                value={formData.amount}
+                onChangeText={(text) => setFormData({ ...formData, amount: text })}
+                placeholder="Enter budget amount"
+                keyboardType="numeric"
+              />
+            </View>
+          </View>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -206,80 +281,11 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
     paddingBottom: 100,
   },
   budgetsList: {
+    paddingHorizontal: 20,
     paddingVertical: 10,
-  },
-  budgetCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  budgetHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  budgetCategory: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  budgetAmount: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#3B82F6',
-  },
-  progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  progressBar: {
-    flex: 1,
-    height: 8,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 4,
-    marginRight: 12,
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  progressText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6B7280',
-    minWidth: 40,
-    textAlign: 'right',
-  },
-  budgetFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  budgetStat: {
-    alignItems: 'center',
-  },
-  budgetStatLabel: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    marginBottom: 4,
-  },
-  budgetStatValue: {
-    fontSize: 16,
-    fontWeight: '600',
   },
   emptyContainer: {
     alignItems: 'center',
@@ -319,29 +325,82 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  fab: {
-    position: 'absolute',
-    bottom: 90,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-    zIndex: 1,
-  },
-  fabGradient: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  setNewBudgetButton: {
+    backgroundColor: '#3B82F6',
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  setNewBudgetText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  modalCancelText: {
+    fontSize: 16,
+    color: '#6B7280',
+  },
+  modalSaveText: {
+    fontSize: 16,
+    color: '#3B82F6',
+    fontWeight: '600',
+  },
+  modalContent: {
+    padding: 20,
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  textInput: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+  },
+  disabledInput: {
+    backgroundColor: '#F3F4F6',
+    color: '#6B7280',
+  },
+  helperText: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 4,
   },
 });
 

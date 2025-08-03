@@ -289,6 +289,20 @@ def get_budgets_for_month_endpoint(
     """
     return budget_crud.get_budgets_for_month(db, user_id=current_user.id, year=year, month=month)
 
+@app.delete("/budgets/{budget_id}", response_model=schemas.Budget, tags=["Budgets"])
+def delete_budget_endpoint(
+    budget_id: int,
+    db: Session = Depends(get_db),
+    current_user: schemas.User = Depends(get_current_user)
+):
+    """
+    Deletes a budget.
+    """
+    db_budget = budget_crud.delete_budget(db, budget_id=budget_id, user_id=current_user.id)
+    if db_budget is None:
+        raise HTTPException(status_code=404, detail="Budget not found")
+    return db_budget
+
 # --- NEW GOAL ENDPOINTS ---
 
 @app.post("/goals/", response_model=schemas.Goal, tags=["Goals"])
