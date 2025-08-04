@@ -34,7 +34,7 @@ import { useMemo } from "react"
 
 export default function SettingsPage() {
   const { expenses, incomes, clearAllTransactions } = useTransactions()
-  const { user } = useAuth()
+  const { user, updateUser } = useAuth()
   const { isDark, toggleTheme } = useTheme()
   const { currency } = useCurrency()
 
@@ -126,13 +126,14 @@ export default function SettingsPage() {
     e.preventDefault()
     setIsUpdating(true)
     try {
-      // Mock API call - replace with actual API when backend is ready
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      alert('Email updated successfully! (Mock - Backend API needed)')
+      const { updateEmail } = await import('@/services/apiService')
+      const updatedUser = await updateEmail(emailForm.newEmail)
+      updateUser({ email: updatedUser.email })
+      alert('Email updated successfully!')
       setShowChangeEmailModal(false)
       setEmailForm({ newEmail: '', password: '' })
     } catch (error) {
-      alert('Failed to update email')
+      alert('Failed to update email. Please try again.')
     } finally {
       setIsUpdating(false)
     }
@@ -144,15 +145,19 @@ export default function SettingsPage() {
       alert('New passwords do not match')
       return
     }
+    if (passwordForm.newPassword.length < 6) {
+      alert('Password must be at least 6 characters long')
+      return
+    }
     setIsUpdating(true)
     try {
-      // Mock API call - replace with actual API when backend is ready
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      alert('Password updated successfully! (Mock - Backend API needed)')
+      const { updatePassword } = await import('@/services/apiService')
+      await updatePassword(passwordForm.newPassword)
+      alert('Password updated successfully!')
       setShowChangePasswordModal(false)
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
     } catch (error) {
-      alert('Failed to update password')
+      alert('Failed to update password. Please try again.')
     } finally {
       setIsUpdating(false)
     }

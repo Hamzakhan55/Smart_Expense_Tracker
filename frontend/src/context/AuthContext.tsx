@@ -11,6 +11,7 @@ interface AuthContextType {
   token: string | null;
   login: (token: string) => void;
   logout: () => void;
+  updateUser: (userData: Partial<User>) => void;
   isLoading: boolean;
 }
 
@@ -69,12 +70,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     router.push('/login'); // Redirect to login page after logout
   };
 
+  const updateUser = (userData: Partial<User>) => {
+    if (user) {
+      setUser({ ...user, ...userData });
+    }
+  };
+
   const value = {
     isAuthenticated: !!token,
     user,
     token,
     login,
     logout,
+    updateUser,
     isLoading,
   };
 

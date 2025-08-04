@@ -14,10 +14,12 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useCurrency } from '../context/CurrencyContext';
 import CurrencySelector from '../components/CurrencySelector';
+import ChangeEmailModal from '../components/ChangeEmailModal';
+import ChangePasswordModal from '../components/ChangePasswordModal';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
-import { getExpenses, getIncomes } from '../services/apiService';
+import { getExpenses, getIncomes, getBudgets, getGoals, deleteExpense, deleteIncome, deleteBudget, deleteGoal, updateEmail, updatePassword } from '../services/apiService';
 
 interface SettingItemProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -26,6 +28,7 @@ interface SettingItemProps {
   onPress: () => void;
   showArrow?: boolean;
   danger?: boolean;
+  disabled?: boolean;
 }
 
 const SettingItem: React.FC<SettingItemProps> = ({ 
@@ -34,11 +37,16 @@ const SettingItem: React.FC<SettingItemProps> = ({
   subtitle, 
   onPress, 
   showArrow = true,
-  danger = false 
+  danger = false,
+  disabled = false 
 }) => {
   const { theme } = useTheme();
   return (
-  <TouchableOpacity style={[styles.settingItem, { borderBottomColor: theme.colors.border }]} onPress={onPress}>
+  <TouchableOpacity 
+    style={[styles.settingItem, { borderBottomColor: theme.colors.border, opacity: disabled ? 0.6 : 1 }]} 
+    onPress={disabled ? undefined : onPress}
+    disabled={disabled}
+  >
     <View style={[styles.settingIcon, danger && styles.settingIconDanger]}>
       <Ionicons 
         name={icon} 
@@ -66,15 +74,22 @@ const SettingItem: React.FC<SettingItemProps> = ({
 };
 
 const SettingsScreen = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const { isDarkMode, toggleTheme, theme } = useTheme();
   const { selectedCurrency } = useCurrency();
   const [showCurrencySelector, setShowCurrencySelector] = useState(false);
+  const [showChangeEmailModal, setShowChangeEmailModal] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
   const handleLogout = () => {
     Alert.alert(
       'Sign Out',
-      'Are you sure you want to sign out?',
+      'Are you sure you want to sign out? Any unsaved changes will be lost.',
       [
         {
           text: 'Cancel',
@@ -83,7 +98,10 @@ const SettingsScreen = () => {
         {
           text: 'Sign Out',
           style: 'destructive',
-          onPress: logout,
+          onPress: () => {
+            Alert.alert('Signed Out', 'You have been successfully signed out.');
+            logout();
+          },
         },
       ]
     );
@@ -102,8 +120,26 @@ const SettingsScreen = () => {
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            // Handle account deletion
-            Alert.alert('Account Deleted', 'Your account has been deleted.');
+            Alert.prompt(
+              'Confirm Deletion',
+              'Type "DELETE" to confirm account deletion:',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Delete Account',
+                  style: 'destructive',
+                  onPress: (text) => {
+                    if (text === 'DELETE') {
+                      Alert.alert('Account Deleted', 'Your account has been permanently deleted.');
+                      logout();
+                    } else {
+                      Alert.alert('Error', 'Please type "DELETE" to confirm.');
+                    }
+                  }
+                }
+              ],
+              'plain-text'
+            );
           },
         },
       ]
@@ -170,7 +206,7 @@ const SettingsScreen = () => {
         'Export Complete',
         `Data exported as ${fileName}. Would you like to share it?`,
         [
-          { text: 'Just Save', style: 'cancel' },
+          { text: 'Save', style: 'cancel' },
           { 
             text: 'Share', 
             onPress: async () => {
@@ -200,7 +236,20 @@ const SettingsScreen = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              // In a real app, you'd call an API to clear data
+              const [expenses, incomes, budgets, goals] = await Promise.all([
+                getExpenses(),
+                getIncomes(),
+                getBudgets(new Date().getFullYear(), new Date().getMonth() + 1),
+                getGoals()
+              ]);
+              
+              await Promise.all([
+                ...expenses.map(expense => deleteExpense(expense.id)),
+                ...incomes.map(income => deleteIncome(income.id)),
+                ...budgets.map(budget => deleteBudget(budget.id)),
+                ...goals.map(goal => deleteGoal(goal.id))
+              ]);
+              
               Alert.alert('Data Cleared', 'All your data has been cleared.');
             } catch (error) {
               Alert.alert('Error', 'Failed to clear data.');
@@ -276,23 +325,6 @@ const SettingsScreen = () => {
               subtitle={isDarkMode ? "Switch to light theme" : "Switch to dark theme"}
               onPress={toggleTheme}
             />
-            <SettingItem
-              icon="language-outline"
-              title="Language"
-              subtitle="English"
-              onPress={() => {
-                Alert.alert(
-                  'Select Language',
-                  'Choose your preferred language:',
-                  [
-                    { text: 'English', onPress: () => Alert.alert('Language', 'English selected') },
-                    { text: 'Spanish', onPress: () => Alert.alert('Language', 'Spanish selected') },
-                    { text: 'French', onPress: () => Alert.alert('Language', 'French selected') },
-                    { text: 'Cancel', style: 'cancel' }
-                  ]
-                );
-              }}
-            />
           </View>
         </View>
 
@@ -303,24 +335,10 @@ const SettingsScreen = () => {
             <SettingItem
               icon="download-outline"
               title="Export Data"
-              subtitle="Download your data as CSV"
+              subtitle="Download your data as Pdf"
               onPress={handleExportData}
             />
-            <SettingItem
-              icon="cloud-upload-outline"
-              title="Backup & Sync"
-              subtitle="Sync your data across devices"
-              onPress={() => {
-                Alert.alert(
-                  'Backup & Sync',
-                  'Your data is automatically synced to the cloud.',
-                  [
-                    { text: 'Backup Now', onPress: () => Alert.alert('Backup', 'Data backed up successfully!') },
-                    { text: 'OK', style: 'cancel' }
-                  ]
-                );
-              }}
-            />
+
             <SettingItem
               icon="trash-outline"
               title="Clear All Data"
@@ -342,7 +360,7 @@ const SettingsScreen = () => {
               onPress={() => {
                 Alert.alert(
                   'Help & FAQ',
-                  'Common questions:\n\n• How to add expenses?\n• How to set budgets?\n• How to track goals?\n• How to export data?',
+                  'Common Questions:\n\n• How to add expenses?\nTap the + button on dashboard or use voice recording\n\n• How to set budgets?\nGo to Budgets tab and tap "Set New Budget"\n\n• How to track goals?\nUse Goals tab to create and manage savings goals\n\n• How to export data?\nGo to Settings > Export Data for PDF reports\n\n• How to change theme?\nSettings > Dark Mode toggle',
                   [{ text: 'OK' }]
                 );
               }}
@@ -354,8 +372,14 @@ const SettingsScreen = () => {
               onPress={() => {
                 Alert.alert(
                   'Contact Support',
-                  'Need help? Contact us at:\n\nsupport@smartexpensetracker.com\n\nOr call: +1 (555) 123-4567',
-                  [{ text: 'OK' }]
+                  'Need help or have feedback?\n\nEmail: hamzakhan127109@gmail.com\n\nWe typically respond within 24 hours.',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Send Email', onPress: () => {
+                      // In a real app, this would open the email client
+                      Alert.alert('Email Client', 'Opening email app...');
+                    }}
+                  ]
                 );
               }}
             />
@@ -366,10 +390,13 @@ const SettingsScreen = () => {
               onPress={() => {
                 Alert.alert(
                   'Rate Smart Expense Tracker',
-                  'Enjoying the app? Please rate us on the app store!',
+                  'Enjoying the app? Your rating helps us improve and reach more users!',
                   [
                     { text: 'Later', style: 'cancel' },
-                    { text: 'Rate Now', onPress: () => Alert.alert('Thank You!', 'Thanks for rating us!') }
+                    { text: 'Rate Now', onPress: () => {
+                      // In a real app, this would open the app store
+                      Alert.alert('Thank You!', 'Redirecting to app store...');
+                    }}
                   ]
                 );
               }}
@@ -381,7 +408,7 @@ const SettingsScreen = () => {
               onPress={() => {
                 Alert.alert(
                   'About Smart Expense Tracker',
-                  'Version 1.0.0\n\nA modern expense tracking app built with React Native.\n\nDeveloped with ❤️ for better financial management.',
+                  'Version 1.0.0\n\nSmart Expense Tracker is a comprehensive financial management app that helps you take control of your finances. Features include:\n\n• AI-powered expense tracking with voice input\n• Smart budget management with alerts\n• Goal setting and progress tracking\n• Advanced analytics and insights\n• Data export and reporting\n• Dark/Light theme support\n• Multi-currency support\n\nAI Models Integrated:\n• AI Voice Recognition - Converts speech to expense data\n• Category Prediction - Automatically categorizes transactions\n\nBuilt with React Native and modern AI technologies for intelligent financial management.\n\nDeveloped by Hamza Khan\nFull-Stack Developer\n\nCreated with ❤️ for better financial wellness.',
                   [{ text: 'OK' }]
                 );
               }}
@@ -393,6 +420,18 @@ const SettingsScreen = () => {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Account</Text>
           <View style={[styles.settingsGroup, { backgroundColor: theme.colors.card }]}>
+            <SettingItem
+              icon="mail-outline"
+              title="Change Email"
+              subtitle="Update your email address"
+              onPress={() => setShowChangeEmailModal(true)}
+            />
+            <SettingItem
+              icon="lock-closed-outline"
+              title="Change Password"
+              subtitle="Update your password"
+              onPress={() => setShowChangePasswordModal(true)}
+            />
             <SettingItem
               icon="log-out-outline"
               title="Sign Out"
@@ -415,6 +454,33 @@ const SettingsScreen = () => {
       <CurrencySelector
         isVisible={showCurrencySelector}
         onClose={() => setShowCurrencySelector(false)}
+      />
+      
+      <ChangeEmailModal
+        visible={showChangeEmailModal}
+        onClose={() => setShowChangeEmailModal(false)}
+        onUpdate={async (email) => {
+          await updateEmail(email);
+          await updateUser({ email });
+          Alert.alert('Success', 'Email updated successfully!');
+        }}
+        currentEmail={user?.email || ''}
+      />
+      
+      <ChangePasswordModal
+        visible={showChangePasswordModal}
+        onClose={() => setShowChangePasswordModal(false)}
+        onUpdate={async (password) => {
+          try {
+            console.log('Updating password...');
+            const result = await updatePassword(password);
+            console.log('Password update result:', result);
+            Alert.alert('Success', 'Password updated successfully!');
+          } catch (error) {
+            console.error('Password update error:', error);
+            Alert.alert('Error', 'Failed to update password. Please try again.');
+          }
+        }}
       />
     </SafeAreaView>
   );

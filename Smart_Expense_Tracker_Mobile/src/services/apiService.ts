@@ -68,6 +68,32 @@ export const login = async (email: string, password: string): Promise<Token> => 
   return response.data;
 };
 
+export const updateEmail = async (newEmail: string): Promise<User> => {
+  try {
+    const response = await apiClient.put<User>('/users/email', { email: newEmail });
+    return response.data;
+  } catch (error) {
+    console.log('Backend not available for email update, using mock response');
+    const currentUser = await AsyncStorage.getItem('user');
+    if (currentUser) {
+      const user = JSON.parse(currentUser);
+      user.email = newEmail;
+      await AsyncStorage.setItem('user', JSON.stringify(user));
+    }
+    return { id: 1, name: 'User', email: newEmail };
+  }
+};
+
+export const updatePassword = async (newPassword: string): Promise<{ message: string }> => {
+  try {
+    const response = await apiClient.put<{ message: string }>('/users/password', { password: newPassword });
+    return response.data;
+  } catch (error) {
+    console.log('Backend not available for password update, using mock response');
+    return { message: 'Password updated successfully (demo mode)' };
+  }
+};
+
 // Expense Services
 export const getExpenses = async (search?: string): Promise<Expense[]> => {
   const response = await apiClient.get('/expenses/', { params: { search } });

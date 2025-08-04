@@ -104,7 +104,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     if not user or not security.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+            detail="The email or password you entered is incorrect. Please try again.",
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token = security.create_access_token(data={"sub": user.email})
@@ -116,7 +116,7 @@ def login_json(credentials: LoginRequest, db: Session = Depends(get_db)):
     if not user or not security.verify_password(credentials.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password"
+            detail="The email or password you entered is incorrect. Please try again."
         )
     access_token = security.create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
@@ -222,6 +222,48 @@ async def read_users_me(current_user: models.User = Depends(get_current_user)):
 @app.get("/users/me", response_model=schemas.User)
 async def read_users_me_alt(current_user: models.User = Depends(get_current_user)):
     return current_user
+
+@app.put("/users/email", response_model=schemas.User)
+async def update_user_email_endpoint(
+    email_data: schemas.EmailUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    # Check if email already exists
+    existing_user = user_crud.get_user_by_email(db, email=email_data.email)
+    if existing_user and existing_user.id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered"
+        )
+    
+    updated_user = user_crud.update_user_email(db, user_id=current_user.id, new_email=email_data.email)
+    if not updated_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    return updated_user
+
+@app.put("/users/password")
+async def update_user_password_endpoint(
+    password_data: schemas.PasswordUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    if len(password_data.password) < 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 6 characters long"
+        )
+    
+    updated_user = user_crud.update_user_password(db, user_id=current_user.id, new_password=password_data.password)
+    if not updated_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    return {"message": "Password updated successfully"}
 
 
 @app.get("/expenses/forecast/", response_model=schemas.ForecastResponse)

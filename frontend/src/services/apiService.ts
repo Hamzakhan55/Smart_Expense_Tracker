@@ -61,7 +61,8 @@ export const getExpenses = async (search?: string): Promise<Expense[]> => {
     return response.data;
   } catch (error) {
     console.error('Failed to fetch expenses:', error);
-    throw error;
+    // Return empty array as fallback when backend is not available
+    return [];
   }
 };
 
@@ -100,7 +101,8 @@ export const getIncomes = async (search?: string): Promise<Income[]> => {
     return response.data;
   } catch (error) {
     console.error('Failed to fetch incomes:', error);
-    throw error;
+    // Return empty array as fallback when backend is not available
+    return [];
   }
 };
 
@@ -360,5 +362,15 @@ export const getSmartInsights = async (): Promise<any> => {
     console.log('Backend insights not available, using client-side analysis');
     return null;
   }
+};
+
+export const updateEmail = async (newEmail: string): Promise<User> => {
+  const response = await apiClient.put<User>('/users/email', { email: newEmail });
+  return response.data;
+};
+
+export const updatePassword = async (newPassword: string): Promise<{ message: string }> => {
+  const response = await apiClient.put<{ message: string }>('/users/password', { password: newPassword });
+  return response.data;
 };
 

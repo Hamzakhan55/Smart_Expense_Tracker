@@ -262,5 +262,6 @@ export default function DashboardPage() {
         </div>
 
         <AiConfirmationModal aiData={aiData} onClose={() => setAiData(null)} />
-  )
+      </div>
+    )
 }

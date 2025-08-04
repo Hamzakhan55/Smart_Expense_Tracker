@@ -61,6 +61,12 @@ class User(UserBase):
     
     class Config:
         from_attributes = True
+
+class EmailUpdate(BaseModel):
+    email: str
+
+class PasswordUpdate(BaseModel):
+    password: str
         
 class ForecastResponse(BaseModel):
     total_forecast: float

@@ -78,7 +78,17 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 export const useTheme = () => {
   const context = useContext(ThemeContext);
   if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider');
+    // Return default values instead of throwing error
+    return {
+      isDark: false,
+      toggleTheme: () => {},
+      theme: themeConfig.light,
+      getBackgroundClass: () => 'min-h-screen bg-gradient-to-br from-slate-50 to-blue-50',
+      getCardClass: () => 'bg-white border border-slate-200 rounded-3xl shadow-lg',
+      getModalClass: () => 'bg-white border border-slate-200 rounded-3xl shadow-xl',
+      getTextClass: () => 'text-slate-900',
+      getBorderClass: () => 'border-slate-200'
+    };
   }
   return context;
 };
