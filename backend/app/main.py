@@ -345,10 +345,34 @@ def delete_goal_endpoint(
 
 @app.get("/summary/historical", response_model=List[schemas.HistoricalDataPoint], tags=["Summaries"])
 def get_historical_summary_endpoint(
+    months: int = 6,
     db: Session = Depends(get_db),
     current_user: schemas.User = Depends(get_current_user)
 ):
-    return summary_crud.get_historical_summary(db, user_id=current_user.id)
+    return summary_crud.get_historical_summary(db, user_id=current_user.id, months=months)
+
+@app.get("/analytics/category-breakdown", response_model=List[schemas.CategoryBreakdown], tags=["Analytics"])
+def get_category_breakdown(
+    months: int = 6,
+    db: Session = Depends(get_db),
+    current_user: schemas.User = Depends(get_current_user)
+):
+    return summary_crud.get_category_breakdown(db, user_id=current_user.id, months=months)
+
+@app.get("/analytics/spending-trends", response_model=List[schemas.SpendingTrend], tags=["Analytics"])
+def get_spending_trends(
+    months: int = 6,
+    db: Session = Depends(get_db),
+    current_user: schemas.User = Depends(get_current_user)
+):
+    return summary_crud.get_spending_trends(db, user_id=current_user.id, months=months)
+
+@app.get("/analytics/stats", response_model=schemas.AnalyticsStats, tags=["Analytics"])
+def get_analytics_stats(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    return summary_crud.get_analytics_stats(db, user_id=current_user.id)
 
 @app.get("/expenses/{year}/{month}", response_model=List[schemas.Expense], tags=["Expenses"])
 def get_expenses_by_month(

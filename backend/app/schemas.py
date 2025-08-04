@@ -118,6 +118,27 @@ class HistoricalDataPoint(BaseModel):
     year: int
     month: int
     total_expenses: float
+    total_income: float
+
+class CategoryBreakdown(BaseModel):
+    category: str
+    amount: float
+    percentage: float
+    color: str
+
+class SpendingTrend(BaseModel):
+    year: int
+    month: int
+    total_expenses: float
+    total_income: float
+    net_savings: float
+
+class AnalyticsStats(BaseModel):
+    total_expenses: float
+    daily_average: float
+    top_category: str
+    transaction_count: int
+    savings_rate: float
 
 class AssetBase(BaseModel):
     name: str

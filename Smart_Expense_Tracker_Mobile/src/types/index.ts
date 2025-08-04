@@ -83,6 +83,29 @@ export interface HistoricalDataPoint {
   total_expenses: number;
 }
 
+export interface CategoryBreakdown {
+  category: string;
+  amount: number;
+  percentage: number;
+  color: string;
+}
+
+export interface SpendingTrend {
+  year: number;
+  month: number;
+  total_expenses: number;
+  total_income: number;
+  net_savings: number;
+}
+
+export interface AnalyticsStats {
+  total_expenses: number;
+  daily_average: number;
+  top_category: string;
+  transaction_count: number;
+  savings_rate: number;
+}
+
 export type RootStackParamList = {
   Login: undefined;
   Signup: undefined;

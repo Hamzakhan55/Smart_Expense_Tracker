@@ -12,31 +12,38 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { LineChart, PieChart } from 'react-native-chart-kit';
-import { getHistoricalSummary, getExpenses } from '../services/apiService';
-import { HistoricalDataPoint, Expense } from '../types';
+import { getHistoricalSummary, getExpenses, getCategoryBreakdown, getSpendingTrends, getAnalyticsStats } from '../services/apiService';
+import { HistoricalDataPoint, Expense, CategoryBreakdown, SpendingTrend, AnalyticsStats } from '../types';
 
 const { width } = Dimensions.get('window');
 
 const AnalyticsScreen = () => {
   const [historicalData, setHistoricalData] = useState<HistoricalDataPoint[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [categoryData, setCategoryData] = useState<CategoryBreakdown[]>([]);
+  const [analyticsStats, setAnalyticsStats] = useState<AnalyticsStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState<'6m' | '1y'>('6m');
+  const [selectedPeriod, setSelectedPeriod] = useState<'3m' | '6m' | '1y'>('6m');
 
   useEffect(() => {
     loadAnalyticsData();
-  }, []);
+  }, [selectedPeriod]);
 
   const loadAnalyticsData = async () => {
     try {
-      const [historical, expenseData] = await Promise.all([
-        getHistoricalSummary(),
+      const months = selectedPeriod === '3m' ? 3 : selectedPeriod === '6m' ? 6 : 12;
+      const [historical, expenseData, categoryBreakdown, stats] = await Promise.all([
+        getHistoricalSummary(months),
         getExpenses(),
+        getCategoryBreakdown(months),
+        getAnalyticsStats(),
       ]);
       
       setHistoricalData(historical);
       setExpenses(expenseData);
+      setCategoryData(categoryBreakdown);
+      setAnalyticsStats(stats);
     } catch (error) {
       console.error('Error loading analytics data:', error);
     } finally {
@@ -51,7 +58,8 @@ const AnalyticsScreen = () => {
   };
 
   const getSpendingTrendData = () => {
-    const data = historicalData.slice(-6); // Last 6 months
+    const months = selectedPeriod === '3m' ? 3 : selectedPeriod === '6m' ? 6 : 12;
+    const data = historicalData.slice(-months);
     return {
       labels: data.map(item => 
         new Date(item.year, item.month - 1).toLocaleDateString('en-US', { month: 'short' })
@@ -72,29 +80,7 @@ const AnalyticsScreen = () => {
     };
   };
 
-  const getCategoryData = () => {
-    const categoryTotals: { [key: string]: number } = {};
-    
-    expenses.forEach(expense => {
-      categoryTotals[expense.category] = (categoryTotals[expense.category] || 0) + expense.amount;
-    });
 
-    const colors = [
-      '#EF4444', '#F59E0B', '#10B981', '#3B82F6', 
-      '#8B5CF6', '#EC4899', '#F97316', '#06B6D4'
-    ];
-
-    return Object.entries(categoryTotals)
-      .sort(([,a], [,b]) => b - a)
-      .slice(0, 6)
-      .map(([name, population], index) => ({
-        name,
-        population,
-        color: colors[index % colors.length],
-        legendFontColor: '#6B7280',
-        legendFontSize: 12,
-      }));
-  };
 
   const chartConfig = {
     backgroundColor: '#FFFFFF',
@@ -129,7 +115,13 @@ const AnalyticsScreen = () => {
   }
 
   const trendData = getSpendingTrendData();
-  const categoryData = getCategoryData();
+  const pieChartData = categoryData.map(item => ({
+    name: item.category,
+    population: item.amount,
+    color: item.color,
+    legendFontColor: '#6B7280',
+    legendFontSize: 12,
+  }));
 
   return (
     <SafeAreaView style={styles.container}>
@@ -152,6 +144,14 @@ const AnalyticsScreen = () => {
           <View style={styles.chartHeader}>
             <Text style={styles.chartTitle}>Spending Trend</Text>
             <View style={styles.periodSelector}>
+              <TouchableOpacity
+                style={[styles.periodButton, selectedPeriod === '3m' && styles.periodButtonActive]}
+                onPress={() => setSelectedPeriod('3m')}
+              >
+                <Text style={[styles.periodButtonText, selectedPeriod === '3m' && styles.periodButtonTextActive]}>
+                  3M
+                </Text>
+              </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.periodButton, selectedPeriod === '6m' && styles.periodButtonActive]}
                 onPress={() => setSelectedPeriod('6m')}
@@ -186,17 +186,29 @@ const AnalyticsScreen = () => {
         {/* Category Breakdown */}
         <View style={styles.chartContainer}>
           <Text style={styles.chartTitle}>Category Breakdown</Text>
-          {categoryData.length > 0 && (
-            <PieChart
-              data={categoryData}
-              width={width - 40}
-              height={220}
-              chartConfig={chartConfig}
-              accessor="population"
-              backgroundColor="transparent"
-              paddingLeft="15"
-              style={styles.chart}
-            />
+          {pieChartData.length > 0 && (
+            <View>
+              <PieChart
+                data={pieChartData.map(item => ({ ...item, name: '' }))}
+                width={width - -180}
+                height={220}
+                chartConfig={chartConfig}
+                accessor="population"
+                backgroundColor="transparent"
+                paddingLeft="0"
+                hasLegend={false}
+                style={styles.chart}
+              />
+              <View style={styles.legendContainer}>
+                {categoryData.map((item, index) => (
+                  <View key={index} style={styles.legendItem}>
+                    <View style={[styles.legendColor, { backgroundColor: item.color }]} />
+                    <Text style={styles.legendText}>{item.category}</Text>
+                    <Text style={styles.legendValue}>{formatCurrency(item.amount)}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
           )}
         </View>
 
@@ -208,7 +220,7 @@ const AnalyticsScreen = () => {
               <LinearGradient colors={['#EF4444', '#DC2626']} style={styles.statGradient}>
                 <Ionicons name="trending-down" size={24} color="#FFFFFF" />
                 <Text style={styles.statValue}>
-                  {formatCurrency(expenses.reduce((sum, exp) => sum + exp.amount, 0))}
+                  {formatCurrency(analyticsStats?.total_expenses || 0)}
                 </Text>
                 <Text style={styles.statLabel}>Total Expenses</Text>
               </LinearGradient>
@@ -218,7 +230,7 @@ const AnalyticsScreen = () => {
               <LinearGradient colors={['#F59E0B', '#D97706']} style={styles.statGradient}>
                 <Ionicons name="calendar" size={24} color="#FFFFFF" />
                 <Text style={styles.statValue}>
-                  {formatCurrency(expenses.reduce((sum, exp) => sum + exp.amount, 0) / 30)}
+                  {formatCurrency(analyticsStats?.daily_average || 0)}
                 </Text>
                 <Text style={styles.statLabel}>Daily Average</Text>
               </LinearGradient>
@@ -228,7 +240,7 @@ const AnalyticsScreen = () => {
               <LinearGradient colors={['#8B5CF6', '#7C3AED']} style={styles.statGradient}>
                 <Ionicons name="pie-chart" size={24} color="#FFFFFF" />
                 <Text style={styles.statValue}>
-                  {categoryData.length > 0 ? categoryData[0].name : 'N/A'}
+                  {analyticsStats?.top_category || 'N/A'}
                 </Text>
                 <Text style={styles.statLabel}>Top Category</Text>
               </LinearGradient>
@@ -237,7 +249,7 @@ const AnalyticsScreen = () => {
             <View style={styles.statCard}>
               <LinearGradient colors={['#10B981', '#059669']} style={styles.statGradient}>
                 <Ionicons name="receipt" size={24} color="#FFFFFF" />
-                <Text style={styles.statValue}>{expenses.length}</Text>
+                <Text style={styles.statValue}>{analyticsStats?.transaction_count || 0}</Text>
                 <Text style={styles.statLabel}>Transactions</Text>
               </LinearGradient>
             </View>
@@ -382,6 +394,70 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     textAlign: 'center',
+  },
+  savingsRateContainer: {
+    marginVertical: 10,
+    marginHorizontal: 20,
+  },
+  savingsRateCard: {
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  savingsRateHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  savingsRateText: {
+    marginLeft: 16,
+  },
+  savingsRateValue: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  savingsRateLabel: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontWeight: '500',
+  },
+  savingsRateDescription: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontStyle: 'italic',
+  },
+  legendContainer: {
+    marginTop: 16,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  legendColor: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  legendText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#1F2937',
+    fontWeight: '500',
+  },
+  legendValue: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '600',
   },
 });
 

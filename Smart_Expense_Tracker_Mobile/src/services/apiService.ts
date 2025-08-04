@@ -258,9 +258,9 @@ export const deleteGoal = async (id: number): Promise<Goal> => {
 };
 
 // Analytics Services
-export const getHistoricalSummary = async (): Promise<HistoricalDataPoint[]> => {
+export const getHistoricalSummary = async (months: number = 6): Promise<HistoricalDataPoint[]> => {
   try {
-    const response = await apiClient.get<HistoricalDataPoint[]>('/summary/historical');
+    const response = await apiClient.get<HistoricalDataPoint[]>(`/summary/historical?months=${months}`);
     return response.data;
   } catch (error) {
     console.log('Using mock historical data');
@@ -269,7 +269,7 @@ export const getHistoricalSummary = async (): Promise<HistoricalDataPoint[]> => 
     const currentYear = currentDate.getFullYear();
     
     const data = [];
-    for (let i = 5; i >= 0; i--) {
+    for (let i = months - 1; i >= 0; i--) {
       let month = currentMonth - i;
       let year = currentYear;
       
@@ -287,6 +287,48 @@ export const getHistoricalSummary = async (): Promise<HistoricalDataPoint[]> => 
     }
     
     return data;
+  }
+};
+
+export const getCategoryBreakdown = async (months: number = 6): Promise<any[]> => {
+  try {
+    const response = await apiClient.get(`/analytics/category-breakdown?months=${months}`);
+    return response.data;
+  } catch (error) {
+    console.log('Using mock category data');
+    return [
+      { category: 'Food & Drinks', amount: 450, percentage: 30, color: '#EF4444' },
+      { category: 'Transport', amount: 300, percentage: 20, color: '#F59E0B' },
+      { category: 'Shopping', amount: 225, percentage: 15, color: '#10B981' },
+      { category: 'Entertainment', amount: 150, percentage: 10, color: '#3B82F6' },
+      { category: 'Bills & Fees', amount: 375, percentage: 25, color: '#8B5CF6' }
+    ];
+  }
+};
+
+export const getSpendingTrends = async (months: number = 6): Promise<any[]> => {
+  try {
+    const response = await apiClient.get(`/analytics/spending-trends?months=${months}`);
+    return response.data;
+  } catch (error) {
+    console.log('Using mock spending trends');
+    return await getHistoricalSummary(months);
+  }
+};
+
+export const getAnalyticsStats = async (): Promise<any> => {
+  try {
+    const response = await apiClient.get('/analytics/stats');
+    return response.data;
+  } catch (error) {
+    console.log('Using mock analytics stats');
+    return {
+      total_expenses: 2500,
+      daily_average: 83.33,
+      top_category: 'Food & Drinks',
+      transaction_count: 45,
+      savings_rate: 25.5
+    };
   }
 };
 
