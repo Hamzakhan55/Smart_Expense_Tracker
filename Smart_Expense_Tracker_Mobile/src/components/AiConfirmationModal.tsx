@@ -13,6 +13,7 @@ import Modal from 'react-native-modal';
 import { AiResponse } from '../types';
 import { createExpense } from '../services/apiService';
 import { useCurrency } from '../context/CurrencyContext';
+import { useTheme } from '../context/ThemeContext';
 
 interface AiConfirmationModalProps {
   aiData: AiResponse | null;
@@ -37,20 +38,26 @@ const AiConfirmationModal: React.FC<AiConfirmationModalProps> = ({
   onSuccess
 }) => {
   const { selectedCurrency } = useCurrency();
+  const { theme } = useTheme();
   const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState(EXPENSE_CATEGORIES[0]);
+  const [category, setCategory] = useState('');
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [description, setDescription] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
     if (aiData) {
-      setAmount(String(aiData.amount));
-      setDescription(aiData.description);
-      // Find matching category or use Other
+      // Better amount handling
+      setAmount(aiData.amount > 0 ? String(aiData.amount) : '');
+      setDescription(aiData.description || '');
+      
+      // Enhanced category matching
       const matchedCategory = EXPENSE_CATEGORIES.find(cat => 
-        cat.toLowerCase() === aiData.category.toLowerCase()
+        cat.toLowerCase() === aiData.category.toLowerCase() ||
+        cat.toLowerCase().includes(aiData.category.toLowerCase()) ||
+        aiData.category.toLowerCase().includes(cat.toLowerCase())
       );
-      setCategory(matchedCategory || EXPENSE_CATEGORIES[0]);
+      setCategory(matchedCategory || aiData.category || '');
     }
   }, [aiData]);
 
@@ -85,82 +92,100 @@ const AiConfirmationModal: React.FC<AiConfirmationModalProps> = ({
       isVisible={!!aiData}
       onBackdropPress={onClose}
       style={styles.modal}
-      animationIn="slideInUp"
-      animationOut="slideOutDown"
+      animationIn="zoomIn"
+      animationOut="zoomOut"
+      backdropOpacity={0.5}
     >
-      <View style={styles.modalContent}>
+      <View style={[styles.modalContent, { backgroundColor: theme.colors.card }]}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: theme.colors.card }]}>
           <View style={styles.headerLeft}>
             <View style={styles.iconContainer}>
               <Ionicons name="sparkles" size={24} color="#FFFFFF" />
             </View>
             <View>
-              <Text style={styles.title}>AI Expense Detected</Text>
-              <Text style={styles.subtitle}>Review and confirm the details</Text>
+              <Text style={[styles.title, { color: theme.colors.text }]}>
+                {aiData?.description === 'Voice recorded - please verify details' ? 'Voice Recorded' : 'AI Expense Detected'}
+              </Text>
+              <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+                {aiData?.description === 'Voice recorded - please verify details' 
+                  ? 'Please enter your expense details'
+                  : 'Review and confirm the details'
+                }
+              </Text>
             </View>
           </View>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Ionicons name="close" size={24} color="#6B7280" />
-          </TouchableOpacity>
         </View>
 
         <ScrollView style={styles.form} showsVerticalScrollIndicator={false}>
+          {/* AI Detection Warning */}
+          {aiData && (aiData.amount === 0 || !aiData.amount) && (
+            <View style={[styles.warningContainer, { backgroundColor: '#FEF3C7', borderColor: '#F59E0B' }]}>
+              <Ionicons name="warning" size={16} color="#F59E0B" />
+              <Text style={[styles.warningText, { color: '#92400E' }]}>
+                {aiData.description === 'Voice recorded - please verify details' 
+                  ? 'Voice recorded successfully - please enter the expense details manually'
+                  : 'Please verify the amount - AI couldn\'t detect it clearly'
+                }
+              </Text>
+            </View>
+          )}
+          
           {/* Amount Field */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>
-              <Ionicons name="cash" size={16} color="#10B981" /> Amount
-            </Text>
-            <View style={styles.inputContainer}>
+            <Text style={[styles.label, { color: theme.colors.text }]}>Amount</Text>
+            <View style={[styles.inputContainer, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: theme.colors.text }]}
                 value={amount}
                 onChangeText={setAmount}
                 placeholder="0.00"
                 keyboardType="numeric"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={theme.colors.textSecondary}
               />
               <Text style={styles.currency}>{selectedCurrency.code}</Text>
             </View>
           </View>
 
           {/* Category Field */}
-          <View style={styles.fieldContainer}>
-            <Text style={styles.label}>
-              <Ionicons name="pricetag" size={16} color="#3B82F6" /> Category
-            </Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
-              {EXPENSE_CATEGORIES.map((cat) => (
-                <TouchableOpacity
-                  key={cat}
-                  style={[
-                    styles.categoryChip,
-                    category === cat && styles.categoryChipActive
-                  ]}
-                  onPress={() => setCategory(cat)}
-                >
-                  <Text style={[
-                    styles.categoryChipText,
-                    category === cat && styles.categoryChipTextActive
-                  ]}>
-                    {cat}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+          <View style={[styles.fieldContainer, { position: 'relative' }]}>
+            <Text style={[styles.label, { color: theme.colors.text }]}>Category</Text>
+            <TouchableOpacity 
+              style={[styles.dropdownContainer, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+              onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}
+            >
+              <Text style={[styles.dropdownText, { color: category ? theme.colors.text : theme.colors.textSecondary }]}>
+                {category || 'Select category'}
+              </Text>
+              <Ionicons name={showCategoryDropdown ? "chevron-up" : "chevron-down"} size={20} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+            {showCategoryDropdown && (
+              <ScrollView style={[styles.dropdownOptions, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]} nestedScrollEnabled>
+                {EXPENSE_CATEGORIES.map((cat) => (
+                  <TouchableOpacity
+                    key={cat}
+                    style={styles.dropdownOption}
+                    onPress={() => {
+                      setCategory(cat);
+                      setShowCategoryDropdown(false);
+                    }}
+                  >
+                    <Text style={[styles.dropdownOptionText, { color: theme.colors.text }]}>{cat}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
           </View>
 
           {/* Description Field */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>
-              <Ionicons name="document-text" size={16} color="#8B5CF6" /> Description
-            </Text>
+            <Text style={[styles.label, { color: theme.colors.text }]}>Description</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.descriptionInput, { borderColor: theme.colors.border, color: theme.colors.text }]}
               value={description}
               onChangeText={setDescription}
               placeholder="What was this expense for?"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={theme.colors.textSecondary}
               multiline
             />
           </View>
@@ -200,60 +225,69 @@ const AiConfirmationModal: React.FC<AiConfirmationModalProps> = ({
 
 const styles = StyleSheet.create({
   modal: {
-    margin: 0,
-    justifyContent: 'flex-end',
+    margin: 20,
+    justifyContent: 'center',
   },
   modalContent: {
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '85%',
-    paddingBottom: 20,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+    maxHeight: '80%',
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    padding: 20,
-    paddingBottom: 16,
-    backgroundColor: 'rgba(59, 130, 246, 0.05)',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    padding: 24,
+    paddingBottom: 20,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#3B82F6',
-    alignItems: 'center',
-    justifyContent: 'center',
     marginRight: 12,
   },
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F59E0B',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
   title: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
     color: '#1F2937',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   subtitle: {
     fontSize: 14,
     color: '#6B7280',
   },
   closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#F9FAFB',
+    flexShrink: 0,
   },
   form: {
-    padding: 20,
+    paddingHorizontal: 24,
+    paddingBottom: 8,
   },
   fieldContainer: {
     marginBottom: 20,
@@ -267,50 +301,76 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    paddingHorizontal: 16,
+    paddingRight: 16,
   },
   input: {
     flex: 1,
     height: 48,
     fontSize: 16,
     color: '#1F2937',
+    paddingHorizontal: 16,
+  },
+  dropdownContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  dropdownText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  descriptionInput: {
+    height: 80,
+    fontSize: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    textAlignVertical: 'top',
   },
   currency: {
     fontSize: 14,
     color: '#6B7280',
     fontWeight: '500',
   },
-  categoryScroll: {
-    marginBottom: 8,
-  },
-  categoryChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
-    marginRight: 8,
+  dropdownOptions: {
+    position: 'absolute',
+    top: 56,
+    left: 0,
+    right: 0,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    maxHeight: 160,
+    zIndex: 1000,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  categoryChipActive: {
-    backgroundColor: '#3B82F6',
-    borderColor: '#3B82F6',
+  dropdownOption: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#E5E7EB',
+    minHeight: 44,
+    justifyContent: 'center',
   },
-  categoryChipText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6B7280',
-  },
-  categoryChipTextActive: {
-    color: '#FFFFFF',
+  dropdownOptionText: {
+    fontSize: 16,
   },
   buttonContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
+    paddingBottom: 24,
     gap: 12,
   },
   cancelButton: {
@@ -348,6 +408,19 @@ const styles = StyleSheet.create({
   loadingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  warningContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 16,
+    gap: 8,
+  },
+  warningText: {
+    fontSize: 14,
+    flex: 1,
   },
 });
 
