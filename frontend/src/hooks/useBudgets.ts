@@ -3,14 +3,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getBudgets, createOrUpdateBudget, getExpenses } from '@/services/apiService';
 import { useMemo } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import type { BudgetCreate } from '@/types';
 
 export const useBudgets = (year: number, month: number) => {
   const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
 
   const { data: budgets, isLoading: isLoadingBudgets } = useQuery({
     queryKey: ['budgets', year, month],
     queryFn: () => getBudgets(year, month),
+    enabled: isAuthenticated,
   });
 
   const { data: expenses, isLoading: isLoadingExpenses } = useQuery({

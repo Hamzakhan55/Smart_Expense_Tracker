@@ -1,5 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { connectionManager } from './connectionManager';
 import { 
   Expense, 
   ExpenseCreate, 
@@ -19,51 +20,84 @@ import {
   HistoricalDataPoint 
 } from '../types';
 
-// For mobile development, use your computer's IP address
-const API_BASE_URL = 'http://192.168.1.25:8000';
+// Dynamic API client that auto-detects backend
+const createApiClient = async () => {
+  const baseURL = await connectionManager.getBackendURL();
+  return axios.create({
+    baseURL,
+    timeout: 10000,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+};
 
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+let apiClient: any = null;
 
-// Request interceptor to add auth token
-apiClient.interceptors.request.use(
-  async (config) => {
-    const token = await AsyncStorage.getItem('authToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+const getApiClient = async () => {
+  if (!apiClient) {
+    apiClient = await createApiClient();
+    
+    // Request interceptor
+    apiClient.interceptors.request.use(
+      async (config: any) => {
+        const token = await AsyncStorage.getItem('authToken');
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error: any) => Promise.reject(error)
+    );
+    
+    // Response interceptor
+    apiClient.interceptors.response.use(
+      (response: any) => response,
+      async (error: any) => {
+        console.log('API Error:', {
+          message: error.message,
+          code: error.code,
+          status: error.response?.status,
+          url: error.config?.url
+        });
+        
+        if (error.response?.status === 401) {
+          await AsyncStorage.removeItem('authToken');
+          await AsyncStorage.removeItem('user');
+        }
+        
+        if (!error.response || error.code === 'NETWORK_ERROR') {
+          console.log('🔄 Network error - attempting reconnection...');
+          // Try to reconnect
+          const newURL = await connectionManager.findWorkingURL();
+          if (newURL && newURL !== apiClient.defaults.baseURL) {
+            apiClient.defaults.baseURL = newURL;
+            console.log('🔄 Switched to new backend:', newURL);
+          }
+        }
+        
+        return Promise.reject(error);
+      }
+    );
   }
-);
+  return apiClient;
+};
 
-// Response interceptor for error handling
-apiClient.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid, clear stored auth silently
-      await AsyncStorage.removeItem('authToken');
-      await AsyncStorage.removeItem('user');
-    }
-    if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
-      console.log('Network error detected, using offline mode');
-    }
-    return Promise.reject(error);
-  }
-);
+// Test connection function
+export const testConnection = async (): Promise<boolean> => {
+  return await connectionManager.testConnection();
+};
+
+// Get connection status
+export const getConnectionStatus = (): boolean => {
+  return connectionManager.getConnectionStatus();
+};
 
 // Auth Services
 export const signup = async (userData: UserCreate): Promise<User> => {
   try {
-    const response = await apiClient.post<User>('/users/', userData);
+    const client = await getApiClient();
+    const response = await client.post<User>('/users/', userData);
     return response.data;
   } catch (error) {
     console.log('Backend not available, using mock signup');
@@ -78,7 +112,8 @@ export const signup = async (userData: UserCreate): Promise<User> => {
 
 export const login = async (email: string, password: string): Promise<Token> => {
   try {
-    const response = await apiClient.post<Token>('/login', { email, password });
+    const client = await getApiClient();
+    const response = await client.post<Token>('/login', { email, password });
     return response.data;
   } catch (error) {
     console.log('Backend not available, using mock login');
@@ -91,7 +126,8 @@ export const login = async (email: string, password: string): Promise<Token> => 
 
 export const updateEmail = async (newEmail: string): Promise<User> => {
   try {
-    const response = await apiClient.put<User>('/users/email', { email: newEmail });
+    const client = await getApiClient();
+    const response = await client.put<User>('/users/email', { email: newEmail });
     return response.data;
   } catch (error) {
     console.log('Backend not available for email update, using mock response');
@@ -107,7 +143,8 @@ export const updateEmail = async (newEmail: string): Promise<User> => {
 
 export const updatePassword = async (newPassword: string): Promise<{ message: string }> => {
   try {
-    const response = await apiClient.put<{ message: string }>('/users/password', { password: newPassword });
+    const client = await getApiClient();
+    const response = await client.put<{ message: string }>('/users/password', { password: newPassword });
     return response.data;
   } catch (error) {
     console.log('Backend not available for password update, using mock response');
@@ -118,7 +155,8 @@ export const updatePassword = async (newPassword: string): Promise<{ message: st
 // Expense Services
 export const getExpenses = async (search?: string): Promise<Expense[]> => {
   try {
-    const response = await apiClient.get('/expenses/', { params: { search } });
+    const client = await getApiClient();
+    const response = await client.get('/expenses/', { params: { search } });
     return response.data;
   } catch (error) {
     console.log('Using mock expenses data');
@@ -127,45 +165,99 @@ export const getExpenses = async (search?: string): Promise<Expense[]> => {
 };
 
 export const createExpense = async (expenseData: ExpenseCreate): Promise<Expense> => {
-  const response = await apiClient.post('/expenses/', expenseData);
-  return response.data;
+  try {
+    const client = await getApiClient();
+    const response = await client.post('/expenses/', expenseData);
+    return response.data;
+  } catch (error) {
+    console.log('Backend not available, creating mock expense');
+    return {
+      id: Date.now(),
+      ...expenseData,
+      date: expenseData.date || new Date().toISOString().split('T')[0]
+    };
+  }
 };
 
 export const deleteExpense = async (id: number): Promise<Expense> => {
-  const response = await apiClient.delete(`/expenses/${id}`);
-  return response.data;
+  try {
+    const response = await apiClient.delete(`/expenses/${id}`);
+    return response.data;
+  } catch (error) {
+    console.log('Backend not available, mock delete expense');
+    return { id, description: 'Deleted', amount: 0, category: '', date: '' };
+  }
 };
 
 export const updateExpense = async ({ id, ...data }: { id: number } & ExpenseCreate): Promise<Expense> => {
-  const response = await apiClient.put(`/expenses/${id}`, data);
-  return response.data;
+  try {
+    const response = await apiClient.put(`/expenses/${id}`, data);
+    return response.data;
+  } catch (error) {
+    console.log('Backend not available, mock update expense');
+    return {
+      id,
+      ...data,
+      date: data.date || new Date().toISOString().split('T')[0]
+    };
+  }
 };
 
 // Income Services
 export const getIncomes = async (search?: string): Promise<Income[]> => {
-  const response = await apiClient.get<Income[]>('/incomes/', { params: { search } });
-  return response.data;
+  try {
+    const response = await apiClient.get<Income[]>('/incomes/', { params: { search } });
+    return response.data;
+  } catch (error) {
+    console.log('Network error detected, using offline mode');
+    console.log('Using mock incomes data');
+    return [];
+  }
 };
 
 export const createIncome = async (incomeData: IncomeCreate): Promise<Income> => {
-  const response = await apiClient.post<Income>('/incomes/', incomeData);
-  return response.data;
+  try {
+    const response = await apiClient.post<Income>('/incomes/', incomeData);
+    return response.data;
+  } catch (error) {
+    console.log('Backend not available, creating mock income');
+    return {
+      id: Date.now(),
+      ...incomeData,
+      date: incomeData.date || new Date().toISOString().split('T')[0]
+    };
+  }
 };
 
 export const deleteIncome = async (id: number): Promise<Income> => {
-  const response = await apiClient.delete(`/incomes/${id}`);
-  return response.data;
+  try {
+    const response = await apiClient.delete(`/incomes/${id}`);
+    return response.data;
+  } catch (error) {
+    console.log('Backend not available, mock delete income');
+    return { id, description: 'Deleted', amount: 0, category: '', date: '' };
+  }
 };
 
 export const updateIncome = async ({ id, ...data }: { id: number } & IncomeCreate): Promise<Income> => {
-  const response = await apiClient.put(`/incomes/${id}`, data);
-  return response.data;
+  try {
+    const response = await apiClient.put(`/incomes/${id}`, data);
+    return response.data;
+  } catch (error) {
+    console.log('Backend not available, mock update income');
+    return {
+      id,
+      ...data,
+      date: data.date || new Date().toISOString().split('T')[0]
+    };
+  }
 };
 
 // Summary Services
 export const getMonthlySummary = async (year: number, month: number): Promise<MonthlySummary> => {
   try {
-    const response = await apiClient.get<MonthlySummary>(`/summary/${year}/${month}`);
+    const client = await getApiClient();
+    const response = await client.get<MonthlySummary>(`/summary/${year}/${month}`);
     return response.data;
   } catch (error) {
     console.log('Using mock summary data');
@@ -181,7 +273,8 @@ export const getMonthlySummary = async (year: number, month: number): Promise<Mo
 
 export const getRunningBalance = async (): Promise<RunningBalance> => {
   try {
-    const response = await apiClient.get<RunningBalance>('/summary/balance');
+    const client = await getApiClient();
+    const response = await client.get<RunningBalance>('/summary/balance');
     return response.data;
   } catch (error) {
     console.log('Using mock balance data');
@@ -192,7 +285,8 @@ export const getRunningBalance = async (): Promise<RunningBalance> => {
 // Budget Services
 export const getBudgets = async (year: number, month: number): Promise<Budget[]> => {
   try {
-    const response = await apiClient.get<Budget[]>(`/budgets/${year}/${month}`);
+    const client = await getApiClient();
+    const response = await client.get<Budget[]>(`/budgets/${year}/${month}`);
     return response.data;
   } catch (error) {
     console.log('Using mock budgets data');
@@ -257,18 +351,37 @@ export const getGoals = async (): Promise<Goal[]> => {
 };
 
 export const createGoal = async (goalData: GoalCreate): Promise<Goal> => {
-  const response = await apiClient.post<Goal>('/goals/', goalData);
-  return response.data;
+  try {
+    const response = await apiClient.post<Goal>('/goals/', goalData);
+    return response.data;
+  } catch (error) {
+    console.log('Backend not available, creating mock goal');
+    return {
+      id: Date.now(),
+      current_amount: 0,
+      ...goalData
+    };
+  }
 };
 
 export const updateGoalProgress = async ({ id, amount }: { id: number, amount: number }): Promise<Goal> => {
-  const response = await apiClient.put<Goal>(`/goals/${id}/progress`, { amount });
-  return response.data;
+  try {
+    const response = await apiClient.put<Goal>(`/goals/${id}/progress`, { amount });
+    return response.data;
+  } catch (error) {
+    console.log('Backend not available, mock goal progress update');
+    return { id, name: 'Goal', target_amount: 1000, current_amount: amount };
+  }
 };
 
 export const deleteGoal = async (id: number): Promise<Goal> => {
-  const response = await apiClient.delete<Goal>(`/goals/${id}`);
-  return response.data;
+  try {
+    const response = await apiClient.delete<Goal>(`/goals/${id}`);
+    return response.data;
+  } catch (error) {
+    console.log('Backend not available, mock delete goal');
+    return { id, name: 'Deleted', target_amount: 0, current_amount: 0 };
+  }
 };
 
 // Analytics Services
@@ -469,4 +582,4 @@ export const processVoiceExpense = async (formData: FormData): Promise<Expense> 
   }
 };
 
-export default apiClient;
+export default getApiClient;

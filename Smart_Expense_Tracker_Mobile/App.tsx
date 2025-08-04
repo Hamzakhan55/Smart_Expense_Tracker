@@ -1,10 +1,12 @@
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
+import { View } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './src/context/AuthContext';
 import { ThemeProvider } from './src/context/ThemeContext';
 import { NotificationProvider } from './src/context/NotificationContext';
 import { CurrencyProvider } from './src/context/CurrencyContext';
+import { ConnectionStatus } from './src/components/ConnectionStatus';
 import AppNavigator from './src/navigation/AppNavigator';
 
 const queryClient = new QueryClient({
@@ -23,8 +25,11 @@ export default function App() {
         <ThemeProvider>
           <NotificationProvider>
             <AuthProvider>
-              <StatusBar style="auto" />
-              <AppNavigator />
+              <View style={{ flex: 1 }}>
+                <StatusBar style="auto" />
+                <ConnectionStatus />
+                <AppNavigator />
+              </View>
             </AuthProvider>
           </NotificationProvider>
         </ThemeProvider>

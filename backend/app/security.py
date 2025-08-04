@@ -6,7 +6,7 @@ from passlib.context import CryptContext
 # This should be a secret key stored securely, e.g., in your .env file
 SECRET_KEY = "c44df0c124ca2149186660defdb6dda55a7a86afe9906a719fa78894d2eb05f0a2e958e00de89ccc9e26aa8c60e3cf1c" 
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8 hours
 
 # Setup for password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

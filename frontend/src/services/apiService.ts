@@ -49,6 +49,11 @@ apiClient.interceptors.response.use(
     if (error.code === 'ECONNREFUSED') {
       error.message = 'Cannot connect to server. Please check if the backend is running.';
     }
+    // Handle 401 Unauthorized errors
+    if (error.response?.status === 401) {
+      localStorage.removeItem('authToken');
+      window.location.href = '/login';
+    }
     return Promise.reject(error);
   }
 );
@@ -268,8 +273,13 @@ export const getBudgets = async (year: number, month: number): Promise<Budget[]>
   try {
     const response = await apiClient.get<Budget[]>(`/budgets/${year}/${month}`);
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to fetch budgets:', error);
+    // Handle 401 specifically
+    if (error.response?.status === 401) {
+      console.log('Authentication required for budgets');
+      return [];
+    }
     // Return empty array as fallback
     return [];
   }

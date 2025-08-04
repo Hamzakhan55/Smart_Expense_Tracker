@@ -21,11 +21,8 @@ export const useTransactions = () => {
       setExpenses(expensesData);
       setIncomes(incomesData);
     } catch (error: any) {
-      console.error('Failed to load transactions:', error);
-      if (error.response?.status === 401) {
-        console.log('Using demo transactions data');
-      }
-      // Mock data for demo
+      console.log('Error loading transactions:', error.message || 'Network error');
+      // Mock data for offline mode
       setExpenses([
         { id: 1, description: 'Grocery shopping', amount: 2500, category: 'Food & Drinks', date: new Date().toISOString().split('T')[0] },
         { id: 2, description: 'Gas station', amount: 1200, category: 'Transport', date: new Date(Date.now() - 86400000).toISOString().split('T')[0] },
