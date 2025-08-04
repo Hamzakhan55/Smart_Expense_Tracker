@@ -19,6 +19,7 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 import { getExpenses, getIncomes, exportTransactionsPDF, exportFilteredTransactionsPDF } from '../services/apiService';
+import { useCurrency } from '../context/CurrencyContext';
 import { Expense, Income } from '../types';
 
 interface TransactionItemProps {
@@ -27,12 +28,7 @@ interface TransactionItemProps {
 }
 
 const TransactionItem: React.FC<TransactionItemProps> = ({ item, type }) => {
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-    }).format(value);
+  const { formatCurrency } = useCurrency();
 
   const getCategoryIcon = (category: string) => {
     const iconMap: { [key: string]: keyof typeof Ionicons.glyphMap } = {

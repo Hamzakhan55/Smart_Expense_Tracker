@@ -13,11 +13,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { LineChart, PieChart } from 'react-native-chart-kit';
 import { getHistoricalSummary, getExpenses, getCategoryBreakdown, getSpendingTrends, getAnalyticsStats } from '../services/apiService';
+import { useCurrency } from '../context/CurrencyContext';
 import { HistoricalDataPoint, Expense, CategoryBreakdown, SpendingTrend, AnalyticsStats } from '../types';
 
 const { width } = Dimensions.get('window');
 
 const AnalyticsScreen = () => {
+  const { formatCurrency } = useCurrency();
   const [historicalData, setHistoricalData] = useState<HistoricalDataPoint[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categoryData, setCategoryData] = useState<CategoryBreakdown[]>([]);
@@ -99,12 +101,7 @@ const AnalyticsScreen = () => {
     },
   };
 
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(value);
+
 
   if (isLoading) {
     return (

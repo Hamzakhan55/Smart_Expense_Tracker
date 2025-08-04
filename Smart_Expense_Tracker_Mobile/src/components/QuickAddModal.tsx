@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import Modal from 'react-native-modal';
 import { createExpense, createIncome } from '../services/apiService';
+import { useCurrency } from '../context/CurrencyContext';
 
 interface QuickAddModalProps {
   isVisible: boolean;
@@ -47,6 +48,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
   initialType = 'expense',
   hideTypeSelector = false
 }) => {
+  const { selectedCurrency } = useCurrency();
   const [type, setType] = useState<'expense' | 'income'>(initialType);
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState(EXPENSE_CATEGORIES[0]);
@@ -162,7 +164,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
                 keyboardType="numeric"
                 placeholderTextColor="#9CA3AF"
               />
-              <Text style={styles.currency}>USD</Text>
+              <Text style={styles.currency}>{selectedCurrency.code}</Text>
             </View>
           </View>
 

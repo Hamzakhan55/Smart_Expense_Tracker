@@ -10,6 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import Modal from 'react-native-modal';
 import { createGoal, updateGoalProgress, deleteGoal } from '../services/apiService';
+import { useCurrency } from '../context/CurrencyContext';
 import { GoalCreate, Goal } from '../types';
 
 interface CreateGoalModalProps {
@@ -25,6 +26,7 @@ const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
   onSuccess,
   goal
 }) => {
+  const { selectedCurrency } = useCurrency();
   const [name, setName] = useState('');
   const [targetAmount, setTargetAmount] = useState('');
   const [contributionAmount, setContributionAmount] = useState('');
@@ -181,7 +183,7 @@ const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
                     keyboardType="numeric"
                     placeholderTextColor="#9CA3AF"
                   />
-                  <Text style={styles.currency}>USD</Text>
+                  <Text style={styles.currency}>{selectedCurrency.code}</Text>
                 </View>
               </View>
             </>
@@ -192,7 +194,7 @@ const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
                 <Text style={styles.label}>Progress</Text>
                 <View style={styles.progressContainer}>
                   <Text style={styles.progressText}>
-                    ${goal?.current_amount.toFixed(2)} / ${goal?.target_amount.toFixed(2)}
+                    {selectedCurrency.symbol}{goal?.current_amount.toFixed(2)} / {selectedCurrency.symbol}{goal?.target_amount.toFixed(2)}
                   </Text>
                   <Text style={styles.progressPercentage}>
                     {((goal?.current_amount || 0) / (goal?.target_amount || 1) * 100).toFixed(1)}%
@@ -212,7 +214,7 @@ const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
                     keyboardType="numeric"
                     placeholderTextColor="#9CA3AF"
                   />
-                  <Text style={styles.currency}>USD</Text>
+                  <Text style={styles.currency}>{selectedCurrency.code}</Text>
                 </View>
                 <View style={styles.contributionButtons}>
                   <TouchableOpacity

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Budget } from '../types';
+import { useCurrency } from '../context/CurrencyContext';
 
 interface BudgetProgressCardProps {
   budget: Budget;
@@ -35,12 +36,9 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
     return 'checkmark-circle';
   };
 
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(Math.abs(value));
+  const { formatCurrency } = useCurrency();
+  
+  const formatCurrencyAbs = (value: number) => formatCurrency(Math.abs(value));
 
   return (
     <TouchableOpacity 
@@ -67,7 +65,7 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
               </Text>
             </View>
           </View>
-          <Text style={styles.budgetAmount}>{formatCurrency(budget.amount)}</Text>
+          <Text style={styles.budgetAmount}>{formatCurrencyAbs(budget.amount)}</Text>
         </View>
 
         <View style={styles.progressSection}>
@@ -96,7 +94,7 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
           <View style={styles.stat}>
             <Text style={styles.statLabel}>Spent</Text>
             <Text style={[styles.statValue, { color: '#EF4444' }]}>
-              {formatCurrency(spent)}
+              {formatCurrencyAbs(spent)}
             </Text>
           </View>
           <View style={styles.stat}>
@@ -104,7 +102,7 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
               {isOverBudget ? 'Over by' : 'Remaining'}
             </Text>
             <Text style={[styles.statValue, { color: getProgressColor() }]}>
-              {formatCurrency(remaining)}
+              {formatCurrencyAbs(remaining)}
             </Text>
           </View>
         </View>

@@ -7,10 +7,12 @@ import {
   TouchableOpacity,
   RefreshControl,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { getGoals, updateGoalProgress, deleteGoal } from '../services/apiService';
+import { useCurrency } from '../context/CurrencyContext';
 import { Goal } from '../types';
 import CreateGoalModal from '../components/CreateGoalModal';
 
@@ -21,6 +23,7 @@ interface GoalCardProps {
 }
 
 const GoalCard: React.FC<GoalCardProps> = ({ goal, onPress, onLongPress }) => {
+  const { formatCurrency } = useCurrency();
   const percentage = (goal.current_amount / goal.target_amount) * 100;
   const remaining = goal.target_amount - goal.current_amount;
   
@@ -30,13 +33,6 @@ const GoalCard: React.FC<GoalCardProps> = ({ goal, onPress, onLongPress }) => {
     if (percentage >= 50) return '#F59E0B';
     return '#EF4444';
   };
-
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(value);
 
   return (
     <TouchableOpacity 
@@ -98,6 +94,7 @@ const GoalCard: React.FC<GoalCardProps> = ({ goal, onPress, onLongPress }) => {
 };
 
 const GoalsScreen = () => {
+  const { formatCurrency } = useCurrency();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -156,13 +153,6 @@ const GoalsScreen = () => {
   const totalSaved = goals.reduce((sum, goal) => sum + goal.current_amount, 0);
   const totalTarget = goals.reduce((sum, goal) => sum + goal.target_amount, 0);
   const overallProgress = totalTarget > 0 ? (totalSaved / totalTarget) * 100 : 0;
-
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(value);
 
   if (isLoading) {
     return (

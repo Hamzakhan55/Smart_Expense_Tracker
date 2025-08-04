@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './src/context/AuthContext';
 import { ThemeProvider } from './src/context/ThemeContext';
 import { NotificationProvider } from './src/context/NotificationContext';
+import { CurrencyProvider } from './src/context/CurrencyContext';
 import AppNavigator from './src/navigation/AppNavigator';
 
 const queryClient = new QueryClient({
@@ -18,14 +19,16 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <NotificationProvider>
-          <AuthProvider>
-            <StatusBar style="auto" />
-            <AppNavigator />
-          </AuthProvider>
-        </NotificationProvider>
-      </ThemeProvider>
+      <CurrencyProvider>
+        <ThemeProvider>
+          <NotificationProvider>
+            <AuthProvider>
+              <StatusBar style="auto" />
+              <AppNavigator />
+            </AuthProvider>
+          </NotificationProvider>
+        </ThemeProvider>
+      </CurrencyProvider>
     </QueryClientProvider>
   );
 }

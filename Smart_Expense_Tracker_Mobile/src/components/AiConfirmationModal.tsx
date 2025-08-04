@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Modal from 'react-native-modal';
 import { AiResponse } from '../types';
 import { createExpense } from '../services/apiService';
+import { useCurrency } from '../context/CurrencyContext';
 
 interface AiConfirmationModalProps {
   aiData: AiResponse | null;
@@ -35,6 +36,7 @@ const AiConfirmationModal: React.FC<AiConfirmationModalProps> = ({
   onClose,
   onSuccess
 }) => {
+  const { selectedCurrency } = useCurrency();
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState(EXPENSE_CATEGORIES[0]);
   const [description, setDescription] = useState('');
@@ -118,7 +120,7 @@ const AiConfirmationModal: React.FC<AiConfirmationModalProps> = ({
                 keyboardType="numeric"
                 placeholderTextColor="#9CA3AF"
               />
-              <Text style={styles.currency}>USD</Text>
+              <Text style={styles.currency}>{selectedCurrency.code}</Text>
             </View>
           </View>
 

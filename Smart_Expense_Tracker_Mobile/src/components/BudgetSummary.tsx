@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Budget } from '../types';
+import { useCurrency } from '../context/CurrencyContext';
 
 interface BudgetSummaryProps {
   budgets: Budget[];
@@ -9,6 +10,7 @@ interface BudgetSummaryProps {
 }
 
 const BudgetSummary: React.FC<BudgetSummaryProps> = ({ budgets, getSpentAmount }) => {
+  const { formatCurrency } = useCurrency();
   const totalBudget = budgets.reduce((sum, budget) => sum + budget.amount, 0);
   const totalSpent = budgets.reduce((sum, budget) => sum + getSpentAmount(budget.category), 0);
   const totalRemaining = totalBudget - totalSpent;
@@ -26,12 +28,7 @@ const BudgetSummary: React.FC<BudgetSummaryProps> = ({ budgets, getSpentAmount }
 
   const budgetsOnTrack = budgets.length - budgetsOverLimit - budgetsNearLimit;
 
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(Math.abs(value));
+
 
   if (budgets.length === 0) return null;
 
@@ -55,7 +52,7 @@ const BudgetSummary: React.FC<BudgetSummaryProps> = ({ budgets, getSpentAmount }
           <Ionicons name="warning" size={24} color="#FFFFFF" />
           <Text style={styles.cardLabel}>REMAINING</Text>
           <Text style={styles.cardValue}>
-            {formatCurrency(totalRemaining)}
+            {formatCurrency(Math.abs(totalRemaining))}
           </Text>
         </View>
         <View style={[styles.card, styles.progressCard]}>

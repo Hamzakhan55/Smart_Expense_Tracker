@@ -11,6 +11,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { getMonthlySummary, getRunningBalance } from '../services/apiService';
 import { MonthlySummary, RunningBalance, AiResponse } from '../types';
 import { useNavigation } from '@react-navigation/native';
@@ -32,12 +33,7 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, amount, icon, colors, change, trend, isPercentage = false }) => {
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(value);
+  const { formatCurrency } = useCurrency();
 
   const formatValue = (value: number) => {
     if (isPercentage) {

@@ -15,6 +15,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { getBudgets, createOrUpdateBudget, getExpenses, deleteBudget } from '../services/apiService';
+import { useCurrency } from '../context/CurrencyContext';
 import { Budget, BudgetCreate, Expense } from '../types';
 import BudgetProgressCard from '../components/BudgetProgressCard';
 import BudgetSummary from '../components/BudgetSummary';
@@ -25,6 +26,7 @@ const { width } = Dimensions.get('window');
 
 
 const BudgetsScreen = () => {
+  const { formatCurrency } = useCurrency();
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
