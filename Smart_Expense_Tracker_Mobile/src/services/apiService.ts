@@ -19,7 +19,8 @@ import {
   HistoricalDataPoint 
 } from '../types';
 
-const API_BASE_URL = 'http://192.168.1.17:8000';
+// For mobile development, use your computer's IP address
+const API_BASE_URL = 'http://192.168.1.25:8000';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -63,41 +64,19 @@ export const signup = async (userData: UserCreate): Promise<User> => {
 };
 
 export const login = async (email: string, password: string): Promise<Token> => {
-  try {
-    const response = await apiClient.post<Token>('/login', { email, password });
-    return response.data;
-  } catch (error) {
-    console.log('Backend login failed, using mock token');
-    return {
-      access_token: 'mock_token_' + Date.now(),
-      token_type: 'bearer'
-    };
-  }
+  const response = await apiClient.post<Token>('/login', { email, password });
+  return response.data;
 };
 
 // Expense Services
 export const getExpenses = async (search?: string): Promise<Expense[]> => {
-  try {
-    const response = await apiClient.get('/expenses/', { params: { search } });
-    return response.data;
-  } catch (error) {
-    console.log('Backend not available, using empty array');
-    return [];
-  }
+  const response = await apiClient.get('/expenses/', { params: { search } });
+  return response.data;
 };
 
 export const createExpense = async (expenseData: ExpenseCreate): Promise<Expense> => {
-  try {
-    const response = await apiClient.post('/expenses/', expenseData);
-    return response.data;
-  } catch (error) {
-    console.log('Backend not available, creating mock expense');
-    return {
-      id: Date.now(),
-      ...expenseData,
-      date: new Date().toISOString()
-    } as Expense;
-  }
+  const response = await apiClient.post('/expenses/', expenseData);
+  return response.data;
 };
 
 export const deleteExpense = async (id: number): Promise<Expense> => {
@@ -112,27 +91,13 @@ export const updateExpense = async ({ id, ...data }: { id: number } & ExpenseCre
 
 // Income Services
 export const getIncomes = async (search?: string): Promise<Income[]> => {
-  try {
-    const response = await apiClient.get<Income[]>('/incomes/', { params: { search } });
-    return response.data;
-  } catch (error) {
-    console.log('Backend not available, using empty array');
-    return [];
-  }
+  const response = await apiClient.get<Income[]>('/incomes/', { params: { search } });
+  return response.data;
 };
 
 export const createIncome = async (incomeData: IncomeCreate): Promise<Income> => {
-  try {
-    const response = await apiClient.post<Income>('/incomes/', incomeData);
-    return response.data;
-  } catch (error) {
-    console.log('Backend not available, creating mock income');
-    return {
-      id: Date.now(),
-      ...incomeData,
-      date: new Date().toISOString()
-    } as Income;
-  }
+  const response = await apiClient.post<Income>('/incomes/', incomeData);
+  return response.data;
 };
 
 export const deleteIncome = async (id: number): Promise<Income> => {
@@ -147,32 +112,13 @@ export const updateIncome = async ({ id, ...data }: { id: number } & IncomeCreat
 
 // Summary Services
 export const getMonthlySummary = async (year: number, month: number): Promise<MonthlySummary> => {
-  try {
-    const response = await apiClient.get<MonthlySummary>(`/summary/${year}/${month}`);
-    return response.data;
-  } catch (error) {
-    console.log('Using mock monthly summary');
-    return {
-      total_income: 3500,
-      total_expenses: 2100,
-      net_savings: 1400,
-      year,
-      month
-    };
-  }
+  const response = await apiClient.get<MonthlySummary>(`/summary/${year}/${month}`);
+  return response.data;
 };
 
 export const getRunningBalance = async (): Promise<RunningBalance> => {
-  try {
-    const response = await apiClient.get<RunningBalance>('/summary/balance');
-    return response.data;
-  } catch (error) {
-    console.log('Using mock running balance');
-    return {
-      total_balance: 15750,
-      last_updated: new Date().toISOString()
-    };
-  }
+  const response = await apiClient.get<RunningBalance>('/summary/balance');
+  return response.data;
 };
 
 // Budget Services
