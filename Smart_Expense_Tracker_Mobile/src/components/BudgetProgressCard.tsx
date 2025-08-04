@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Budget } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
+import { useTheme } from '../context/ThemeContext';
 
 interface BudgetProgressCardProps {
   budget: Budget;
@@ -18,6 +18,7 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
   onPress, 
   onLongPress 
 }) => {
+  const { theme } = useTheme();
   const percentage = (spent / budget.amount) * 100;
   const remaining = budget.amount - spent;
   const isOverBudget = spent > budget.amount;
@@ -47,13 +48,10 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
       onLongPress={onLongPress}
       activeOpacity={0.7}
     >
-      <LinearGradient
-        colors={['#FFFFFF', '#F8FAFC']}
-        style={styles.card}
-      >
+      <View style={[styles.card, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
         <View style={styles.header}>
           <View style={styles.categoryInfo}>
-            <Text style={styles.category}>{budget.category}</Text>
+            <Text style={[styles.category, { color: theme.colors.text }]}>{budget.category}</Text>
             <View style={styles.statusContainer}>
               <Ionicons 
                 name={getStatusIcon()} 
@@ -65,7 +63,7 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
               </Text>
             </View>
           </View>
-          <Text style={styles.budgetAmount}>{formatCurrencyAbs(budget.amount)}</Text>
+          <Text style={[styles.budgetAmount, { color: theme.colors.primary }]}>{formatCurrencyAbs(budget.amount)}</Text>
         </View>
 
         <View style={styles.progressSection}>
@@ -92,13 +90,13 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
 
         <View style={styles.footer}>
           <View style={styles.stat}>
-            <Text style={styles.statLabel}>Spent</Text>
+            <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>Spent</Text>
             <Text style={[styles.statValue, { color: '#EF4444' }]}>
               {formatCurrencyAbs(spent)}
             </Text>
           </View>
           <View style={styles.stat}>
-            <Text style={styles.statLabel}>
+            <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
               {isOverBudget ? 'Over by' : 'Remaining'}
             </Text>
             <Text style={[styles.statValue, { color: getProgressColor() }]}>
@@ -106,7 +104,7 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
             </Text>
           </View>
         </View>
-      </LinearGradient>
+      </View>
     </TouchableOpacity>
   );
 };
@@ -128,7 +126,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
   header: {
     flexDirection: 'row',
@@ -142,7 +139,6 @@ const styles = StyleSheet.create({
   category: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1F2937',
     marginBottom: 4,
   },
   statusContainer: {
@@ -157,7 +153,6 @@ const styles = StyleSheet.create({
   budgetAmount: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#3B82F6',
   },
   progressSection: {
     marginBottom: 16,
@@ -190,7 +185,6 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 12,
-    color: '#9CA3AF',
     marginBottom: 4,
   },
   statValue: {

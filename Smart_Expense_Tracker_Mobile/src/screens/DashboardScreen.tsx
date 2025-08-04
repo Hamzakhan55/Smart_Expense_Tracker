@@ -271,13 +271,13 @@ const DashboardScreen = () => {
                 <Text style={[styles.sectionSubtitle, { color: theme.colors.textSecondary }]}>AI-powered financial{"\n"}intelligence</Text>
               </View>
             </View>
-            <View style={styles.liveIndicator}>
+            <View style={[styles.liveIndicator, { backgroundColor: theme.colors.surface }]}>
               <Ionicons name="flash" size={12} color="#8B5CF6" />
-              <Text style={styles.liveText}>LIVE</Text>
+              <Text style={[styles.liveText, { color: theme.colors.text }]}>LIVE</Text>
             </View>
           </View>
           {insightsLoading ? (
-            <View style={[styles.insightCard, { backgroundColor: theme.colors.card }]}>
+            <View style={[styles.insightCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
               <View style={styles.loadingInsight}>
                 <View style={styles.loadingDot} />
                 <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>Analyzing your data...</Text>
@@ -285,7 +285,11 @@ const DashboardScreen = () => {
             </View>
           ) : (
             insights.map((insight, index) => (
-              <View key={index} style={[styles.insightCard, { backgroundColor: insight.bgColor, borderLeftColor: insight.color }]}>
+              <View key={index} style={[styles.insightCard, { 
+                backgroundColor: theme.colors.card, 
+                borderLeftColor: insight.color,
+                borderColor: theme.colors.border
+              }]}>
                 <View style={styles.insightHeader}>
                   <View style={[styles.insightIcon, { backgroundColor: insight.color }]}>
                     <Ionicons 
@@ -544,7 +548,6 @@ const styles = StyleSheet.create({
   liveIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -553,7 +556,6 @@ const styles = StyleSheet.create({
   liveText: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#8B5CF6',
   },
   insightCard: {
     borderRadius: 16,
@@ -565,6 +567,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     borderLeftWidth: 4,
+    borderWidth: 1,
   },
   insightHeader: {
     flexDirection: 'row',

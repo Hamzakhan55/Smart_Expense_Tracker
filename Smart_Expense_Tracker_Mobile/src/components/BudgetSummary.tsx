@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Budget } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
+import { useTheme } from '../context/ThemeContext';
 
 interface BudgetSummaryProps {
   budgets: Budget[];
@@ -11,6 +12,7 @@ interface BudgetSummaryProps {
 
 const BudgetSummary: React.FC<BudgetSummaryProps> = ({ budgets, getSpentAmount }) => {
   const { formatCurrency } = useCurrency();
+  const { theme } = useTheme();
   const totalBudget = budgets.reduce((sum, budget) => sum + budget.amount, 0);
   const totalSpent = budgets.reduce((sum, budget) => sum + getSpentAmount(budget.category), 0);
   const totalRemaining = totalBudget - totalSpent;
@@ -62,23 +64,23 @@ const BudgetSummary: React.FC<BudgetSummaryProps> = ({ budgets, getSpentAmount }
         </View>
       </View>
 
-      <View style={styles.statusSection}>
-        <Text style={styles.statusTitle}>Budget Status Overview</Text>
+      <View style={[styles.statusSection, { backgroundColor: theme.colors.card }]}>
+        <Text style={[styles.statusTitle, { color: theme.colors.text }]}>Budget Status Overview</Text>
         <View style={styles.statusCards}>
-          <View style={[styles.statusCard, styles.onTrackCard]}>
+          <View style={[styles.statusCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
             <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-            <Text style={styles.statusNumber}>{budgetsOnTrack}</Text>
-            <Text style={styles.statusLabel}>On Track</Text>
+            <Text style={[styles.statusNumber, { color: theme.colors.text }]}>{budgetsOnTrack}</Text>
+            <Text style={[styles.statusLabel, { color: theme.colors.textSecondary }]}>On Track</Text>
           </View>
-          <View style={[styles.statusCard, styles.nearLimitCard]}>
+          <View style={[styles.statusCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
             <Ionicons name="warning" size={20} color="#F59E0B" />
-            <Text style={styles.statusNumber}>{budgetsNearLimit}</Text>
-            <Text style={styles.statusLabel}>Near Limit</Text>
+            <Text style={[styles.statusNumber, { color: theme.colors.text }]}>{budgetsNearLimit}</Text>
+            <Text style={[styles.statusLabel, { color: theme.colors.textSecondary }]}>Near Limit</Text>
           </View>
-          <View style={[styles.statusCard, styles.overBudgetCard]}>
+          <View style={[styles.statusCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
             <Ionicons name="warning" size={20} color="#EF4444" />
-            <Text style={styles.statusNumber}>{budgetsOverLimit}</Text>
-            <Text style={styles.statusLabel}>Over Budget</Text>
+            <Text style={[styles.statusNumber, { color: theme.colors.text }]}>{budgetsOverLimit}</Text>
+            <Text style={[styles.statusLabel, { color: theme.colors.textSecondary }]}>Over Budget</Text>
           </View>
         </View>
       </View>
@@ -133,13 +135,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   statusSection: {
-    backgroundColor: '#F8FAFC',
     borderRadius: 12,
     padding: 16,
   },
   statusTitle: {
     fontSize: 16,
-    color: '#1F2937',
     fontWeight: '600',
     marginBottom: 12,
   },
@@ -152,27 +152,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     alignItems: 'center',
-  },
-  onTrackCard: {
-    backgroundColor: '#DCFCE7',
-  },
-  nearLimitCard: {
-    backgroundColor: '#FEF3C7',
-  },
-  overBudgetCard: {
-    backgroundColor: '#FEE2E2',
+    borderWidth: 1,
   },
   statusNumber: {
     fontSize: 18,
     fontWeight: 'bold',
     marginTop: 4,
     marginBottom: 2,
-    color: '#1F2937',
   },
   statusLabel: {
     fontSize: 10,
     fontWeight: '500',
-    color: '#6B7280',
   },
 });
 

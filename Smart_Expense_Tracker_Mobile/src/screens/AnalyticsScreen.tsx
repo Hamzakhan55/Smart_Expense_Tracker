@@ -87,12 +87,12 @@ const AnalyticsScreen = () => {
 
 
   const chartConfig = {
-    backgroundColor: '#FFFFFF',
-    backgroundGradientFrom: '#FFFFFF',
-    backgroundGradientTo: '#FFFFFF',
+    backgroundColor: theme.colors.card,
+    backgroundGradientFrom: theme.colors.card,
+    backgroundGradientTo: theme.colors.surface,
     decimalPlaces: 0,
     color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`,
+    labelColor: (opacity = 1) => theme.isDarkMode ? `rgba(241, 245, 249, ${opacity})` : `rgba(107, 114, 128, ${opacity})`,
     style: {
       borderRadius: 16,
     },
@@ -118,7 +118,7 @@ const AnalyticsScreen = () => {
     name: item.category,
     population: item.amount,
     color: item.color,
-    legendFontColor: '#6B7280',
+    legendFontColor: theme.colors.text,
     legendFontSize: 12,
   }));
 
@@ -139,15 +139,15 @@ const AnalyticsScreen = () => {
         }
       >
         {/* Spending Trend Chart */}
-        <View style={[styles.chartContainer, { backgroundColor: theme.colors.card }]}>
+        <View style={[styles.chartContainer, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
           <View style={styles.chartHeader}>
             <Text style={[styles.chartTitle, { color: theme.colors.text }]}>Spending Trend</Text>
-            <View style={styles.periodSelector}>
+            <View style={[styles.periodSelector, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
               <TouchableOpacity
                 style={[styles.periodButton, selectedPeriod === '3m' && styles.periodButtonActive]}
                 onPress={() => setSelectedPeriod('3m')}
               >
-                <Text style={[styles.periodButtonText, selectedPeriod === '3m' && styles.periodButtonTextActive]}>
+                <Text style={[styles.periodButtonText, { color: theme.colors.textSecondary }, selectedPeriod === '3m' && styles.periodButtonTextActive]}>
                   3M
                 </Text>
               </TouchableOpacity>
@@ -155,7 +155,7 @@ const AnalyticsScreen = () => {
                 style={[styles.periodButton, selectedPeriod === '6m' && styles.periodButtonActive]}
                 onPress={() => setSelectedPeriod('6m')}
               >
-                <Text style={[styles.periodButtonText, selectedPeriod === '6m' && styles.periodButtonTextActive]}>
+                <Text style={[styles.periodButtonText, { color: theme.colors.textSecondary }, selectedPeriod === '6m' && styles.periodButtonTextActive]}>
                   6M
                 </Text>
               </TouchableOpacity>
@@ -163,7 +163,7 @@ const AnalyticsScreen = () => {
                 style={[styles.periodButton, selectedPeriod === '1y' && styles.periodButtonActive]}
                 onPress={() => setSelectedPeriod('1y')}
               >
-                <Text style={[styles.periodButtonText, selectedPeriod === '1y' && styles.periodButtonTextActive]}>
+                <Text style={[styles.periodButtonText, { color: theme.colors.textSecondary }, selectedPeriod === '1y' && styles.periodButtonTextActive]}>
                   1Y
                 </Text>
               </TouchableOpacity>
@@ -173,7 +173,7 @@ const AnalyticsScreen = () => {
           {trendData.labels.length > 0 && (
             <LineChart
               data={trendData}
-              width={width - 40}
+              width={width - 80}
               height={220}
               chartConfig={chartConfig}
               bezier
@@ -183,12 +183,12 @@ const AnalyticsScreen = () => {
         </View>
 
         {/* Category Breakdown */}
-        <View style={[styles.chartContainer, { backgroundColor: theme.colors.card }]}>
+        <View style={[styles.chartContainer, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
           <Text style={[styles.chartTitle, { color: theme.colors.text }]}>Category Breakdown</Text>
           {pieChartData.length > 0 && (
             <View>
               <PieChart
-                data={pieChartData.map(item => ({ ...item, name: '' }))}
+                data={pieChartData.map(item => ({ ...item, name: '', legendFontColor: theme.colors.text }))}
                 width={width - -180}
                 height={220}
                 chartConfig={chartConfig}
@@ -202,8 +202,8 @@ const AnalyticsScreen = () => {
                 {categoryData.map((item, index) => (
                   <View key={index} style={styles.legendItem}>
                     <View style={[styles.legendColor, { backgroundColor: item.color }]} />
-                    <Text style={styles.legendText}>{item.category}</Text>
-                    <Text style={styles.legendValue}>{formatCurrency(item.amount)}</Text>
+                    <Text style={[styles.legendText, { color: theme.colors.text }]}>{item.category}</Text>
+                    <Text style={[styles.legendValue, { color: theme.colors.textSecondary }]}>{formatCurrency(item.amount)}</Text>
                   </View>
                 ))}
               </View>
@@ -296,7 +296,6 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   chartContainer: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 20,
     marginVertical: 10,
@@ -308,6 +307,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+    borderWidth: 1,
   },
   chartHeader: {
     flexDirection: 'row',
@@ -322,9 +322,9 @@ const styles = StyleSheet.create({
   },
   periodSelector: {
     flexDirection: 'row',
-    backgroundColor: '#F3F4F6',
     borderRadius: 8,
     padding: 2,
+    borderWidth: 1,
   },
   periodButton: {
     paddingHorizontal: 12,
@@ -337,7 +337,6 @@ const styles = StyleSheet.create({
   periodButtonText: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#6B7280',
   },
   periodButtonTextActive: {
     color: '#FFFFFF',
@@ -450,12 +449,10 @@ const styles = StyleSheet.create({
   legendText: {
     flex: 1,
     fontSize: 14,
-    color: '#1F2937',
     fontWeight: '500',
   },
   legendValue: {
     fontSize: 14,
-    color: '#6B7280',
     fontWeight: '600',
   },
 });

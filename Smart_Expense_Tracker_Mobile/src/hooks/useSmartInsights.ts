@@ -6,7 +6,6 @@ import { useCurrency } from '../context/CurrencyContext';
 interface InsightData {
   icon: string;
   color: string;
-  bgColor: string;
   message: string;
   type: 'prediction' | 'success' | 'warning' | 'tip' | 'info';
   priority: number;
@@ -153,7 +152,6 @@ export const useSmartInsights = () => {
           insights.push({
             icon: 'calendar-outline',
             color: '#F59E0B',
-            bgColor: '#FEF3C7',
             message: `AI predicts your total spending next month will be ${formatCurrency(nextMonth.amount)} (${isIncrease ? '+' : ''}${changePercent.toFixed(0)}% vs current month)`,
             type: 'prediction',
             priority: 1
@@ -169,7 +167,6 @@ export const useSmartInsights = () => {
           insights.push({
             icon: 'trending-up-outline',
             color: '#F59E0B',
-            bgColor: '#FEF3C7',
             message: `3-month forecast: Your spending trend suggests ${formatCurrency(threeMonths.amount)} per month (${changePercent > 0 ? 'increasing' : 'decreasing'} trend)`,
             type: 'prediction',
             priority: 1
@@ -195,7 +192,6 @@ export const useSmartInsights = () => {
       insights.push({
         icon: isIncrease ? 'warning-outline' : 'trending-down',
         color: isIncrease ? '#EF4444' : '#10B981',
-        bgColor: isIncrease ? '#FEE2E2' : '#D1FAE5',
         message: `${topChange.category} spending ${isIncrease ? 'surged' : 'dropped'} ${cappedPercent.toFixed(0)}% (${formatCurrency(Math.abs(topChange.change))}) vs last month`,
         type: isIncrease ? 'warning' : 'success',
         priority: 2
@@ -218,7 +214,6 @@ export const useSmartInsights = () => {
         insights.push({
           icon: 'flag-outline',
           color: isImprovement ? '#10B981' : '#EF4444',
-          bgColor: isImprovement ? '#D1FAE5' : '#FEE2E2',
           message: `Savings rate ${isImprovement ? 'improved' : 'declined'} by ${Math.abs(savingsChange).toFixed(1)}% (now ${currentSavingsRate.toFixed(1)}%)`,
           type: isImprovement ? 'success' : 'warning',
           priority: 3
@@ -250,7 +245,6 @@ export const useSmartInsights = () => {
       insights.push({
         icon: 'bulb',
         color: '#3B82F6',
-        bgColor: '#DBEAFE',
         message: `${topCategory.category}: ${formatCurrency(topCategory.currentMonth)} this month. ${tip}`,
         type: 'tip',
         priority: 4
