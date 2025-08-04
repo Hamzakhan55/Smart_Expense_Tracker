@@ -121,7 +121,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    height: 48,
+    height: 50,
+    marginTop: 14
   },
   leftSection: {
     flexDirection: 'row',
@@ -133,8 +134,8 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   logo: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -159,10 +160,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   appName: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#1F2937',
-    lineHeight: 20,
+    lineHeight: 30,
   },
   appSubtitle: {
     fontSize: 11,

@@ -234,7 +234,14 @@ const DashboardScreen = () => {
         </View>
 
         <View style={styles.quickActions}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Quick Actions</Text>
+          <View style={styles.sectionHeader}>
+            <View style={styles.headerLeft}>
+              <View style={styles.quickActionsIconContainer}>
+                <Ionicons name="flash" size={20} color="#FFFFFF" />
+              </View>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Quick Actions</Text>
+            </View>
+          </View>
           <View style={styles.actionGrid}>
             <View style={styles.actionRow}>
               <TouchableOpacity style={styles.actionCard} onPress={() => setShowExpenseModal(true)}>
@@ -453,6 +460,20 @@ const styles = StyleSheet.create({
   quickActions: {
     marginBottom: 20,
   },
+  quickActionsIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#3B82F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 3,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -467,8 +488,8 @@ const styles = StyleSheet.create({
   },
   actionGrid: {
     gap: 13,
-    marginTop: 10,
-    marginBottom: 10,
+    marginTop: 7,
+    marginBottom: 12,
   },
   actionRow: {
     flexDirection: 'row',
@@ -516,27 +537,34 @@ const styles = StyleSheet.create({
   },
   brainIconContainer: {
     position: 'relative',
-    width: 40,
-    height: 40,
-    borderRadius: 16,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: '#8B5CF6',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 4,
+    marginRight: 16,
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   liveDot: {
     position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    top: -3,
+    right: -3,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     backgroundColor: '#10B981',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 3,
   },
   headerText: {
     flex: 1,
@@ -548,26 +576,33 @@ const styles = StyleSheet.create({
   liveIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
-  },
-  liveText: {
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  insightCard: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    gap: 6,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    borderLeftWidth: 4,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  liveText: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  insightCard: {
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+    borderLeftWidth: 5,
     borderWidth: 1,
+    transform: [{ scale: 1 }],
   },
   insightHeader: {
     flexDirection: 'row',
@@ -575,21 +610,29 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   insightIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   insightTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   insightMessage: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 8,
+    fontSize: 15,
+    lineHeight: 22,
+    marginTop: 8,
+    fontWeight: '500',
   },
   confidenceBar: {
     marginTop: 8,

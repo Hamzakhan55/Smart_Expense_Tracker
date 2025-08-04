@@ -26,27 +26,11 @@ export const VoiceInputFAB: React.FC<VoiceInputFABProps> = ({ onPress }) => {
         return;
       }
 
-      const newRecording = new Audio.Recording();
-      await newRecording.prepareToRecordAsync({
-        android: {
-          extension: '.m4a',
-          outputFormat: Audio.AndroidOutputFormat.MPEG_4,
-          audioEncoder: Audio.AndroidAudioEncoder.AAC,
-          sampleRate: 44100,
-          numberOfChannels: 2,
-          bitRate: 128000,
-        },
-        ios: {
-          extension: '.m4a',
-          outputFormat: Audio.IOSOutputFormat.MPEG4AAC,
-          audioQuality: Audio.IOSAudioQuality.MAX,
-          sampleRate: 44100,
-          numberOfChannels: 2,
-          bitRate: 128000,
-        },
-      });
+      const { recording: newRecording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
 
-      await newRecording.startAsync();
+      // Recording already started with createAsync
       setRecording(newRecording);
       setIsRecording(true);
       console.log('Recording started successfully');
@@ -120,7 +104,7 @@ export const VoiceInputFAB: React.FC<VoiceInputFABProps> = ({ onPress }) => {
         onPressOut={handlePressOut}
         activeOpacity={0.8}
       >
-        <LinearGradient colors={isRecording ? ['#EF4444', '#DC2626'] : ['#8B5CF6', '#7C3AED']} style={styles.fabGradient}>
+        <LinearGradient colors={isRecording ? ['#EF4444', '#DC2626'] : ['#3B82F6', '#1E40AF']} style={styles.fabGradient}>
           <Ionicons name={isRecording ? "stop" : "mic"} size={24} color="#FFFFFF" />
         </LinearGradient>
       </TouchableOpacity>
@@ -152,9 +136,9 @@ const styles = StyleSheet.create({
     zIndex: 1000,
   },
   fabGradient: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 65,
+    height: 65,
+    borderRadius: 38,
     justifyContent: 'center',
     alignItems: 'center',
   },
