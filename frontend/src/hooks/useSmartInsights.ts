@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { useSummary } from './useSummary';
 import { useTransactions } from './useTransactions';
 import { useCurrency } from '@/context/CurrencyContext';
-import { Calendar, TrendingUp, TrendingDown, Target, Lightbulb, AlertCircle, Brain } from 'lucide-react';
+import { Calendar, TrendingUp, TrendingDown, Target, Lightbulb, AlertTriangle } from 'lucide-react';
 
 interface InsightData {
   icon: any;
@@ -31,9 +31,9 @@ export const useSmartInsights = () => {
   const previousMonth = currentMonth === 1 ? 12 : currentMonth - 1;
   const previousYear = currentMonth === 1 ? currentYear - 1 : currentYear;
 
-  const { monthlySummary: currentSummary } = useSummary(currentYear, currentMonth);
-  const { monthlySummary: previousSummary } = useSummary(previousYear, previousMonth);
-  const { expenses: allExpenses } = useTransactions();
+  const { monthlySummary: currentSummary, isLoading: isLoadingCurrentSummary } = useSummary(currentYear, currentMonth);
+  const { monthlySummary: previousSummary, isLoading: isLoadingPreviousSummary } = useSummary(previousYear, previousMonth);
+  const { expenses: allExpenses, isLoading: isLoadingTransactions } = useTransactions();
   const { currency } = useCurrency();
 
   const formatCurrency = (amount: number) =>
@@ -64,7 +64,7 @@ export const useSmartInsights = () => {
       const currentAmount = currentExpenses.filter(e => e.category === category).reduce((sum, e) => sum + e.amount, 0);
       const previousAmount = previousExpenses.filter(e => e.category === category).reduce((sum, e) => sum + e.amount, 0);
       const change = currentAmount - previousAmount;
-      const changePercent = previousAmount > 0 ? (change / previousAmount) * 100 : 0;
+      const changePercent = previousAmount > 0 ? Math.abs((change / previousAmount) * 100) : 0;
 
       return {
         category,
@@ -76,33 +76,67 @@ export const useSmartInsights = () => {
     }).filter(item => item.currentMonth > 0 || item.previousMonth > 0);
   }, [currentExpenses, previousExpenses]);
 
-  // Advanced prediction algorithm
-  const nextMonthPrediction = useMemo(() => {
-    if (!currentSummary || !previousSummary) return null;
+  // Multi-month prediction algorithm
+  const predictions = useMemo(() => {
+    if (!allExpenses || allExpenses.length < 3) return null;
 
-    const currentTotal = currentSummary.total_expenses;
-    const previousTotal = previousSummary.total_expenses;
-    
-    if (previousTotal === 0) return currentTotal;
+    // Get last 6 months of data
+    const monthlyData = [];
+    for (let i = 5; i >= 0; i--) {
+      const targetMonth = currentMonth - i <= 0 ? currentMonth - i + 12 : currentMonth - i;
+      const targetYear = currentMonth - i <= 0 ? currentYear - 1 : currentYear;
+      
+      const monthExpenses = allExpenses.filter(e => {
+        const expenseDate = new Date(e.date);
+        return expenseDate.getMonth() + 1 === targetMonth && expenseDate.getFullYear() === targetYear;
+      });
+      
+      const total = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
+      monthlyData.push({ month: targetMonth, year: targetYear, total });
+    }
 
-    // Multi-factor prediction model
-    const monthlyTrend = (currentTotal - previousTotal) / previousTotal;
-    const seasonalFactor = 1 + (Math.sin((currentMonth * Math.PI) / 6) * 0.15);
-    const volatilityAdjustment = Math.abs(monthlyTrend) > 0.3 ? 0.5 : 0.7; // Reduce impact of extreme changes
-    
-    // Category-based prediction refinement
-    const categoryTrends = categoryAnalysis.map(cat => ({
-      category: cat.category,
-      trend: cat.previousMonth > 0 ? cat.changePercent / 100 : 0,
-      weight: cat.currentMonth / currentTotal
-    }));
+    if (monthlyData.length < 3) return null;
 
-    const weightedTrend = categoryTrends.reduce((sum, cat) => sum + (cat.trend * cat.weight), 0);
+    // Exponential smoothing
+    const alpha = 0.3;
+    const beta = 0.2;
     
-    const prediction = currentTotal * (1 + (weightedTrend * volatilityAdjustment)) * seasonalFactor;
+    let level = monthlyData[0].total;
+    let trend = monthlyData[1].total - monthlyData[0].total;
     
-    return Math.max(prediction, currentTotal * 0.7); // Minimum 70% of current month
-  }, [currentSummary, previousSummary, currentMonth, categoryAnalysis]);
+    for (let i = 1; i < monthlyData.length; i++) {
+      const actual = monthlyData[i].total;
+      const prevLevel = level;
+      
+      level = alpha * actual + (1 - alpha) * (level + trend);
+      trend = beta * (level - prevLevel) + (1 - beta) * trend;
+    }
+
+    // Generate predictions for next 6 months
+    const predictions = [];
+    const currentTotal = currentSummary?.total_expenses || 0;
+    
+    for (let monthsAhead = 1; monthsAhead <= 6; monthsAhead++) {
+      const futureMonth = (currentMonth + monthsAhead - 1) % 12 + 1;
+      const seasonalIndex = 1 + Math.sin((futureMonth * Math.PI) / 6) * 0.1;
+      
+      const basePrediction = level + (trend * monthsAhead);
+      const seasonalPrediction = basePrediction * seasonalIndex;
+      
+      // Apply bounds
+      const lowerBound = currentTotal * 0.6;
+      const upperBound = currentTotal * 1.8;
+      const finalPrediction = Math.max(lowerBound, Math.min(upperBound, seasonalPrediction));
+      
+      predictions.push({
+        monthsAhead,
+        amount: finalPrediction,
+        month: futureMonth
+      });
+    }
+    
+    return predictions;
+  }, [allExpenses, currentMonth, currentYear, currentSummary]);
 
   // Generate insights
   const insights = useMemo((): InsightData[] => {
@@ -110,29 +144,55 @@ export const useSmartInsights = () => {
 
     const insights: InsightData[] = [];
 
-    // 1. Next month prediction (highest priority)
-    if (nextMonthPrediction && currentSummary.total_expenses > 0) {
-      const difference = nextMonthPrediction - currentSummary.total_expenses;
-      const changePercent = (difference / currentSummary.total_expenses) * 100;
-      const isSignificantChange = Math.abs(changePercent) > 10;
+    // 1. Multi-month predictions
+    if (predictions && currentSummary.total_expenses > 0) {
+      const nextMonth = predictions[0];
+      const threeMonths = predictions[2];
       
-      if (isSignificantChange) {
-        const isIncrease = difference > 0;
-        insights.push({
-          icon: Calendar,
-          color: isIncrease ? "text-orange-400" : "text-green-400",
-          bgColor: isIncrease ? "bg-orange-500/10" : "bg-green-500/10",
-          borderColor: isIncrease ? "border-orange-500/20" : "border-green-500/20",
-          message: `AI predicts next month's expenses: ${formatCurrency(nextMonthPrediction)} (${isIncrease ? '+' : ''}${changePercent.toFixed(0)}% vs this month)`,
-          type: "prediction",
-          priority: 1
-        });
+      if (nextMonth) {
+        const difference = nextMonth.amount - currentSummary.total_expenses;
+        const changePercent = (difference / currentSummary.total_expenses) * 100;
+        
+        if (Math.abs(changePercent) > 5) {
+          const isIncrease = difference > 0;
+          
+          insights.push({
+            icon: Calendar,
+            color: "text-yellow-500",
+            bgColor: "bg-yellow-500/10",
+            borderColor: "border-yellow-500/20",
+            message: `AI predicts your total spending next month will be ${formatCurrency(nextMonth.amount)} (${isIncrease ? '+' : ''}${changePercent.toFixed(0)}% vs current month)`,
+            type: "prediction",
+            priority: 1
+          });
+        }
+      }
+      
+      if (threeMonths) {
+        const difference = threeMonths.amount - currentSummary.total_expenses;
+        const changePercent = (difference / currentSummary.total_expenses) * 100;
+        
+        if (Math.abs(changePercent) > 10) {
+          insights.push({
+            icon: TrendingUp,
+            color: "text-yellow-500",
+            bgColor: "bg-yellow-500/10",
+            borderColor: "border-yellow-500/20",
+            message: `3-month forecast: Your spending trend suggests ${formatCurrency(threeMonths.amount)} per month (${changePercent > 0 ? 'increasing' : 'decreasing'} trend)`,
+            type: "prediction",
+            priority: 1
+          });
+        }
       }
     }
 
     // 2. Significant category changes
     const significantChanges = categoryAnalysis
-      .filter(item => Math.abs(item.changePercent) > 25 && Math.abs(item.change) > 100)
+      .filter(item => {
+        const hasSignificantChange = Math.abs(item.changePercent) > 25 && Math.abs(item.change) > 100;
+        const isReasonablePercent = item.changePercent <= 500;
+        return hasSignificantChange && isReasonablePercent;
+      })
       .sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent));
 
     if (significantChanges.length > 0) {
@@ -177,7 +237,7 @@ export const useSmartInsights = () => {
 
     // 4. Smart spending recommendations
     const topSpendingCategories = categoryAnalysis
-      .filter(item => item.currentMonth > 200)
+      .filter(item => item.currentMonth > 50)
       .sort((a, b) => b.currentMonth - a.currentMonth)
       .slice(0, 2);
 
@@ -205,6 +265,27 @@ export const useSmartInsights = () => {
         type: "tip",
         priority: 4
       });
+    } else if (currentSummary.total_expenses > 0) {
+      // General tips when no specific category spending is high enough
+      const generalTips = [
+        "Track every expense, no matter how small - it adds up over time",
+        "Set up automatic savings - even PKR 1,000 per month makes a difference",
+        "Review your subscriptions monthly and cancel unused ones",
+        "Use the 50/30/20 rule: 50% needs, 30% wants, 20% savings",
+        "Compare prices before making purchases over PKR 1,000"
+      ];
+      
+      const randomTip = generalTips[Math.floor(Math.random() * generalTips.length)];
+      
+      insights.push({
+        icon: Lightbulb,
+        color: "text-blue-400",
+        bgColor: "bg-blue-500/10",
+        borderColor: "border-blue-500/20",
+        message: `Money Tip: ${randomTip}`,
+        type: "tip",
+        priority: 4
+      });
     }
 
     // 5. Unusual spending patterns
@@ -215,7 +296,7 @@ export const useSmartInsights = () => {
     if (unusualPatterns.length > 0) {
       const pattern = unusualPatterns[0];
       insights.push({
-        icon: AlertCircle,
+        icon: AlertTriangle,
         color: "text-purple-400",
         bgColor: "bg-purple-500/10",
         borderColor: "border-purple-500/20",
@@ -228,13 +309,13 @@ export const useSmartInsights = () => {
     return insights
       .sort((a, b) => a.priority - b.priority)
       .slice(0, 4);
-  }, [currentSummary, previousSummary, allExpenses, categoryAnalysis, nextMonthPrediction, formatCurrency]);
+  }, [currentSummary, previousSummary, allExpenses, categoryAnalysis, predictions, formatCurrency]);
 
   return {
     insights,
     categoryAnalysis,
-    nextMonthPrediction,
-    isLoading: !currentSummary || !allExpenses,
+    predictions,
+    isLoading: isLoadingCurrentSummary || isLoadingPreviousSummary || isLoadingTransactions || !currentSummary || !allExpenses,
     currentMonthTotal: currentSummary?.total_expenses || 0,
     previousMonthTotal: previousSummary?.total_expenses || 0
   };

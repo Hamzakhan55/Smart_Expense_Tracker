@@ -3,12 +3,11 @@
 import { useState } from "react"
 import { useSmartInsights } from "@/hooks/useSmartInsights"
 import { useTheme } from "@/context/ThemeContext"
-import DetailedInsightsModal from "./DetailedInsightsModal"
-import { Sparkles, Brain, BarChart3, Zap, ArrowRight } from "lucide-react"
+import InfoTooltip from "@/components/InfoTooltip"
+import { Sparkles, Brain, BarChart3, Zap } from "lucide-react"
 
 const SmartInsightsWidget = () => {
-  const [showDetailedModal, setShowDetailedModal] = useState(false)
-  const { insights, isLoading, nextMonthPrediction, currentMonthTotal, previousMonthTotal } = useSmartInsights()
+  const { insights, isLoading, predictions, currentMonthTotal, previousMonthTotal } = useSmartInsights()
   const { getCardClass } = useTheme()
 
   if (isLoading) {
@@ -46,8 +45,11 @@ const SmartInsightsWidget = () => {
               <Brain className="text-white" size={20} />
               <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
             </div>
-            <div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Smart Insights</h3>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Smart Insights</h3>
+                <InfoTooltip content="AI analyzes your spending patterns to provide personalized predictions, alerts about unusual spending, money-saving tips, and insights about your financial habits. These insights help you make better financial decisions." />
+              </div>
               <p className="text-sm text-slate-500 dark:text-slate-400">AI-powered financial intelligence</p>
             </div>
           </div>
@@ -105,38 +107,30 @@ const SmartInsightsWidget = () => {
               <div className="w-20 h-20 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
                 <Brain className="w-10 h-10 text-slate-400 dark:text-slate-500" />
               </div>
-              <h4 className="text-lg font-semibold text-slate-600 dark:text-slate-300 mb-2">Building Intelligence</h4>
+              <h4 className="text-lg font-semibold text-slate-600 dark:text-slate-300 mb-2">Getting Ready to Help You</h4>
               <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mx-auto leading-relaxed">
-                Add more transactions to unlock personalized AI insights and predictions
+                I need to learn about your spending habits first! Add some expenses and income transactions, and I'll start providing personalized insights about your money, predictions for future spending, and tips to save money.
               </p>
+              <div className="mt-4 text-xs text-slate-400 dark:text-slate-500">
+                💡 Tip: Add at least 5-10 transactions to get meaningful insights
+              </div>
             </div>
           )}
         </div>
 
-        {/* Footer with View Details button */}
+        {/* Footer */}
         {insights.length > 0 && (
           <div className="mt-6 pt-6 border-t border-slate-200/50 dark:border-slate-700/50">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-center">
               <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                 <span>AI Active • Real-time analysis</span>
               </div>
-              <button
-                onClick={() => setShowDetailedModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white text-sm font-medium rounded-xl transition-all duration-200 hover:shadow-lg hover:scale-105"
-              >
-                <span>View Details</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
             </div>
           </div>
         )}
       </div>
-      
-      <DetailedInsightsModal 
-        isOpen={showDetailedModal} 
-        onClose={() => setShowDetailedModal(false)} 
-      />
+
     </div>
   )
 }

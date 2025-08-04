@@ -28,7 +28,7 @@ export const useTransactions = (search?: string) => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
       queryClient.invalidateQueries({ queryKey: ['goals'] });
       
-      // Force immediate refetch
+      // Force immediate refetch for live updates
       queryClient.refetchQueries({ queryKey: ['summary'] });
       queryClient.refetchQueries({ queryKey: ['expenses'] });
     },
@@ -46,7 +46,7 @@ export const useTransactions = (search?: string) => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
       queryClient.invalidateQueries({ queryKey: ['goals'] });
       
-      // Force immediate refetch
+      // Force immediate refetch for live updates
       queryClient.refetchQueries({ queryKey: ['summary'] });
       queryClient.refetchQueries({ queryKey: ['incomes'] });
     },
@@ -63,6 +63,7 @@ export const useTransactions = (search?: string) => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
       queryClient.invalidateQueries({ queryKey: ['goals'] });
       queryClient.refetchQueries({ queryKey: ['summary'] });
+      queryClient.refetchQueries({ queryKey: ['expenses'] });
     },
   });
 
@@ -74,6 +75,7 @@ export const useTransactions = (search?: string) => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
       queryClient.invalidateQueries({ queryKey: ['goals'] });
       queryClient.refetchQueries({ queryKey: ['summary'] });
+      queryClient.refetchQueries({ queryKey: ['incomes'] });
     },
   });
 
@@ -96,6 +98,7 @@ export const useTransactions = (search?: string) => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
       queryClient.invalidateQueries({ queryKey: ['goals'] });
       queryClient.refetchQueries({ queryKey: ['summary'] });
+      queryClient.refetchQueries({ queryKey: ['expenses'] });
     },
   });
 
@@ -107,6 +110,7 @@ export const useTransactions = (search?: string) => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
       queryClient.invalidateQueries({ queryKey: ['goals'] });
       queryClient.refetchQueries({ queryKey: ['summary'] });
+      queryClient.refetchQueries({ queryKey: ['incomes'] });
     },
   });
 
@@ -119,6 +123,9 @@ export const useTransactions = (search?: string) => {
       queryClient.invalidateQueries({ queryKey: ['summary'] });
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
       queryClient.invalidateQueries({ queryKey: ['goals'] });
+      queryClient.refetchQueries({ queryKey: ['expenses'] });
+      queryClient.refetchQueries({ queryKey: ['incomes'] });
+      queryClient.refetchQueries({ queryKey: ['summary'] });
     },
   });
 

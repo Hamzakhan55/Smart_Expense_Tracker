@@ -123,17 +123,20 @@ const DashboardScreen = () => {
       
       setMonthlySummary(summaryData);
       setRunningBalance(balanceData);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading dashboard data:', error);
-      // Use mock data if API fails
+      // Use mock data if API fails or user not authenticated
+      if (error.response?.status === 401) {
+        console.log('User not authenticated, using demo data');
+      }
       setMonthlySummary({
         year: currentYear,
         month: currentMonth,
-        total_income: 5000,
-        total_expenses: 3200,
-        net_balance: 1800
+        total_income: 50000,
+        total_expenses: 32000,
+        net_balance: 18000
       });
-      setRunningBalance({ total_balance: 15000 });
+      setRunningBalance({ total_balance: 150000 });
     } finally {
       setIsLoading(false);
     }
@@ -169,14 +172,8 @@ const DashboardScreen = () => {
     ? ((monthlySummary.total_income - monthlySummary.total_expenses) / monthlySummary.total_income) * 100
     : 0;
 
-  const getInsightIcon = (type: string) => {
-    switch (type) {
-      case 'prediction': return 'trending-up'
-      case 'warning': return 'warning'
-      case 'success': return 'checkmark-circle'
-      case 'info': return 'information-circle'
-      default: return 'bulb'
-    }
+  const getInsightIcon = (iconName: string) => {
+    return iconName as keyof typeof Ionicons.glyphMap;
   };
 
   if (isLoading) {
@@ -261,7 +258,24 @@ const DashboardScreen = () => {
 
         {/* Smart Insights */}
         <View style={styles.smartInsights}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Smart Insights</Text>
+          <View style={styles.sectionHeader}>
+            <View style={styles.headerLeft}>
+              <View style={styles.brainIconContainer}>
+                <Ionicons name="bulb" size={25} color="#FFFFFF" />
+                <View style={styles.liveDot} />
+              </View>
+              <View style={styles.headerText}>
+                <View style={styles.titleRow}>
+                  <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Smart Insights</Text>
+                </View>
+                <Text style={[styles.sectionSubtitle, { color: theme.colors.textSecondary }]}>AI-powered financial{"\n"}intelligence</Text>
+              </View>
+            </View>
+            <View style={styles.liveIndicator}>
+              <Ionicons name="flash" size={12} color="#8B5CF6" />
+              <Text style={styles.liveText}>LIVE</Text>
+            </View>
+          </View>
           {insightsLoading ? (
             <View style={[styles.insightCard, { backgroundColor: theme.colors.card }]}>
               <View style={styles.loadingInsight}>
@@ -271,28 +285,18 @@ const DashboardScreen = () => {
             </View>
           ) : (
             insights.map((insight, index) => (
-              <View key={index} style={[styles.insightCard, { backgroundColor: theme.colors.card }, styles[`insight${insight.type.charAt(0).toUpperCase() + insight.type.slice(1)}`]]}>
+              <View key={index} style={[styles.insightCard, { backgroundColor: insight.bgColor, borderLeftColor: insight.color }]}>
                 <View style={styles.insightHeader}>
-                  <View style={[styles.insightIcon, styles[`icon${insight.type.charAt(0).toUpperCase() + insight.type.slice(1)}`]]}>
+                  <View style={[styles.insightIcon, { backgroundColor: insight.color }]}>
                     <Ionicons 
-                      name={getInsightIcon(insight.type)} 
+                      name={getInsightIcon(insight.icon)} 
                       size={16} 
                       color="#FFFFFF" 
                     />
                   </View>
-                  <Text style={[styles.insightTitle, { color: theme.colors.text }]}>{insight.title}</Text>
+                  <Text style={[styles.insightTitle, { color: theme.colors.text }]}>{insight.type.toUpperCase()}</Text>
                 </View>
                 <Text style={[styles.insightMessage, { color: theme.colors.textSecondary }]}>{insight.message}</Text>
-                {insight.confidence && (
-                  <View style={styles.confidenceBar}>
-                    <View style={styles.confidenceLabel}>
-                      <Text style={styles.confidenceText}>Confidence: {Math.round(insight.confidence * 100)}%</Text>
-                    </View>
-                    <View style={styles.confidenceProgress}>
-                      <View style={[styles.confidenceFill, { width: `${insight.confidence * 100}%` }]} />
-                    </View>
-                  </View>
-                )}
               </View>
             ))
           )}
@@ -446,12 +450,21 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 16,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  infoIcon: {
+    marginLeft: 6,
   },
   actionGrid: {
-    gap: 12,
+    gap: 13,
+    marginTop: 10,
+    marginBottom: 10,
   },
   actionRow: {
     flexDirection: 'row',
@@ -486,6 +499,62 @@ const styles = StyleSheet.create({
   smartInsights: {
     marginBottom: 20,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  brainIconContainer: {
+    position: 'relative',
+    width: 40,
+    height: 40,
+    borderRadius: 16,
+    backgroundColor: '#8B5CF6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  liveDot: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#10B981',
+  },
+  headerText: {
+    flex: 1,
+  },
+  sectionSubtitle: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  liveIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  liveText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#8B5CF6',
+  },
   insightCard: {
     borderRadius: 16,
     padding: 16,
@@ -496,18 +565,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     borderLeftWidth: 4,
-  },
-  insightPrediction: {
-    borderLeftColor: '#3B82F6',
-  },
-  insightWarning: {
-    borderLeftColor: '#F59E0B',
-  },
-  insightSuccess: {
-    borderLeftColor: '#10B981',
-  },
-  insightInfo: {
-    borderLeftColor: '#8B5CF6',
   },
   insightHeader: {
     flexDirection: 'row',
@@ -521,18 +578,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
-  },
-  iconPrediction: {
-    backgroundColor: '#3B82F6',
-  },
-  iconWarning: {
-    backgroundColor: '#F59E0B',
-  },
-  iconSuccess: {
-    backgroundColor: '#10B981',
-  },
-  iconInfo: {
-    backgroundColor: '#8B5CF6',
   },
   insightTitle: {
     fontSize: 16,
