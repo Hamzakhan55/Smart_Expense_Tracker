@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Modal from 'react-native-modal';
 import { createGoal, updateGoalProgress, deleteGoal } from '../services/apiService';
 import { useCurrency } from '../context/CurrencyContext';
+import { useTheme } from '../context/ThemeContext';
 import { GoalCreate, Goal } from '../types';
 
 interface CreateGoalModalProps {
@@ -27,6 +28,7 @@ const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
   goal
 }) => {
   const { selectedCurrency } = useCurrency();
+  const { theme } = useTheme();
   const [name, setName] = useState('');
   const [targetAmount, setTargetAmount] = useState('');
   const [contributionAmount, setContributionAmount] = useState('');
@@ -139,16 +141,16 @@ const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
       animationOut="zoomOut"
       backdropOpacity={0.5}
     >
-      <View style={styles.modalContent}>
+      <View style={[styles.modalContent, { backgroundColor: theme.colors.card }]}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: theme.colors.card }]}>
           <View style={styles.headerLeft}>
             <View style={styles.iconContainer}>
               <Ionicons name="trophy" size={24} color="#FFFFFF" />
             </View>
             <View>
-              <Text style={styles.title}>{isEditMode ? 'Manage Goal' : 'Create New Goal'}</Text>
-              <Text style={styles.subtitle}>{isEditMode ? 'Add funds or manage your goal' : 'Set a new savings target'}</Text>
+              <Text style={[styles.title, { color: theme.colors.text }]}>{isEditMode ? 'Manage Goal' : 'Create New Goal'}</Text>
+              <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>{isEditMode ? 'Add funds or manage your goal' : 'Set a new savings target'}</Text>
             </View>
           </View>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -161,27 +163,27 @@ const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
             <>
               {/* Goal Name Field */}
               <View style={styles.fieldContainer}>
-                <Text style={styles.label}>Goal Name</Text>
+                <Text style={[styles.label, { color: theme.colors.text }]}>Goal Name</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, color: theme.colors.text }]}
                   value={name}
                   onChangeText={setName}
                   placeholder="e.g., Emergency Fund, Vacation"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={theme.colors.textSecondary}
                 />
               </View>
 
               {/* Target Amount Field */}
               <View style={styles.fieldContainer}>
-                <Text style={styles.label}>Target Amount</Text>
-                <View style={styles.inputContainer}>
+                <Text style={[styles.label, { color: theme.colors.text }]}>Target Amount</Text>
+                <View style={[styles.inputContainer, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
                   <TextInput
-                    style={styles.input}
+                    style={[styles.input, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, color: theme.colors.text }]}
                     value={targetAmount}
                     onChangeText={setTargetAmount}
                     placeholder="0.00"
                     keyboardType="numeric"
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor={theme.colors.textSecondary}
                   />
                   <Text style={styles.currency}>{selectedCurrency.code}</Text>
                 </View>
@@ -191,7 +193,7 @@ const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
             <>
               {/* Goal Progress */}
               <View style={styles.fieldContainer}>
-                <Text style={styles.label}>Progress</Text>
+                <Text style={[styles.label, { color: theme.colors.text }]}>Progress</Text>
                 <View style={styles.progressContainer}>
                   <Text style={styles.progressText}>
                     {selectedCurrency.symbol}{goal?.current_amount.toFixed(2)} / {selectedCurrency.symbol}{goal?.target_amount.toFixed(2)}
@@ -204,7 +206,7 @@ const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
 
               {/* Add/Withdraw Funds */}
               <View style={styles.fieldContainer}>
-                <Text style={styles.label}>Add/Withdraw Funds</Text>
+                <Text style={[styles.label, { color: theme.colors.text }]}>Add/Withdraw Funds</Text>
                 <View style={styles.inputContainer}>
                   <TextInput
                     style={styles.input}

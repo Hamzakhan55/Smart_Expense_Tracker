@@ -14,12 +14,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { LineChart, PieChart } from 'react-native-chart-kit';
 import { getHistoricalSummary, getExpenses, getCategoryBreakdown, getSpendingTrends, getAnalyticsStats } from '../services/apiService';
 import { useCurrency } from '../context/CurrencyContext';
+import { useTheme } from '../context/ThemeContext';
 import { HistoricalDataPoint, Expense, CategoryBreakdown, SpendingTrend, AnalyticsStats } from '../types';
 
 const { width } = Dimensions.get('window');
 
 const AnalyticsScreen = () => {
   const { formatCurrency } = useCurrency();
+  const { theme } = useTheme();
   const [historicalData, setHistoricalData] = useState<HistoricalDataPoint[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categoryData, setCategoryData] = useState<CategoryBreakdown[]>([]);
@@ -105,8 +107,8 @@ const AnalyticsScreen = () => {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading Analytics...</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
+        <Text style={[styles.loadingText, { color: theme.colors.text }]}>Loading Analytics...</Text>
       </View>
     );
   }
@@ -121,13 +123,13 @@ const AnalyticsScreen = () => {
   }));
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <LinearGradient
-        colors={['#F8FAFC', '#E2E8F0']}
+        colors={theme.gradients.background}
         style={styles.header}
       >
-        <Text style={styles.headerTitle}>Analytics</Text>
-        <Text style={styles.headerSubtitle}>Insights into your spending patterns</Text>
+        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Analytics</Text>
+        <Text style={[styles.headerSubtitle, { color: theme.colors.textSecondary }]}>Insights into your spending patterns</Text>
       </LinearGradient>
 
       <ScrollView
@@ -137,9 +139,9 @@ const AnalyticsScreen = () => {
         }
       >
         {/* Spending Trend Chart */}
-        <View style={styles.chartContainer}>
+        <View style={[styles.chartContainer, { backgroundColor: theme.colors.card }]}>
           <View style={styles.chartHeader}>
-            <Text style={styles.chartTitle}>Spending Trend</Text>
+            <Text style={[styles.chartTitle, { color: theme.colors.text }]}>Spending Trend</Text>
             <View style={styles.periodSelector}>
               <TouchableOpacity
                 style={[styles.periodButton, selectedPeriod === '3m' && styles.periodButtonActive]}
@@ -181,8 +183,8 @@ const AnalyticsScreen = () => {
         </View>
 
         {/* Category Breakdown */}
-        <View style={styles.chartContainer}>
-          <Text style={styles.chartTitle}>Category Breakdown</Text>
+        <View style={[styles.chartContainer, { backgroundColor: theme.colors.card }]}>
+          <Text style={[styles.chartTitle, { color: theme.colors.text }]}>Category Breakdown</Text>
           {pieChartData.length > 0 && (
             <View>
               <PieChart
@@ -211,7 +213,7 @@ const AnalyticsScreen = () => {
 
         {/* Quick Stats */}
         <View style={styles.statsContainer}>
-          <Text style={styles.sectionTitle}>Quick Stats</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Quick Stats</Text>
           <View style={styles.statsGrid}>
             <View style={styles.statCard}>
               <LinearGradient colors={['#EF4444', '#DC2626']} style={styles.statGradient}>

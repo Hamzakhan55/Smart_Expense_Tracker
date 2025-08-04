@@ -35,8 +35,10 @@ const SettingItem: React.FC<SettingItemProps> = ({
   onPress, 
   showArrow = true,
   danger = false 
-}) => (
-  <TouchableOpacity style={styles.settingItem} onPress={onPress}>
+}) => {
+  const { theme } = useTheme();
+  return (
+  <TouchableOpacity style={[styles.settingItem, { borderBottomColor: theme.colors.border }]} onPress={onPress}>
     <View style={[styles.settingIcon, danger && styles.settingIconDanger]}>
       <Ionicons 
         name={icon} 
@@ -45,11 +47,11 @@ const SettingItem: React.FC<SettingItemProps> = ({
       />
     </View>
     <View style={styles.settingContent}>
-      <Text style={[styles.settingTitle, danger && styles.settingTitleDanger]}>
+      <Text style={[styles.settingTitle, { color: danger ? '#EF4444' : theme.colors.text }]}>
         {title}
       </Text>
       {subtitle && (
-        <Text style={styles.settingSubtitle}>{subtitle}</Text>
+        <Text style={[styles.settingSubtitle, { color: theme.colors.textSecondary }]}>{subtitle}</Text>
       )}
     </View>
     {showArrow && (
@@ -60,11 +62,12 @@ const SettingItem: React.FC<SettingItemProps> = ({
       />
     )}
   </TouchableOpacity>
-);
+  );
+};
 
 const SettingsScreen = () => {
   const { user, logout } = useAuth();
-  const { isDarkMode, toggleTheme } = useTheme();
+  const { isDarkMode, toggleTheme, theme } = useTheme();
   const { selectedCurrency } = useCurrency();
   const [showCurrencySelector, setShowCurrencySelector] = useState(false);
 
@@ -209,19 +212,19 @@ const SettingsScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <LinearGradient
-        colors={['#F8FAFC', '#E2E8F0']}
+        colors={theme.gradients.background}
         style={styles.header}
       >
-        <Text style={styles.headerTitle}>Settings</Text>
-        <Text style={styles.headerSubtitle}>Manage your account and preferences</Text>
+        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Settings</Text>
+        <Text style={[styles.headerSubtitle, { color: theme.colors.textSecondary }]}>Manage your account and preferences</Text>
       </LinearGradient>
 
       <ScrollView style={styles.content}>
         {/* Profile Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Profile</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Profile</Text>
           <View style={styles.profileCard}>
             <LinearGradient
               colors={['#3B82F6', '#1E40AF']}
@@ -243,8 +246,8 @@ const SettingsScreen = () => {
 
         {/* Preferences Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Preferences</Text>
-          <View style={styles.settingsGroup}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Preferences</Text>
+          <View style={[styles.settingsGroup, { backgroundColor: theme.colors.card }]}>
             <SettingItem
               icon="notifications-outline"
               title="Notifications"
@@ -295,8 +298,8 @@ const SettingsScreen = () => {
 
         {/* Data Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Data</Text>
-          <View style={styles.settingsGroup}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Data</Text>
+          <View style={[styles.settingsGroup, { backgroundColor: theme.colors.card }]}>
             <SettingItem
               icon="download-outline"
               title="Export Data"
@@ -330,8 +333,8 @@ const SettingsScreen = () => {
 
         {/* Support Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Support</Text>
-          <View style={styles.settingsGroup}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Support</Text>
+          <View style={[styles.settingsGroup, { backgroundColor: theme.colors.card }]}>
             <SettingItem
               icon="help-circle-outline"
               title="Help & FAQ"
@@ -388,8 +391,8 @@ const SettingsScreen = () => {
 
         {/* Account Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account</Text>
-          <View style={styles.settingsGroup}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Account</Text>
+          <View style={[styles.settingsGroup, { backgroundColor: theme.colors.card }]}>
             <SettingItem
               icon="log-out-outline"
               title="Sign Out"
@@ -420,7 +423,6 @@ const SettingsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
   },
   header: {
     paddingTop: 20,
@@ -430,12 +432,10 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#1F2937',
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 16,
-    color: '#6B7280',
   },
   content: {
     flex: 1,
@@ -448,7 +448,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1F2937',
     marginBottom: 12,
   },
   profileCard: {
@@ -499,7 +498,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   settingsGroup: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     shadowColor: '#000',
     shadowOffset: {
@@ -515,7 +513,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
   },
   settingIcon: {
     width: 40,
@@ -535,15 +532,10 @@ const styles = StyleSheet.create({
   settingTitle: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#1F2937',
     marginBottom: 2,
-  },
-  settingTitleDanger: {
-    color: '#EF4444',
   },
   settingSubtitle: {
     fontSize: 14,
-    color: '#6B7280',
   },
 });
 

@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react"
 import { useTransactions } from "@/hooks/useTransactions"
 import { useCurrency } from "@/context/CurrencyContext"
+import { useTheme } from "@/context/ThemeContext"
 import TransactionList from "@/components/TransactionList"
 import { generateTransactionReport } from "@/services/reportService"
 import { Search, Filter, Calendar, Download, Plus, TrendingUp, TrendingDown, Receipt } from "lucide-react"
@@ -17,6 +18,7 @@ export default function TransactionsPage() {
 
   const { expenses, incomes, isLoading } = useTransactions(searchTerm)
   const { currency } = useCurrency()
+  const { getCardClass } = useTheme()
 
   // Calculate totals for the current filter
   const totalExpenses = expenses?.reduce((sum, expense) => sum + expense.amount, 0) || 0
@@ -140,8 +142,7 @@ export default function TransactionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Header Section */}
         <div className="text-center space-y-4">
           <div className="inline-flex items-center gap-3 px-6 py-3 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-full border border-white/20 dark:border-slate-700/50">
@@ -152,7 +153,7 @@ export default function TransactionsPage() {
         </div>
 
         {/* Stats Card */}
-        <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 dark:border-slate-700/50 overflow-hidden">
+        <div className={`${getCardClass()} overflow-hidden`}>
           <div className="p-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -175,7 +176,7 @@ export default function TransactionsPage() {
         </div>
 
         {/* Filters and Search */}
-        <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 dark:border-slate-700/50 overflow-hidden">
+        <div className={`${getCardClass()} overflow-hidden`}>
           <div className="p-8">
             <div className="flex flex-col lg:flex-row gap-6">
               {/* Search Bar */}
@@ -333,7 +334,7 @@ export default function TransactionsPage() {
         </div>
 
         {/* Transaction List */}
-        <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 dark:border-slate-700/50 overflow-hidden">
+        <div className={`${getCardClass()} overflow-hidden`}>
           <div className="p-2">
             <TransactionList 
               expenses={filteredTransactions.filter(t => t.type === 'expense').map(t => t.data)} 

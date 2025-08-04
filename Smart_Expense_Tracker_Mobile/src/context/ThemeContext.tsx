@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Appearance } from 'react-native';
+import { lightTheme, darkTheme, Theme } from '../utils/theme';
 
 interface ThemeContextType {
   isDarkMode: boolean;
   toggleTheme: () => void;
   isLoading: boolean;
+  theme: Theme;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -36,13 +38,11 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       if (savedTheme !== null) {
         setIsDarkMode(savedTheme === 'dark');
       } else {
-        // Use system preference if no saved theme
         const systemTheme = Appearance.getColorScheme();
         setIsDarkMode(systemTheme === 'dark');
       }
     } catch (error) {
       console.error('Error loading theme:', error);
-      // Fallback to system theme
       const systemTheme = Appearance.getColorScheme();
       setIsDarkMode(systemTheme === 'dark');
     } finally {
@@ -60,10 +60,13 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     }
   };
 
+  const theme = isDarkMode ? darkTheme : lightTheme;
+
   const value: ThemeContextType = {
     isDarkMode,
     toggleTheme,
     isLoading,
+    theme,
   };
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

@@ -16,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { getBudgets, createOrUpdateBudget, getExpenses, deleteBudget } from '../services/apiService';
 import { useCurrency } from '../context/CurrencyContext';
+import { useTheme } from '../context/ThemeContext';
 import { Budget, BudgetCreate, Expense } from '../types';
 import BudgetProgressCard from '../components/BudgetProgressCard';
 import BudgetSummary from '../components/BudgetSummary';
@@ -27,6 +28,7 @@ const { width } = Dimensions.get('window');
 
 const BudgetsScreen = () => {
   const { formatCurrency } = useCurrency();
+  const { theme } = useTheme();
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -139,22 +141,22 @@ const BudgetsScreen = () => {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading Budgets...</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
+        <Text style={[styles.loadingText, { color: theme.colors.text }]}>Loading Budgets...</Text>
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <LinearGradient
-        colors={['#F8FAFC', '#E2E8F0']}
+        colors={theme.gradients.background}
         style={styles.header}
       >
         <View style={styles.headerContent}>
           <View>
-            <Text style={styles.headerTitle}>Budgets</Text>
-            <Text style={styles.headerSubtitle}>
+            <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Budgets</Text>
+            <Text style={[styles.headerSubtitle, { color: theme.colors.textSecondary }]}>
               {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
             </Text>
           </View>
@@ -176,8 +178,8 @@ const BudgetsScreen = () => {
         {budgets.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="wallet-outline" size={64} color="#9CA3AF" />
-            <Text style={styles.emptyText}>No budgets set</Text>
-            <Text style={styles.emptySubtext}>Create your first budget to start tracking</Text>
+            <Text style={[styles.emptyText, { color: theme.colors.text }]}>No budgets set</Text>
+            <Text style={[styles.emptySubtext, { color: theme.colors.textSecondary }]}>Create your first budget to start tracking</Text>
             <TouchableOpacity style={styles.createButton} onPress={handleCreateBudget}>
               <LinearGradient colors={['#3B82F6', '#1E40AF']} style={styles.createButtonGradient}>
                 <Text style={styles.createButtonText}>Create Budget</Text>
@@ -207,12 +209,12 @@ const BudgetsScreen = () => {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowCreateModal(false)}
       >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
+        <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.colors.background }]}>
+          <View style={[styles.modalHeader, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border }]}>
             <TouchableOpacity onPress={() => setShowCreateModal(false)}>
               <Text style={styles.modalCancelText}>Cancel</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>
+            <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
               {editingBudget ? 'Edit Budget' : 'Create Budget'}
             </Text>
             <TouchableOpacity onPress={handleSaveBudget}>
@@ -222,24 +224,25 @@ const BudgetsScreen = () => {
 
           <View style={styles.modalContent}>
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Category</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Category</Text>
               <CategoryPicker
                 selectedCategory={formData.category}
                 onCategorySelect={(category) => setFormData({ ...formData, category })}
                 disabled={!!editingBudget}
               />
               {editingBudget && (
-                <Text style={styles.helperText}>Category cannot be changed when editing</Text>
+                <Text style={[styles.helperText, { color: theme.colors.textSecondary }]}>Category cannot be changed when editing</Text>
               )}
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Budget Amount</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Budget Amount</Text>
               <TextInput
-                style={styles.textInput}
+                style={[styles.textInput, { backgroundColor: theme.colors.card, color: theme.colors.text, borderColor: theme.colors.border }]}
                 value={formData.amount}
                 onChangeText={(text) => setFormData({ ...formData, amount: text })}
                 placeholder="Enter budget amount"
+                placeholderTextColor={theme.colors.textSecondary}
                 keyboardType="numeric"
               />
             </View>

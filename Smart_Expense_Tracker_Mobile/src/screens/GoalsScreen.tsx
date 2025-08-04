@@ -13,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { getGoals, updateGoalProgress, deleteGoal } from '../services/apiService';
 import { useCurrency } from '../context/CurrencyContext';
+import { useTheme } from '../context/ThemeContext';
 import { Goal } from '../types';
 import CreateGoalModal from '../components/CreateGoalModal';
 
@@ -24,6 +25,7 @@ interface GoalCardProps {
 
 const GoalCard: React.FC<GoalCardProps> = ({ goal, onPress, onLongPress }) => {
   const { formatCurrency } = useCurrency();
+  const { theme } = useTheme();
   const percentage = (goal.current_amount / goal.target_amount) * 100;
   const remaining = goal.target_amount - goal.current_amount;
   
@@ -36,15 +38,15 @@ const GoalCard: React.FC<GoalCardProps> = ({ goal, onPress, onLongPress }) => {
 
   return (
     <TouchableOpacity 
-      style={styles.goalCard} 
+      style={[styles.goalCard, { backgroundColor: theme.colors.card }]} 
       onPress={onPress}
       onLongPress={onLongPress}
       activeOpacity={0.7}
     >
       <View style={styles.goalHeader}>
         <View style={styles.goalInfo}>
-          <Text style={styles.goalName}>{goal.name}</Text>
-          <Text style={styles.goalTarget}>Target: {formatCurrency(goal.target_amount)}</Text>
+          <Text style={[styles.goalName, { color: theme.colors.text }]}>{goal.name}</Text>
+          <Text style={[styles.goalTarget, { color: theme.colors.textSecondary }]}>Target: {formatCurrency(goal.target_amount)}</Text>
         </View>
         <View style={[styles.goalIcon, { backgroundColor: getProgressColor() + '20' }]}>
           <Ionicons name="trophy" size={24} color={getProgressColor()} />
@@ -76,7 +78,7 @@ const GoalCard: React.FC<GoalCardProps> = ({ goal, onPress, onLongPress }) => {
           </View>
           <View style={styles.goalStat}>
             <Text style={styles.goalStatLabel}>Remaining</Text>
-            <Text style={styles.goalStatValue}>
+            <Text style={[styles.goalStatValue, { color: theme.colors.text }]}>
               {formatCurrency(remaining)}
             </Text>
           </View>
@@ -95,6 +97,7 @@ const GoalCard: React.FC<GoalCardProps> = ({ goal, onPress, onLongPress }) => {
 
 const GoalsScreen = () => {
   const { formatCurrency } = useCurrency();
+  const { theme } = useTheme();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -156,21 +159,21 @@ const GoalsScreen = () => {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading Goals...</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
+        <Text style={[styles.loadingText, { color: theme.colors.text }]}>Loading Goals...</Text>
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <LinearGradient
-        colors={['#F8FAFC', '#E2E8F0']}
+        colors={theme.gradients.background}
         style={styles.header}
       >
         <View style={styles.headerContent}>
           <View>
-            <Text style={styles.headerTitle}>Goals</Text>
+            <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Goals</Text>
           </View>
           <TouchableOpacity style={styles.createNewGoalButton} onPress={() => setShowCreateModal(true)}>
             <Ionicons name="add-circle" size={20} color="#FFFFFF" />
@@ -212,8 +215,8 @@ const GoalsScreen = () => {
         {goals.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="trophy-outline" size={64} color="#9CA3AF" />
-            <Text style={styles.emptyText}>No goals set</Text>
-            <Text style={styles.emptySubtext}>Create your first financial goal</Text>
+            <Text style={[styles.emptyText, { color: theme.colors.text }]}>No goals set</Text>
+            <Text style={[styles.emptySubtext, { color: theme.colors.textSecondary }]}>Create your first financial goal</Text>
             <TouchableOpacity style={styles.createButton} onPress={() => setShowCreateModal(true)}>
               <LinearGradient colors={['#8B5CF6', '#7C3AED']} style={styles.createButtonGradient}>
                 <Text style={styles.createButtonText}>Create Goal</Text>

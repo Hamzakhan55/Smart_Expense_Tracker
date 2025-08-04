@@ -5,6 +5,7 @@ import type React from "react"
 import { useSummary } from "@/hooks/useSummary"
 import { useTransactions } from "@/hooks/useTransactions"
 import { useCurrency } from "@/context/CurrencyContext"
+import { useTheme } from "@/context/ThemeContext"
 import TransactionList from "@/components/TransactionList"
 import QuickAddWidget from "@/components/QuickAddWidget"
 import BudgetAlertsWidget from "@/components/BudgetAlertsWidget"
@@ -86,6 +87,7 @@ const StatCard = ({
 export default function DashboardPage() {
   const { monthlySummary, runningBalance, isLoading, error } = useSummary()
   const { expenses, incomes, isLoading: isTransactionsLoading, processVoice, isProcessingVoice } = useTransactions()
+  const { getBackgroundClass, getCardClass, getTextClass } = useTheme()
   const [aiData, setAiData] = useState<AiResponse | null>(null)
   const currentMonth = new Date().getMonth() + 1
   const currentYear = new Date().getFullYear()
@@ -124,10 +126,10 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center">
+      <div className={`${getBackgroundClass()} flex items-center justify-center`}>
         <div className="text-center space-y-4">
           <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
-          <p className="text-xl font-medium text-slate-600 dark:text-slate-300">Loading Dashboard...</p>
+          <p className={`text-xl font-medium ${getTextClass()}`}>Loading Dashboard...</p>
         </div>
       </div>
     )
@@ -135,8 +137,8 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center">
-        <div className="text-center space-y-4 p-8 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-3xl border border-red-200 dark:border-red-800">
+      <div className={`${getBackgroundClass()} flex items-center justify-center`}>
+        <div className={`text-center space-y-4 p-8 ${getCardClass()} border-red-200 dark:border-red-800`}>
           <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto">
             <TrendingDown className="w-8 h-8 text-red-600 dark:text-red-400" />
           </div>
@@ -148,8 +150,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
         
 
         {/* Stats Grid */}
@@ -239,12 +240,12 @@ export default function DashboardPage() {
         {/* Recent Transactions */}
         <div className="space-y-6">
           <div className="text-center lg:text-left">
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 dark:from-white dark:via-blue-100 dark:to-indigo-100 bg-clip-text text-transparent mb-2">
+            <h2 className={`text-3xl font-bold ${getTextClass()} mb-2`}>
               Recent Transactions
             </h2>
             <p className="text-slate-600 dark:text-slate-400 text-lg">Your latest financial activity</p>
           </div>
-          <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 dark:border-slate-700/50 overflow-hidden">
+          <div className={`${getCardClass()} overflow-hidden`}>
             <TransactionList
               expenses={expenses?.slice(0, 10)}
               incomes={incomes?.slice(0, 10)}
@@ -261,7 +262,5 @@ export default function DashboardPage() {
         </div>
 
         <AiConfirmationModal aiData={aiData} onClose={() => setAiData(null)} />
-      </div>
-    </div>
   )
 }

@@ -2,12 +2,14 @@
 
 import { useBudgets } from "@/hooks/useBudgets"
 import { useCurrency } from "@/context/CurrencyContext"
+import { useTheme } from "@/context/ThemeContext"
 import { AlertTriangle, Target } from "lucide-react"
 
 const BudgetAlertsWidget = () => {
   const today = new Date()
   const { budgets, spendingByCategory } = useBudgets(today.getFullYear(), today.getMonth() + 1)
   const { currency } = useCurrency()
+  const { getCardClass } = useTheme()
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 0 }).format(amount)
@@ -35,7 +37,7 @@ const BudgetAlertsWidget = () => {
   }
 
   return (
-    <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 dark:border-slate-700/50 overflow-hidden group hover:shadow-2xl transition-all duration-300">
+    <div className={`${getCardClass()} overflow-hidden group hover:shadow-2xl transition-all duration-300`}>
       <div className="p-8">
         <div className="flex items-center gap-3 mb-8">
           <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl shadow-lg">

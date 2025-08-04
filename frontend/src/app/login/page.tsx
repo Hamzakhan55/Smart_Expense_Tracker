@@ -5,6 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/context/AuthContext"
+import { useTheme } from "@/context/ThemeContext"
 import { login } from "@/services/apiService"
 import Link from "next/link"
 import BackendStatus from "@/components/BackendStatus"
@@ -32,6 +33,7 @@ export default function LoginPage() {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false)
 
   const { login: authLogin } = useAuth()
+  const { getBackgroundClass } = useTheme()
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -98,7 +100,7 @@ export default function LoginPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex">
+    <div className={`${getBackgroundClass()} flex`}>
       <BackendStatus />
       {/* Left Side - Branding & Features */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">

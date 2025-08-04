@@ -2,16 +2,18 @@
 
 import { useState } from "react"
 import { useSmartInsights } from "@/hooks/useSmartInsights"
+import { useTheme } from "@/context/ThemeContext"
 import DetailedInsightsModal from "./DetailedInsightsModal"
 import { Sparkles, Brain, BarChart3, Zap, ArrowRight } from "lucide-react"
 
 const SmartInsightsWidget = () => {
   const [showDetailedModal, setShowDetailedModal] = useState(false)
   const { insights, isLoading, nextMonthPrediction, currentMonthTotal, previousMonthTotal } = useSmartInsights()
+  const { getCardClass } = useTheme()
 
   if (isLoading) {
     return (
-      <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 dark:border-slate-700/50 overflow-hidden">
+      <div className={`${getCardClass()} overflow-hidden`}>
         <div className="p-8">
           <div className="flex items-center gap-3 mb-8">
             <div className="p-3 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl shadow-lg animate-pulse">
@@ -35,7 +37,7 @@ const SmartInsightsWidget = () => {
   }
 
   return (
-    <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 dark:border-slate-700/50 overflow-hidden group hover:shadow-2xl transition-all duration-300">
+    <div className={`${getCardClass()} overflow-hidden group hover:shadow-2xl transition-all duration-300`}>
       <div className="p-8">
         {/* Header with enhanced styling */}
         <div className="flex items-center justify-between mb-8">

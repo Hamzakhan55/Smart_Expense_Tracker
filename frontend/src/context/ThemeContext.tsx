@@ -1,10 +1,17 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { themeConfig, type ThemeConfig } from '@/lib/theme';
 
 interface ThemeContextType {
   isDark: boolean;
   toggleTheme: () => void;
+  theme: ThemeConfig;
+  getBackgroundClass: () => string;
+  getCardClass: () => string;
+  getModalClass: () => string;
+  getTextClass: (variant?: 'primary' | 'secondary' | 'muted' | 'accent') => string;
+  getBorderClass: (variant?: 'primary' | 'secondary' | 'accent') => string;
 }
 
 const ThemeContext = createContext<ThemeContextType>(null!);
@@ -40,12 +47,29 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const theme = isDark ? themeConfig.dark : themeConfig.light;
+
+  const getBackgroundClass = () => `min-h-screen bg-gradient-to-br ${theme.background.primary}`;
+  const getCardClass = () => `${theme.background.card} border ${theme.border.primary} rounded-3xl ${theme.shadow.card}`;
+  const getModalClass = () => `${theme.background.modal} border ${theme.border.primary} rounded-3xl ${theme.shadow.modal}`;
+  const getTextClass = (variant: 'primary' | 'secondary' | 'muted' | 'accent' = 'primary') => theme.text[variant];
+  const getBorderClass = (variant: 'primary' | 'secondary' | 'accent' = 'primary') => theme.border[variant];
+
   if (!mounted) {
     return <>{children}</>;
   }
 
   return (
-    <ThemeContext.Provider value={{ isDark, toggleTheme }}>
+    <ThemeContext.Provider value={{ 
+      isDark, 
+      toggleTheme, 
+      theme,
+      getBackgroundClass, 
+      getCardClass,
+      getModalClass,
+      getTextClass, 
+      getBorderClass 
+    }}>
       {children}
     </ThemeContext.Provider>
   );

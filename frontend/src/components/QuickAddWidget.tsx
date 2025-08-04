@@ -5,6 +5,7 @@ import type React from "react"
 import { useState } from "react"
 import { useTransactions } from "@/hooks/useTransactions"
 import { useCurrency } from "@/context/CurrencyContext"
+import { useTheme } from "@/context/ThemeContext"
 import { EXPENSE_CATEGORIES, INCOME_SOURCES } from "@/lib/constants"
 import { Plus, CreditCard, Wallet, Tag } from "lucide-react"
 
@@ -17,6 +18,7 @@ const QuickAddWidget = () => {
 
   const { addExpense, addIncome, isCreating } = useTransactions()
   const { currency } = useCurrency()
+  const { getCardClass } = useTheme()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,7 +39,7 @@ const QuickAddWidget = () => {
   }
 
   return (
-    <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 dark:border-slate-700/50 overflow-hidden group hover:shadow-2xl transition-all duration-300">
+    <div className={`${getCardClass()} overflow-hidden group hover:shadow-2xl transition-all duration-300`}>
       <div className="p-8">
         <div className="flex items-center gap-3 mb-8">
           <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg">

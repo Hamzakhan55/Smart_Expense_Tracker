@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Modal from 'react-native-modal';
 import { createExpense, createIncome } from '../services/apiService';
 import { useCurrency } from '../context/CurrencyContext';
+import { useTheme } from '../context/ThemeContext';
 
 interface QuickAddModalProps {
   isVisible: boolean;
@@ -49,6 +50,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
   hideTypeSelector = false
 }) => {
   const { selectedCurrency } = useCurrency();
+  const { theme } = useTheme();
   const [type, setType] = useState<'expense' | 'income'>(initialType);
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState(EXPENSE_CATEGORIES[0]);
@@ -109,16 +111,16 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
       animationIn="slideInUp"
       animationOut="slideOutDown"
     >
-      <View style={styles.modalContent}>
+      <View style={[styles.modalContent, { backgroundColor: theme.colors.card }]}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: theme.colors.border }]}>
           <View style={styles.headerLeft}>
             <View style={[styles.iconContainer, type === 'expense' ? styles.expenseIcon : styles.incomeIcon]}>
               <Ionicons name={type === 'expense' ? 'remove-circle' : 'add-circle'} size={24} color="#FFFFFF" />
             </View>
             <View>
-              <Text style={styles.title}>Add {type === 'expense' ? 'Expense' : 'Income'}</Text>
-              <Text style={styles.subtitle}>Track your {type}</Text>
+              <Text style={[styles.title, { color: theme.colors.text }]}>Add {type === 'expense' ? 'Expense' : 'Income'}</Text>
+              <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>Track your {type}</Text>
             </View>
           </View>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -130,7 +132,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
           {/* Type Selector */}
           {!hideTypeSelector && (
             <View style={styles.fieldContainer}>
-              <Text style={styles.label}>Type</Text>
+              <Text style={[styles.label, { color: theme.colors.text }]}>Type</Text>
               <View style={styles.typeSelector}>
                 <TouchableOpacity
                   style={[styles.typeButton, type === 'expense' && styles.typeButtonActive]}
@@ -154,15 +156,15 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
 
           {/* Amount Field */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Amount</Text>
-            <View style={styles.inputContainer}>
+            <Text style={[styles.label, { color: theme.colors.text }]}>Amount</Text>
+            <View style={[styles.inputContainer, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: theme.colors.text }]}
                 value={amount}
                 onChangeText={setAmount}
                 placeholder="0.00"
                 keyboardType="numeric"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={theme.colors.textSecondary}
               />
               <Text style={styles.currency}>{selectedCurrency.code}</Text>
             </View>
@@ -170,7 +172,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
 
           {/* Category Field */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Category</Text>
+            <Text style={[styles.label, { color: theme.colors.text }]}>Category</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
               {categories.map((cat) => (
                 <TouchableOpacity
@@ -194,13 +196,13 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
 
           {/* Description Field */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Description</Text>
+            <Text style={[styles.label, { color: theme.colors.text }]}>Description</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, color: theme.colors.text, borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, height: 48 }]}
               value={description}
               onChangeText={setDescription}
               placeholder="Optional description"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={theme.colors.textSecondary}
               multiline
             />
           </View>

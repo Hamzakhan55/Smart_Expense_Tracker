@@ -12,6 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
+import { useTheme } from '../context/ThemeContext';
 import { getMonthlySummary, getRunningBalance } from '../services/apiService';
 import { MonthlySummary, RunningBalance, AiResponse } from '../types';
 import { useNavigation } from '@react-navigation/native';
@@ -94,6 +95,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, amount, icon, colors, change
 
 const DashboardScreen = () => {
   const { user, logout } = useAuth();
+  const { theme } = useTheme();
   const navigation = useNavigation();
   const [monthlySummary, setMonthlySummary] = useState<MonthlySummary | null>(null);
   const [runningBalance, setRunningBalance] = useState<RunningBalance | null>(null);
@@ -179,15 +181,15 @@ const DashboardScreen = () => {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading Dashboard...</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
+        <Text style={[styles.loadingText, { color: theme.colors.text }]}>Loading Dashboard...</Text>
       </View>
     );
   }
 
   return (
     <ScrollView 
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }>
@@ -235,7 +237,7 @@ const DashboardScreen = () => {
         </View>
 
         <View style={styles.quickActions}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Quick Actions</Text>
           <View style={styles.actionGrid}>
             <View style={styles.actionRow}>
               <TouchableOpacity style={styles.actionCard} onPress={() => setShowExpenseModal(true)}>
@@ -259,17 +261,17 @@ const DashboardScreen = () => {
 
         {/* Smart Insights */}
         <View style={styles.smartInsights}>
-          <Text style={styles.sectionTitle}>Smart Insights</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Smart Insights</Text>
           {insightsLoading ? (
-            <View style={styles.insightCard}>
+            <View style={[styles.insightCard, { backgroundColor: theme.colors.card }]}>
               <View style={styles.loadingInsight}>
                 <View style={styles.loadingDot} />
-                <Text style={styles.loadingText}>Analyzing your data...</Text>
+                <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>Analyzing your data...</Text>
               </View>
             </View>
           ) : (
             insights.map((insight, index) => (
-              <View key={index} style={[styles.insightCard, styles[`insight${insight.type.charAt(0).toUpperCase() + insight.type.slice(1)}`]]}>
+              <View key={index} style={[styles.insightCard, { backgroundColor: theme.colors.card }, styles[`insight${insight.type.charAt(0).toUpperCase() + insight.type.slice(1)}`]]}>
                 <View style={styles.insightHeader}>
                   <View style={[styles.insightIcon, styles[`icon${insight.type.charAt(0).toUpperCase() + insight.type.slice(1)}`]]}>
                     <Ionicons 
@@ -278,9 +280,9 @@ const DashboardScreen = () => {
                       color="#FFFFFF" 
                     />
                   </View>
-                  <Text style={styles.insightTitle}>{insight.title}</Text>
+                  <Text style={[styles.insightTitle, { color: theme.colors.text }]}>{insight.title}</Text>
                 </View>
-                <Text style={styles.insightMessage}>{insight.message}</Text>
+                <Text style={[styles.insightMessage, { color: theme.colors.textSecondary }]}>{insight.message}</Text>
                 {insight.confidence && (
                   <View style={styles.confidenceBar}>
                     <View style={styles.confidenceLabel}>
@@ -328,17 +330,14 @@ const DashboardScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
   },
   loadingText: {
     fontSize: 18,
-    color: '#6B7280',
     fontWeight: '500',
   },
   headerGradient: {
@@ -449,7 +448,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1F2937',
     marginBottom: 16,
   },
   actionGrid: {
@@ -489,7 +487,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   insightCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
@@ -540,11 +537,9 @@ const styles = StyleSheet.create({
   insightTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
   },
   insightMessage: {
     fontSize: 14,
-    color: '#6B7280',
     lineHeight: 20,
     marginBottom: 8,
   },

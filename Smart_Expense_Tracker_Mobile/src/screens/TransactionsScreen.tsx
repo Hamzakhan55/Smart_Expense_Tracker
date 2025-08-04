@@ -20,6 +20,7 @@ import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 import { getExpenses, getIncomes, exportTransactionsPDF, exportFilteredTransactionsPDF } from '../services/apiService';
 import { useCurrency } from '../context/CurrencyContext';
+import { useTheme } from '../context/ThemeContext';
 import { Expense, Income } from '../types';
 
 interface TransactionItemProps {
@@ -29,6 +30,7 @@ interface TransactionItemProps {
 
 const TransactionItem: React.FC<TransactionItemProps> = ({ item, type }) => {
   const { formatCurrency } = useCurrency();
+  const { theme } = useTheme();
 
   const getCategoryIcon = (category: string) => {
     const iconMap: { [key: string]: keyof typeof Ionicons.glyphMap } = {
@@ -47,7 +49,7 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ item, type }) => {
   };
 
   return (
-    <View style={styles.transactionItem}>
+    <View style={[styles.transactionItem, { backgroundColor: theme.colors.card }]}>
       <View style={[
         styles.categoryIcon, 
         { backgroundColor: type === 'expense' ? '#FEE2E2' : '#D1FAE5' }
@@ -60,9 +62,9 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ item, type }) => {
       </View>
       
       <View style={styles.transactionDetails}>
-        <Text style={styles.transactionDescription}>{item.description}</Text>
-        <Text style={styles.transactionCategory}>{item.category}</Text>
-        <Text style={styles.transactionDate}>{new Date(item.date).toLocaleDateString()}</Text>
+        <Text style={[styles.transactionDescription, { color: theme.colors.text }]}>{item.description}</Text>
+        <Text style={[styles.transactionCategory, { color: theme.colors.textSecondary }]}>{item.category}</Text>
+        <Text style={[styles.transactionDate, { color: theme.colors.textSecondary }]}>{new Date(item.date).toLocaleDateString()}</Text>
       </View>
       
       <Text style={[
@@ -76,6 +78,7 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ item, type }) => {
 };
 
 const TransactionsScreen = () => {
+  const { theme } = useTheme();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -344,22 +347,22 @@ const TransactionsScreen = () => {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading Transactions...</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
+        <Text style={[styles.loadingText, { color: theme.colors.text }]}>Loading Transactions...</Text>
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <LinearGradient
-        colors={['#F8FAFC', '#E2E8F0']}
+        colors={theme.gradients.background}
         style={styles.header}
       >
         <View style={styles.headerTop}>
           <View>
-            <Text style={styles.headerTitle}>Transactions</Text>
-            <Text style={styles.headerSubtitle}>Track your income and expenses</Text>
+            <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Transactions</Text>
+            <Text style={[styles.headerSubtitle, { color: theme.colors.textSecondary }]}>Track your income and expenses</Text>
           </View>
           <View style={styles.headerActions}>
             <TouchableOpacity style={styles.actionButton} onPress={() => setShowFilters(true)}>
@@ -378,9 +381,9 @@ const TransactionsScreen = () => {
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={16} color="#6B7280" style={styles.searchIcon} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: theme.colors.text }]}
             placeholder="Search transactions..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={theme.colors.textSecondary}
             value={searchText}
             onChangeText={setSearchText}
           />
@@ -426,8 +429,8 @@ const TransactionsScreen = () => {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Ionicons name="receipt-outline" size={64} color="#9CA3AF" />
-            <Text style={styles.emptyText}>No transactions found</Text>
-            <Text style={styles.emptySubtext}>Start by adding your first transaction</Text>
+            <Text style={[styles.emptyText, { color: theme.colors.text }]}>No transactions found</Text>
+            <Text style={[styles.emptySubtext, { color: theme.colors.textSecondary }]}>Start by adding your first transaction</Text>
           </View>
         }
       />
@@ -521,17 +524,14 @@ const TransactionsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
   },
   loadingText: {
     fontSize: 18,
-    color: '#6B7280',
     fontWeight: '500',
   },
   header: {
@@ -542,12 +542,10 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#1F2937',
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 16,
-    color: '#6B7280',
     marginBottom: 20,
   },
   filterContainer: {
@@ -582,7 +580,6 @@ const styles = StyleSheet.create({
   transactionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
     marginVertical: 4,
@@ -609,17 +606,14 @@ const styles = StyleSheet.create({
   transactionDescription: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
     marginBottom: 2,
   },
   transactionCategory: {
     fontSize: 14,
-    color: '#6B7280',
     marginBottom: 2,
   },
   transactionDate: {
     fontSize: 12,
-    color: '#9CA3AF',
   },
   transactionAmount: {
     fontSize: 16,
@@ -633,13 +627,11 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#6B7280',
     marginTop: 16,
     marginBottom: 4,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#9CA3AF',
   },
   headerTop: {
     flexDirection: 'row',
@@ -684,7 +676,6 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 40,
     fontSize: 14,
-    color: '#1F2937',
   },
   modal: {
     margin: 0,

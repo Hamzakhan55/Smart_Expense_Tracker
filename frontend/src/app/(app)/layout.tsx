@@ -1,11 +1,15 @@
+'use client';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Header from '@/components/Header';
 import NavigationBar from '@/components/Sidebar';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const { getBackgroundClass } = useTheme();
+  
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className={getBackgroundClass()}>
         <Header />
         <NavigationBar />
         
