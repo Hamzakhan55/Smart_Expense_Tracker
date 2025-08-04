@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { TouchableOpacity, StyleSheet, Alert, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Audio } from 'expo-av';
+import { Audio } from 'expo-audio';
 import * as FileSystem from 'expo-file-system';
 import { processVoiceDryRun } from '../services/apiService';
 import { parseVoiceText } from '../services/speechService';
@@ -206,7 +206,7 @@ export const VoiceInputFAB: React.FC<VoiceInputFABProps> = ({ onPress }) => {
 const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
-    bottom: 90,
+    bottom: 110,
     right: 20,
     width: 56,
     height: 56,

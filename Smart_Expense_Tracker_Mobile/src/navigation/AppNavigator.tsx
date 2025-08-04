@@ -1,12 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
+import { View, StyleSheet } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 import MobileNavbar from '../components/MobileNavbar';
-import { View } from 'react-native';
+import NavigationWrapper from '../components/NavigationWrapper';
 import VoiceInputFAB from '../components/VoiceInputFAB';
 
 // Screens
@@ -22,63 +22,45 @@ import SettingsScreen from '../screens/SettingsScreen';
 import { RootStackParamList, MainTabParamList } from '../types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
-const Tab = createBottomTabNavigator<MainTabParamList>();
 
 const MainTabNavigator = () => {
+  const { theme } = useTheme();
+  const [activeTab, setActiveTab] = useState('Dashboard');
+
+  const renderScreen = () => {
+    switch (activeTab) {
+      case 'Dashboard':
+        return <DashboardScreen />;
+      case 'Transactions':
+        return <TransactionsScreen />;
+      case 'Budgets':
+        return <BudgetsScreen />;
+      case 'Goals':
+        return <GoalsScreen />;
+      case 'Analytics':
+        return <AnalyticsScreen />;
+      case 'Settings':
+        return <SettingsScreen />;
+      default:
+        return <DashboardScreen />;
+    }
+  };
+
   return (
-    <View style={{ flex: 1 }}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <MobileNavbar />
-      <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName: keyof typeof Ionicons.glyphMap;
-
-          switch (route.name) {
-            case 'Dashboard':
-              iconName = focused ? 'home' : 'home-outline';
-              break;
-            case 'Transactions':
-              iconName = focused ? 'list' : 'list-outline';
-              break;
-            case 'Budgets':
-              iconName = focused ? 'wallet' : 'wallet-outline';
-              break;
-            case 'Goals':
-              iconName = focused ? 'trophy' : 'trophy-outline';
-              break;
-            case 'Analytics':
-              iconName = focused ? 'analytics' : 'analytics-outline';
-              break;
-            case 'Settings':
-              iconName = focused ? 'settings' : 'settings-outline';
-              break;
-            default:
-              iconName = 'home-outline';
-          }
-
-          return <Ionicons name={iconName} size={size} color={color} />;
-        },
-        tabBarActiveTintColor: '#3B82F6',
-        tabBarInactiveTintColor: '#6B7280',
-        tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopWidth: 1,
-          borderTopColor: '#E5E7EB',
-          paddingBottom: 5,
-          paddingTop: 5,
-          height: 70,
-        },
-        headerShown: false,
-      })}
-    >
-      <Tab.Screen name="Dashboard" component={DashboardScreen} />
-      <Tab.Screen name="Transactions" component={TransactionsScreen} />
-      <Tab.Screen name="Budgets" component={BudgetsScreen} />
-      <Tab.Screen name="Goals" component={GoalsScreen} />
-      <Tab.Screen name="Analytics" component={AnalyticsScreen} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
-    </Tab.Navigator>
-    <VoiceInputFAB />
+      
+      <View style={styles.screenContainer}>
+        {renderScreen()}
+      </View>
+      
+      <NavigationWrapper 
+        activeTab={activeTab} 
+        onTabPress={setActiveTab}
+        style="floating" // Change to "default" for standard bottom nav
+      />
+      
+      <VoiceInputFAB />
     </View>
   );
 };
@@ -105,5 +87,15 @@ const AppNavigator = () => {
     </NavigationContainer>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  screenContainer: {
+    flex: 1,
+    paddingBottom: 120, // Extra space for floating nav
+  },
+});
 
 export default AppNavigator;
