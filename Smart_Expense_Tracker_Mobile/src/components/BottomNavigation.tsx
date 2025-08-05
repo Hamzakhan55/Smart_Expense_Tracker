@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Dimensions,
   Animated,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -33,8 +34,8 @@ const tabs: TabItem[] = [
   },
   {
     name: 'Transactions',
-    icon: 'list-outline',
-    iconFocused: 'list',
+    icon: 'card-outline',
+    iconFocused: 'card',
     label: 'History',
   },
   {
@@ -72,18 +73,21 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
 
   const handleTabPress = (tabName: string) => {
     // Haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     
-    // Scale animation
+    // Enhanced scale animation with spring
     Animated.sequence([
       Animated.timing(scaleAnim, {
         toValue: 0.95,
-        duration: 100,
+        duration: 80,
         useNativeDriver: true,
       }),
-      Animated.timing(scaleAnim, {
+      Animated.spring(scaleAnim, {
         toValue: 1,
-        duration: 100,
+        tension: 300,
+        friction: 10,
         useNativeDriver: true,
       }),
     ]).start();
@@ -92,20 +96,27 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.surface }]}>
-      {/* Gradient overlay for visual depth */}
+    <View style={[
+      styles.container, 
+      { 
+        backgroundColor: theme.colors.surface,
+        borderTopColor: isDarkMode ? 'rgba(148, 163, 184, 0.1)' : 'rgba(107, 114, 128, 0.1)',
+      }
+    ]}>
+      {/* Enhanced gradient overlay */}
       <LinearGradient
-        colors={isDarkMode ? ['rgba(30, 41, 59, 0.95)', 'rgba(15, 23, 42, 0.98)'] : ['rgba(255, 255, 255, 0.95)', 'rgba(248, 250, 252, 0.98)']}
+        colors={isDarkMode 
+          ? ['rgba(30, 41, 59, 0.98)', 'rgba(15, 23, 42, 1)'] 
+          : ['rgba(255, 255, 255, 0.98)', 'rgba(248, 250, 252, 1)']
+        }
         style={styles.gradient}
       />
       
-      {/* Top border with gradient */}
-      <LinearGradient
-        colors={isDarkMode ? ['#334155', '#475569'] : ['#E5E7EB', '#D1D5DB']}
-        style={styles.topBorder}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-      />
+      {/* Refined top border */}
+      <View style={[
+        styles.topBorder,
+        { backgroundColor: isDarkMode ? 'rgba(148, 163, 184, 0.15)' : 'rgba(107, 114, 128, 0.15)' }
+      ]} />
 
       <View style={styles.tabContainer}>
         {tabs.map((tab) => {
@@ -119,37 +130,43 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
               <TouchableOpacity
                 style={styles.touchable}
                 onPress={() => handleTabPress(tab.name)}
-                activeOpacity={0.7}
+                activeOpacity={0.6}
               >
-                {/* Active tab background */}
+                {/* Enhanced active tab background */}
                 {isActive && (
                   <LinearGradient
-                    colors={['#3B82F6', '#1E40AF']}
+                    colors={[
+                      theme.colors.primary,
+                      isDarkMode ? '#1E40AF' : '#2563EB'
+                    ]}
                     style={styles.activeBackground}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
                   />
                 )}
                 
-                {/* Icon container with glow effect for active tab */}
+                {/* Enhanced icon container */}
                 <View style={[
                   styles.iconContainer,
                   isActive && styles.activeIconContainer
                 ]}>
                   <Ionicons
                     name={isActive ? tab.iconFocused : tab.icon}
-                    size={24}
+                    size={isActive ? 24 : 22}
                     color={isActive ? '#FFFFFF' : theme.colors.textSecondary}
+                    style={isActive ? styles.iconShadow : null}
                   />
                   
-                  {/* Active indicator dot */}
+                  {/* Refined active indicator */}
                   {isActive && (
                     <View style={[
-                      styles.activeDot,
+                      styles.activeIndicator,
                       { backgroundColor: '#FFFFFF' }
                     ]} />
                   )}
                 </View>
 
-                {/* Label */}
+                {/* Enhanced label styling */}
                 <Text 
                   numberOfLines={1}
                   style={[
@@ -157,6 +174,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
                     {
                       color: isActive ? theme.colors.primary : theme.colors.textSecondary,
                       fontWeight: isActive ? '600' : '500',
+                      opacity: isActive ? 1 : 0.8,
                     }
                   ]}>
                   {tab.label}
@@ -175,16 +193,17 @@ const { width } = Dimensions.get('window');
 const styles = StyleSheet.create({
   container: {
     position: 'relative',
-    paddingBottom: 20,
-    paddingTop: 8,
+    paddingBottom: Platform.OS === 'ios' ? 25 : 20,
+    paddingTop: 10,
+    borderTopWidth: 1,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: -4,
+      height: -6,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 12,
   },
   gradient: {
     position: 'absolute',
@@ -198,14 +217,14 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 1,
+    height: 2,
   },
   tabContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    paddingHorizontal: 2,
-    paddingTop: 4,
+    paddingHorizontal: 4,
+    paddingTop: 6,
   },
   tabItem: {
     flex: 1,
@@ -214,51 +233,67 @@ const styles = StyleSheet.create({
   touchable: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 4,
-    minWidth: 75,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    borderRadius: 18,
+    minWidth: 70,
   },
   activeBackground: {
     position: 'absolute',
-    top: 4,
-    left: 8,
-    right: 8,
-    bottom: 4,
-    borderRadius: 16,
-    opacity: 0.15,
+    top: 2,
+    left: 6,
+    right: 6,
+    bottom: 2,
+    borderRadius: 18,
+    opacity: 0.12,
+    shadowColor: '#3B82F6',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   iconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 34,
+    width: 32,
     height: 32,
     marginBottom: 4,
     position: 'relative',
   },
   activeIconContainer: {
-    transform: [{ scale: 1.1 }],
+    transform: [{ scale: 1.05 }],
   },
-  activeDot: {
+  iconShadow: {
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  activeIndicator: {
     position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    shadowColor: '#3B82F6',
+    top: -1,
+    right: -1,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    shadowColor: '#FFFFFF',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 1,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    shadowOpacity: 0.5,
+    shadowRadius: 2,
     elevation: 3,
   },
   tabLabel: {
     fontSize: 10,
     textAlign: 'center',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
+    letterSpacing: 0.2,
     marginTop: 2,
-    minWidth: 60,
+    minWidth: 65,
   },
 });
 
