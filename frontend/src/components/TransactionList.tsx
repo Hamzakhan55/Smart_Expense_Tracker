@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import TransactionDetailModal from "./TransactionDetailModal"
 import AddTransactionModal from "./AddTransactionModal"
+import CategoryIcon from "./CategoryIcon"
 import { useCurrency } from "@/context/CurrencyContext"
 import { TrendingUp, TrendingDown, Receipt } from "lucide-react"
 import type { Expense, Income } from "@/types"
@@ -156,24 +157,7 @@ const TransactionItemEnhanced = ({
     }
   }
 
-  const getCategoryIcon = (category: string) => {
-    const iconMap: { [key: string]: string } = {
-      "Food & Drinks": "🍽️",
-      Transport: "🚗",
-      Shopping: "🛍️",
-      Entertainment: "🎬",
-      Bills: "📄",
-      Health: "🏥",
-      Education: "📚",
-      Travel: "✈️",
-      Other: "📦",
-      Salary: "💰",
-      Freelance: "💼",
-      Investment: "📈",
-      Gift: "🎁",
-    }
-    return iconMap[category] || "📦"
-  }
+
 
   return (
     <div
@@ -190,13 +174,13 @@ const TransactionItemEnhanced = ({
       <div className="flex items-center gap-4">
         {/* Category Icon */}
         <div
-          className={`w-14 h-14 rounded-2xl flex items-center justify-center text-xl shadow-sm ${
+          className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm ${
             isIncome
-              ? "bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30"
-              : "bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/30 dark:to-pink-900/30"
+              ? "bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 text-emerald-600 dark:text-emerald-400"
+              : "bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/30 dark:to-pink-900/30 text-rose-600 dark:text-rose-400"
           }`}
         >
-          {getCategoryIcon(data.category)}
+          <CategoryIcon category={data.category} size={24} />
         </div>
 
         {/* Transaction Details */}

@@ -23,6 +23,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import { useTheme } from '../context/ThemeContext';
 import { Expense, Income } from '../types';
 import EditTransactionModal from '../components/EditTransactionModal';
+import CategoryIcon from '../components/CategoryIcon';
 
 interface TransactionItemProps {
   item: Expense | Income;
@@ -35,21 +36,7 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ item, type, onEdit, o
   const { formatCurrency } = useCurrency();
   const { theme } = useTheme();
 
-  const getCategoryIcon = (category: string) => {
-    const iconMap: { [key: string]: keyof typeof Ionicons.glyphMap } = {
-      'Food': 'restaurant',
-      'Transportation': 'car',
-      'Entertainment': 'game-controller',
-      'Shopping': 'bag',
-      'Bills': 'receipt',
-      'Healthcare': 'medical',
-      'Salary': 'cash',
-      'Freelance': 'laptop',
-      'Investment': 'trending-up',
-      'Other': 'ellipsis-horizontal',
-    };
-    return iconMap[category] || 'ellipsis-horizontal';
-  };
+
 
   return (
     <TouchableOpacity 
@@ -61,8 +48,8 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ item, type, onEdit, o
         styles.categoryIcon, 
         { backgroundColor: type === 'expense' ? '#FEE2E2' : '#D1FAE5' }
       ]}>
-        <Ionicons 
-          name={getCategoryIcon(item.category)} 
+        <CategoryIcon 
+          category={item.category} 
           size={20} 
           color={type === 'expense' ? '#EF4444' : '#10B981'} 
         />

@@ -15,6 +15,24 @@ import {
   Heart,            // For "Charity & Donations"
   CircleDashed,     // For "Miscellaneous"
   
+  // Income category icons
+  Banknote,         // For "Salary"
+  Briefcase,        // For "Freelance"
+  Building2,        // For "Business"
+  PiggyBank,        // For "Investment"
+  Building,         // For "Rental Income"
+  Coins,            // For "Dividends"
+  Percent,          // For "Interest"
+  Gift,             // For "Bonus"
+  HandCoins,        // For "Commission"
+  Clock,            // For "Pension"
+  Award,            // For "Scholarship"
+  Gift as GiftIcon, // For "Gift"
+  RotateCcw,        // For "Refund"
+  FileCheck,        // For "Grant"
+  Crown,            // For "Royalty"
+  Package,          // For "Other"
+  
   LucideProps
 } from 'lucide-react';
 
@@ -25,6 +43,7 @@ interface CategoryIconProps extends Omit<LucideProps, 'ref'> {
 
 const CategoryIcon = ({ category, ...props }: CategoryIconProps) => {
   switch (category.toLowerCase()) {
+    // Expense categories
     case 'food & drinks':
       return <UtensilsCrossed {...props} />;
     case 'transport':
@@ -55,7 +74,42 @@ const CategoryIcon = ({ category, ...props }: CategoryIconProps) => {
       return <Heart {...props} />;
     case 'miscellaneous':
       return <CircleDashed {...props} />;
-    // A default icon in case a category doesn't match
+    
+    // Income categories
+    case 'salary':
+      return <Banknote {...props} />;
+    case 'freelance':
+      return <Briefcase {...props} />;
+    case 'business':
+      return <Building2 {...props} />;
+    case 'investment':
+      return <PiggyBank {...props} />;
+    case 'rental income':
+      return <Building {...props} />;
+    case 'dividends':
+      return <Coins {...props} />;
+    case 'interest':
+      return <Percent {...props} />;
+    case 'bonus':
+      return <Gift {...props} />;
+    case 'commission':
+      return <HandCoins {...props} />;
+    case 'pension':
+      return <Clock {...props} />;
+    case 'scholarship':
+      return <Award {...props} />;
+    case 'gift':
+      return <GiftIcon {...props} />;
+    case 'refund':
+      return <RotateCcw {...props} />;
+    case 'grant':
+      return <FileCheck {...props} />;
+    case 'royalty':
+      return <Crown {...props} />;
+    case 'other':
+      return <Package {...props} />;
+    
+    // Default icon
     default:
       return <CircleDashed {...props} />;
   }
