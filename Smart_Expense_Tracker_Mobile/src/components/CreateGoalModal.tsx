@@ -33,6 +33,7 @@ const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
   const [targetAmount, setTargetAmount] = useState('');
   const [contributionAmount, setContributionAmount] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const isEditMode = !!goal;
 
   useEffect(() => {
@@ -68,12 +69,12 @@ const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
       };
 
       await createGoal(goalData);
-      Alert.alert('Success', 'Goal created successfully!');
+      Alert.alert('🎯 Success', 'Goal created successfully!');
       onSuccess?.();
       onClose();
     } catch (error) {
       console.error('Failed to create goal:', error);
-      Alert.alert('Error', 'Failed to create goal. Please try again.');
+      Alert.alert('❌ Error', 'Failed to create goal. Please try again.');
     } finally {
       setIsCreating(false);
     }
@@ -94,42 +95,37 @@ const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
         id: goal.id, 
         amount: isAdd ? amount : -amount 
       });
-      Alert.alert('Success', `Funds ${isAdd ? 'added' : 'withdrawn'} successfully!`);
+      Alert.alert(
+        isAdd ? '💰 Funds Added' : '💸 Funds Withdrawn', 
+        `${selectedCurrency.symbol}${amount} ${isAdd ? 'added to' : 'withdrawn from'} ${goal.name}`,
+        [{ text: 'OK', style: 'default' }]
+      );
       setContributionAmount('');
       onSuccess?.();
     } catch (error) {
       console.error('Failed to update goal:', error);
-      Alert.alert('Error', 'Failed to update goal. Please try again.');
+      Alert.alert('❌ Error', 'Failed to update goal. Please try again.');
     } finally {
       setIsCreating(false);
     }
   };
 
   const handleDelete = () => {
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
     if (!goal) return;
-    
-    Alert.alert(
-      'Delete Goal',
-      `Are you sure you want to delete "${goal.name}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteGoal(goal.id);
-              Alert.alert('Success', 'Goal deleted successfully!');
-              onSuccess?.();
-              onClose();
-            } catch (error) {
-              console.error('Failed to delete goal:', error);
-              Alert.alert('Error', 'Failed to delete goal.');
-            }
-          },
-        },
-      ]
-    );
+    try {
+      await deleteGoal(goal.id);
+      Alert.alert('✅ Success', 'Goal deleted successfully!');
+      onSuccess?.();
+      onClose();
+      setShowDeleteModal(false);
+    } catch (error) {
+      console.error('Failed to delete goal:', error);
+      Alert.alert('❌ Error', 'Failed to delete goal.');
+    }
   };
 
   return (
@@ -153,9 +149,7 @@ const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
               <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>{isEditMode ? 'Add funds or manage your goal' : 'Set a new savings target'}</Text>
             </View>
           </View>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Ionicons name="close" size={24} color="#6B7280" />
-          </TouchableOpacity>
+
         </View>
 
         <View style={styles.form}>
@@ -196,10 +190,10 @@ const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
                 <Text style={[styles.label, { color: theme.colors.text }]}>Progress</Text>
                 <View style={styles.progressContainer}>
                   <Text style={styles.progressText}>
-                    {selectedCurrency.symbol}{goal?.current_amount.toFixed(2)} / {selectedCurrency.symbol}{goal?.target_amount.toFixed(2)}
+                    {selectedCurrency.symbol}{Math.round(goal?.current_amount || 0)} / {selectedCurrency.symbol}{Math.round(goal?.target_amount || 0)}
                   </Text>
                   <Text style={styles.progressPercentage}>
-                    {((goal?.current_amount || 0) / (goal?.target_amount || 1) * 100).toFixed(1)}%
+                    {Math.round((goal?.current_amount || 0) / (goal?.target_amount || 1) * 100)}%
                   </Text>
                 </View>
               </View>
@@ -244,16 +238,16 @@ const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
           {isEditMode ? (
             <>
               <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={handleDelete}
-              >
-                <Text style={styles.deleteButtonText}>Delete</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
                 style={styles.cancelButton}
                 onPress={onClose}
               >
                 <Text style={styles.cancelButtonText}>Close</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={handleDelete}
+              >
+                <Text style={styles.deleteButtonText}>Delete</Text>
               </TouchableOpacity>
             </>
           ) : (
@@ -286,6 +280,57 @@ const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
           )}
         </View>
       </View>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isVisible={showDeleteModal}
+        onBackdropPress={() => setShowDeleteModal(false)}
+        style={styles.deleteModal}
+        animationIn="zoomIn"
+        animationOut="zoomOut"
+        backdropOpacity={0.6}
+      >
+        <View style={[styles.deleteModalContent, { backgroundColor: theme.colors.card }]}>
+          <View style={styles.deleteHeader}>
+            <View style={styles.deleteIconContainer}>
+              <Ionicons name="warning" size={32} color="#EF4444" />
+            </View>
+            <Text style={[styles.deleteTitle, { color: theme.colors.text }]}>Delete Goal</Text>
+            <Text style={[styles.deleteSubtitle, { color: theme.colors.textSecondary }]}>This action cannot be undone</Text>
+          </View>
+
+          <View style={[styles.deleteGoalInfo, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+            <View style={styles.deleteGoalIcon}>
+              <Ionicons name="trophy" size={20} color="#3B82F6" />
+            </View>
+            <View style={styles.deleteGoalDetails}>
+              <Text style={[styles.deleteGoalName, { color: theme.colors.text }]}>{goal?.name}</Text>
+              <Text style={[styles.deleteGoalAmount, { color: '#3B82F6' }]}>
+                {selectedCurrency.symbol}{Math.round(goal?.current_amount || 0)} / {selectedCurrency.symbol}{Math.round(goal?.target_amount || 0)}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.deleteButtons}>
+            <TouchableOpacity 
+              style={[styles.deleteCancelButton, { borderColor: theme.colors.border }]} 
+              onPress={() => setShowDeleteModal(false)}
+            >
+              <Text style={[styles.deleteCancelText, { color: theme.colors.textSecondary }]}>Cancel</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.deleteConfirmButton} 
+              onPress={confirmDelete}
+            >
+              <View style={styles.deleteLoadingContainer}>
+                <Ionicons name="trash" size={18} color="#FFFFFF" />
+                <Text style={styles.deleteConfirmText}>Delete</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </Modal>
   );
 };
@@ -326,7 +371,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#3B82F6',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
@@ -492,6 +537,111 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  deleteModal: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    margin: 20,
+  },
+  deleteModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 340,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 15,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 25,
+    elevation: 15,
+  },
+  deleteHeader: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  deleteIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#FEE2E2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  deleteTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  deleteSubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  deleteGoalInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 24,
+  },
+  deleteGoalIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  deleteGoalDetails: {
+    flex: 1,
+  },
+  deleteGoalName: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  deleteGoalAmount: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  deleteButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  deleteCancelButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteCancelText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  deleteConfirmButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteConfirmText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginLeft: 8,
+  },
+  deleteLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });
 

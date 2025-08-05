@@ -184,7 +184,7 @@ const GoalsScreen = () => {
         {goals.length > 0 && (
           <View style={styles.overallProgress}>
             <LinearGradient
-              colors={['#8B5CF6', '#7C3AED']}
+              colors={['#3B82F6', '#1E40AF']}
               style={styles.overallCard}
             >
               <View style={styles.overallHeader}>
@@ -218,7 +218,7 @@ const GoalsScreen = () => {
             <Text style={[styles.emptyText, { color: theme.colors.text }]}>No goals set</Text>
             <Text style={[styles.emptySubtext, { color: theme.colors.textSecondary }]}>Create your first financial goal</Text>
             <TouchableOpacity style={styles.createButton} onPress={() => setShowCreateModal(true)}>
-              <LinearGradient colors={['#8B5CF6', '#7C3AED']} style={styles.createButtonGradient}>
+              <LinearGradient colors={['#3B82F6', '#1E40AF']} style={styles.createButtonGradient}>
                 <Text style={styles.createButtonText}>Create Goal</Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   createNewGoalButton: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#3B82F6',
     borderRadius: 24,
     paddingHorizontal: 16,
     paddingVertical: 12,
