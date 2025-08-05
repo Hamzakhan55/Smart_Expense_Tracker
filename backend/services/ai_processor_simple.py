@@ -45,33 +45,40 @@ class AIProcessor:
         
         # Expense categories for classification
         self.expense_categories = [
-            "food and dining",
-            "transportation", 
-            "shopping",
-            "entertainment",
-            "utilities and bills",
-            "healthcare and medical",
-            "education",
-            "groceries",
-            "travel",
-            "personal care",
-            "home and garden",
-            "insurance",
-            "other"
+            "Food & Drinks",
+            "Transport",
+            "Utilities",
+            "Shopping",
+            "Electronics & Gadgets",
+            "Healthcare",
+            "Education",
+            "Rent",
+            "Bills",
+            "Entertainment",
+            "Investments",
+            "Personal Care",
+            "Family & Kids",
+            "Charity & Donations",
+            "Miscellaneous"
         ]
         
         # Fallback keyword mapping
         self.category_keywords = {
-            "food": ["food", "restaurant", "meal", "lunch", "dinner", "breakfast", "eat", "pizza", "burger", "coffee", "snack"],
-            "transport": ["transport", "taxi", "bus", "train", "fuel", "gas", "uber", "lyft", "metro", "parking", "toll"],
-            "shopping": ["shopping", "store", "buy", "purchase", "market", "mall", "clothes", "shirt", "amazon", "online"],
-            "entertainment": ["movie", "cinema", "game", "entertainment", "fun", "party", "concert", "netflix", "spotify"],
-            "utilities": ["electricity", "water", "gas", "internet", "phone", "bill", "utility", "wifi", "mobile"],
-            "healthcare": ["doctor", "medicine", "hospital", "pharmacy", "health", "medical", "dentist", "clinic"],
-            "education": ["book", "course", "school", "education", "tuition", "study", "university", "college"],
-            "groceries": ["grocery", "supermarket", "vegetables", "fruits", "milk", "bread", "walmart", "target"],
-            "travel": ["hotel", "flight", "vacation", "trip", "airbnb", "booking", "travel", "airline"],
-            "other": []
+            "Food & Drinks": ["food", "restaurant", "meal", "lunch", "dinner", "breakfast", "eat", "pizza", "burger", "coffee", "snack", "drinks", "beverage"],
+            "Transport": ["transport", "taxi", "bus", "train", "fuel", "gas", "uber", "lyft", "metro", "parking", "toll", "transportation"],
+            "Utilities": ["electricity", "water", "gas", "internet", "phone", "utility", "wifi", "mobile", "heating", "cooling"],
+            "Shopping": ["shopping", "store", "buy", "purchase", "market", "mall", "clothes", "shirt", "amazon", "online", "clothing"],
+            "Electronics & Gadgets": ["electronics", "gadgets", "phone", "laptop", "computer", "tablet", "headphones", "camera", "tv", "smartphone", "tech"],
+            "Healthcare": ["doctor", "medicine", "hospital", "pharmacy", "health", "medical", "dentist", "clinic", "healthcare"],
+            "Education": ["book", "course", "school", "education", "tuition", "study", "university", "college", "books", "supplies"],
+            "Rent": ["rent", "rental", "lease", "housing", "apartment", "house"],
+            "Bills": ["bill", "bills", "payment", "invoice", "subscription", "membership", "fee"],
+            "Entertainment": ["movie", "cinema", "game", "entertainment", "fun", "party", "concert", "netflix", "spotify", "theater"],
+            "Investments": ["investment", "stocks", "bonds", "mutual", "fund", "portfolio", "trading", "crypto", "bitcoin"],
+            "Personal Care": ["personal", "care", "beauty", "haircut", "salon", "spa", "cosmetics", "skincare", "grooming"],
+            "Family & Kids": ["family", "kids", "children", "baby", "childcare", "toys", "daycare", "babysitter"],
+            "Charity & Donations": ["charity", "donation", "donate", "nonprofit", "church", "temple", "mosque", "giving", "contribution"],
+            "Miscellaneous": []
         }
         
         print("Simplified AIProcessor initialized successfully.")
@@ -150,24 +157,10 @@ class AIProcessor:
             
             print(f"AI Classification: '{predicted_category}' (confidence: {confidence:.2f})")
             
-            # Map AI categories to our simplified categories
-            category_mapping = {
-                "food and dining": "food",
-                "transportation": "transport", 
-                "shopping": "shopping",
-                "entertainment": "entertainment",
-                "utilities and bills": "utilities",
-                "healthcare and medical": "healthcare",
-                "education": "education",
-                "groceries": "groceries",
-                "travel": "travel",
-                "personal care": "other",
-                "home and garden": "other",
-                "insurance": "other",
-                "other": "other"
-            }
+            # Direct mapping since we're using the exact category names
+            return predicted_category
             
-            return category_mapping.get(predicted_category, "other")
+
             
         except Exception as e:
             print(f"AI classification failed: {e}")
@@ -176,7 +169,7 @@ class AIProcessor:
     def classify_text_keywords(self, text: str) -> str:
         """Fallback keyword-based classification."""
         if not text:
-            return "other"
+            return "Miscellaneous"
         
         text_lower = text.lower()
         
@@ -185,13 +178,13 @@ class AIProcessor:
                 print(f"Keyword Classification: '{category}'")
                 return category
         
-        print(f"Keyword Classification: 'other'")
-        return "other"
+        print(f"Keyword Classification: 'Miscellaneous'")
+        return "Miscellaneous"
     
     def classify_text(self, text: str) -> str:
         """Classify text using AI model with keyword fallback."""
         if not text:
-            return "other"
+            return "Miscellaneous"
             
         # Try AI classification first
         if self.ai_available and self.classifier:
@@ -252,7 +245,7 @@ class AIProcessor:
         if not transcription:
             return {
                 "description": "Could not transcribe audio. Please try again or enter manually.",
-                "category": "other",
+                "category": "Miscellaneous",
                 "amount": 0.0
             }
         

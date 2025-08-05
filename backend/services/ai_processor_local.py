@@ -180,7 +180,7 @@ class AIProcessor:
     
     def classify_text(self, text: str) -> str:
         if not text:
-            return "Other"
+            return "Miscellaneous"
         
         # Use local DistilBERT model if available
         if self.category_model and self.category_tokenizer and self.label_encoder and DISTILBERT_AVAILABLE:
@@ -196,17 +196,17 @@ class AIProcessor:
                 
                 # Map your model's actual categories to frontend categories (exact match)
                 category_mapping = {
-                    "bills & fees": "Bills & Fees",
+                    "bills & fees": "Bills",
                     "education": "Education", 
                     "food & drinks": "Food & Drinks",
                     "healthcare": "Healthcare",
-                    "rent": "Other",
+                    "rent": "Rent",
                     "shopping": "Shopping",
                     "transport": "Transport",
-                    "utilities": "Bills & Fees"
+                    "utilities": "Utilities"
                 }
                 
-                mapped_category = category_mapping.get(predicted_label.lower(), "Other")
+                mapped_category = category_mapping.get(predicted_label.lower(), "Miscellaneous")
                 print(f"Mapped to: {mapped_category}")
                 return mapped_category
             except Exception as e:
@@ -217,14 +217,21 @@ class AIProcessor:
     
     def _classify_keywords(self, text: str) -> str:
         keywords = {
-            "Food & Drinks": ["food", "restaurant", "meal", "lunch", "dinner", "breakfast", "eat", "pizza", "burger", "coffee", "drink", "snack", "tea"],
-            "Transport": ["transport", "taxi", "bus", "train", "fuel", "gas", "uber", "lyft", "metro", "parking", "ride", "auto"],
-            "Shopping": ["shopping", "store", "buy", "purchase", "market", "mall", "clothes", "shirt", "amazon", "bag", "bags", "shoes", "dress", "bought"],
-            "Entertainment": ["movie", "cinema", "game", "entertainment", "fun", "party", "concert", "netflix", "show", "ticket"],
-            "Bills & Fees": ["electricity", "water", "gas", "internet", "phone", "bill", "utility", "wifi", "rent", "fee"],
-            "Healthcare": ["doctor", "medicine", "hospital", "pharmacy", "health", "medical", "dentist", "clinic"],
-            "Education": ["book", "course", "school", "education", "tuition", "study", "university", "college"],
-            "Other": []
+            "Food & Drinks": ["food", "restaurant", "meal", "lunch", "dinner", "breakfast", "eat", "pizza", "burger", "coffee", "drink", "snack", "tea", "beverage"],
+            "Transport": ["transport", "taxi", "bus", "train", "fuel", "gas", "uber", "lyft", "metro", "parking", "ride", "auto", "transportation"],
+            "Utilities": ["electricity", "water", "gas", "internet", "phone", "utility", "wifi", "mobile", "heating", "cooling"],
+            "Shopping": ["shopping", "store", "buy", "purchase", "market", "mall", "clothes", "shirt", "amazon", "bag", "bags", "shoes", "dress", "bought", "clothing"],
+            "Electronics & Gadgets": ["electronics", "gadgets", "phone", "laptop", "computer", "tablet", "headphones", "camera", "tv", "smartphone", "tech", "device"],
+            "Healthcare": ["doctor", "medicine", "hospital", "pharmacy", "health", "medical", "dentist", "clinic", "healthcare"],
+            "Education": ["book", "course", "school", "education", "tuition", "study", "university", "college", "books", "supplies"],
+            "Rent": ["rent", "rental", "lease", "housing", "apartment", "house"],
+            "Bills": ["bill", "bills", "payment", "invoice", "subscription", "membership", "fee"],
+            "Entertainment": ["movie", "cinema", "game", "entertainment", "fun", "party", "concert", "netflix", "show", "ticket", "theater"],
+            "Investments": ["investment", "stocks", "bonds", "mutual", "fund", "portfolio", "trading", "crypto", "bitcoin"],
+            "Personal Care": ["personal", "care", "beauty", "haircut", "salon", "spa", "cosmetics", "skincare", "grooming"],
+            "Family & Kids": ["family", "kids", "children", "baby", "childcare", "toys", "daycare", "babysitter"],
+            "Charity & Donations": ["charity", "donation", "donate", "nonprofit", "church", "temple", "mosque", "giving", "contribution"],
+            "Miscellaneous": []
         }
         
         text_lower = text.lower()
@@ -248,8 +255,8 @@ class AIProcessor:
             print(f"Best match: {best_category} with score {category_scores[best_category]}")
             return best_category
         
-        print("No keyword matches found, defaulting to Other")
-        return "Other"
+        print("No keyword matches found, defaulting to Miscellaneous")
+        return "Miscellaneous"
     
     def extract_amount(self, text: str) -> float:
         if not text:

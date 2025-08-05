@@ -23,13 +23,20 @@ interface AiConfirmationModalProps {
 
 const EXPENSE_CATEGORIES = [
   'Food & Drinks',
-  'Transport', 
+  'Transport',
+  'Utilities',
   'Shopping',
-  'Entertainment',
-  'Bills & Fees',
+  'Electronics & Gadgets',
   'Healthcare',
   'Education',
-  'Other'
+  'Rent',
+  'Bills',
+  'Entertainment',
+  'Investments',
+  'Personal Care',
+  'Family & Kids',
+  'Charity & Donations',
+  'Miscellaneous'
 ];
 
 const AiConfirmationModal: React.FC<AiConfirmationModalProps> = ({

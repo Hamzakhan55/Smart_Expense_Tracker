@@ -29,18 +29,25 @@ class AIProcessor:
             except:
                 self.classifier = None
         
-        self.categories = ["food", "transport", "shopping", "entertainment", "utilities", "healthcare", "education", "other"]
+        self.categories = ["Food & Drinks", "Transport", "Utilities", "Shopping", "Electronics & Gadgets", "Healthcare", "Education", "Rent", "Bills", "Entertainment", "Investments", "Personal Care", "Family & Kids", "Charity & Donations", "Miscellaneous"]
         
         # Enhanced keyword mapping
         self.keywords = {
-            "food": ["food", "restaurant", "meal", "lunch", "dinner", "breakfast", "eat", "pizza", "burger", "coffee", "snack", "dining", "cafe", "kitchen", "cooking"],
-            "transport": ["transport", "taxi", "bus", "train", "fuel", "gas", "uber", "lyft", "metro", "parking", "toll", "car", "bike", "flight", "airline"],
-            "shopping": ["shopping", "store", "buy", "purchase", "market", "mall", "clothes", "shirt", "amazon", "online", "retail", "shop"],
-            "entertainment": ["movie", "cinema", "game", "entertainment", "fun", "party", "concert", "netflix", "spotify", "music", "show"],
-            "utilities": ["electricity", "water", "gas", "internet", "phone", "bill", "utility", "wifi", "mobile", "cable", "subscription"],
-            "healthcare": ["doctor", "medicine", "hospital", "pharmacy", "health", "medical", "dentist", "clinic", "prescription"],
-            "education": ["book", "course", "school", "education", "tuition", "study", "university", "college", "learning"],
-            "other": []
+            "Food & Drinks": ["food", "restaurant", "meal", "lunch", "dinner", "breakfast", "eat", "pizza", "burger", "coffee", "snack", "dining", "cafe", "kitchen", "cooking", "drinks", "beverage"],
+            "Transport": ["transport", "taxi", "bus", "train", "fuel", "gas", "uber", "lyft", "metro", "parking", "toll", "car", "bike", "flight", "airline", "transportation"],
+            "Utilities": ["electricity", "water", "gas", "internet", "phone", "utility", "wifi", "mobile", "cable", "heating", "cooling"],
+            "Shopping": ["shopping", "store", "buy", "purchase", "market", "mall", "clothes", "shirt", "amazon", "online", "retail", "shop", "clothing"],
+            "Electronics & Gadgets": ["electronics", "gadgets", "phone", "laptop", "computer", "tablet", "headphones", "camera", "tv", "smartphone", "tech", "device"],
+            "Healthcare": ["doctor", "medicine", "hospital", "pharmacy", "health", "medical", "dentist", "clinic", "prescription", "healthcare"],
+            "Education": ["book", "course", "school", "education", "tuition", "study", "university", "college", "learning", "books", "supplies"],
+            "Rent": ["rent", "rental", "lease", "housing", "apartment", "house"],
+            "Bills": ["bill", "bills", "payment", "invoice", "subscription", "membership", "fee"],
+            "Entertainment": ["movie", "cinema", "game", "entertainment", "fun", "party", "concert", "netflix", "spotify", "music", "show", "theater"],
+            "Investments": ["investment", "stocks", "bonds", "mutual", "fund", "portfolio", "trading", "crypto", "bitcoin"],
+            "Personal Care": ["personal", "care", "beauty", "haircut", "salon", "spa", "cosmetics", "skincare", "grooming"],
+            "Family & Kids": ["family", "kids", "children", "baby", "childcare", "toys", "school", "daycare", "babysitter"],
+            "Charity & Donations": ["charity", "donation", "donate", "nonprofit", "church", "temple", "mosque", "giving", "contribution"],
+            "Miscellaneous": []
         }
         
         print("Enhanced AIProcessor initialized successfully.")
@@ -84,7 +91,7 @@ class AIProcessor:
 
     def classify_text(self, text: str) -> str:
         if not text:
-            return "other"
+            return "Miscellaneous"
         
         text_lower = text.lower()
         
@@ -112,7 +119,7 @@ class AIProcessor:
             print(f"Keyword classified as: {best_category}")
             return best_category
         
-        return "other"
+        return "Miscellaneous"
 
     def extract_amount(self, text: str) -> float:
         if not text:
@@ -147,7 +154,7 @@ class AIProcessor:
         if not transcription:
             return {
                 "description": "Could not transcribe audio. Please try again.",
-                "category": "other",
+                "category": "Miscellaneous",
                 "amount": 0.0
             }
         
