@@ -6,7 +6,7 @@ import { AuthProvider } from './src/context/AuthContext';
 import { ThemeProvider } from './src/context/ThemeContext';
 import { NotificationProvider } from './src/context/NotificationContext';
 import { CurrencyProvider } from './src/context/CurrencyContext';
-import { ConnectionStatus } from './src/components/ConnectionStatus';
+
 import AppNavigator from './src/navigation/AppNavigator';
 
 const queryClient = new QueryClient({
@@ -27,7 +27,6 @@ export default function App() {
             <AuthProvider>
               <View style={{ flex: 1 }}>
                 <StatusBar style="auto" />
-                <ConnectionStatus />
                 <AppNavigator />
               </View>
             </AuthProvider>

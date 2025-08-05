@@ -33,7 +33,7 @@ interface StatCardProps {
   isPercentage?: boolean;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, amount, icon, colors, change, trend, isPercentage = false }) => {
+const StatCard: React.FC<StatCardProps> = ({ title, amount, icon, colors = ['#6B7280', '#4B5563'], change, trend, isPercentage = false }) => {
   const { formatCurrency } = useCurrency();
 
   const formatValue = (value: number) => {
@@ -67,7 +67,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, amount, icon, colors, change
 
   return (
     <View style={styles.statCard}>
-      <LinearGradient colors={colors} style={styles.statCardGradient}>
+      <View style={[styles.statCardGradient, { backgroundColor: colors[0] }]}>
         <View style={styles.statCardHeader}>
           <View style={styles.statCardIconContainer}>
             <Ionicons name={icon} size={18} color="#FFFFFF" />
@@ -88,7 +88,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, amount, icon, colors, change
             </View>
           )}
         </View>
-      </LinearGradient>
+      </View>
     </View>
   );
 };
@@ -237,23 +237,23 @@ const DashboardScreen = () => {
           <View style={styles.sectionHeader}>
             <View style={styles.headerLeft}>
               <View style={styles.quickActionsIconContainer}>
-                <Ionicons name="flash" size={20} color="#FFFFFF" />
+                <Ionicons name="create" size={25} color="#FFFFFF" />
               </View>
-              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Quick Actions</Text>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Add Manually</Text>
             </View>
           </View>
           <View style={styles.actionGrid}>
             <View style={styles.actionRow}>
               <TouchableOpacity style={styles.actionCard} onPress={() => setShowExpenseModal(true)}>
                 <LinearGradient colors={['#F59E0B', '#D97706']} style={styles.actionGradient}>
-                  <Ionicons name="add-circle" size={32} color="#FFFFFF" />
+                  <Ionicons name="remove-circle" size={32} color="#FFFFFF" />
                   <Text style={styles.actionText}>Add Expense</Text>
                 </LinearGradient>
               </TouchableOpacity>
               
               <TouchableOpacity style={styles.actionCard} onPress={() => setShowIncomeModal(true)}>
                 <LinearGradient colors={['#10B981', '#059669']} style={styles.actionGradient}>
-                  <Ionicons name="cash" size={32} color="#FFFFFF" />
+                  <Ionicons name="add-circle" size={32} color="#FFFFFF" />
                   <Text style={styles.actionText}>Add Income</Text>
                 </LinearGradient>
               </TouchableOpacity>
@@ -351,10 +351,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  loadingText: {
-    fontSize: 18,
-    fontWeight: '500',
-  },
+
   headerGradient: {
     paddingTop: 50,
     paddingBottom: 20,
@@ -461,8 +458,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   quickActionsIconContainer: {
-    width: 32,
-    height: 32,
+    width: 42,
+    height: 42,
     borderRadius: 16,
     backgroundColor: '#3B82F6',
     alignItems: 'center',

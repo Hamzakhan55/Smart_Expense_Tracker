@@ -4,17 +4,22 @@ import {
   Text,
   StyleSheet,
   StatusBar,
+  TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { connectionManager } from '../services/connectionManager';
 
 const MobileNavbar = () => {
   const { user } = useAuth();
   const { isDarkMode } = useTheme();
   const [currentTime, setCurrentTime] = useState('');
   const [currentDate, setCurrentDate] = useState('');
+  const [isConnected, setIsConnected] = useState(false);
+  const [currentURL, setCurrentURL] = useState<string>('');
 
   useEffect(() => {
     const updateDateTime = () => {
@@ -30,8 +35,25 @@ const MobileNavbar = () => {
       }));
     };
     
+    const checkConnection = async () => {
+      try {
+        const connected = await connectionManager.testConnection();
+        setIsConnected(connected);
+        if (connected) {
+          const url = await connectionManager.getBackendURL();
+          setCurrentURL(url);
+        }
+      } catch (error) {
+        setIsConnected(false);
+      }
+    };
+    
     updateDateTime();
-    const interval = setInterval(updateDateTime, 60000); // Update every minute
+    checkConnection();
+    const interval = setInterval(() => {
+      updateDateTime();
+      checkConnection();
+    }, 30000); // Update every 30 seconds
     return () => clearInterval(interval);
   }, []);
 
@@ -51,15 +73,27 @@ const MobileNavbar = () => {
       <View style={styles.content}>
         {/* Left Section - App Branding */}
         <View style={styles.leftSection}>
-          <View style={styles.logoContainer}>
+          <TouchableOpacity 
+            style={styles.logoContainer}
+            onPress={() => {
+              const statusText = isConnected ? 'Connected' : 'Offline';
+              const urlText = isConnected && currentURL ? `\n• ${currentURL.replace('http://', '')}` : '';
+              Alert.alert(
+                'Connection Status',
+                `Status: ${statusText}${urlText}`,
+                [{ text: 'OK' }]
+              );
+            }}
+            activeOpacity={0.7}
+          >
             <LinearGradient
               colors={['#3B82F6', '#6366F1', '#8B5CF6']}
               style={styles.logo}
             >
               <Ionicons name="wallet" size={20} color="#FFFFFF" />
             </LinearGradient>
-            <View style={styles.statusDot} />
-          </View>
+            <View style={[styles.statusDot, { backgroundColor: isConnected ? '#10B981' : '#EF4444' }]} />
+          </TouchableOpacity>
           
           <View style={styles.appInfo}>
             <Text style={[styles.appName, isDarkMode && styles.textDark]}>

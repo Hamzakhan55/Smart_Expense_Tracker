@@ -7,13 +7,15 @@ import {
   StyleSheet,
   Alert,
   ScrollView,
-  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Modal from 'react-native-modal';
 import { createExpense, createIncome } from '../services/apiService';
 import { useCurrency } from '../context/CurrencyContext';
 import { useTheme } from '../context/ThemeContext';
+import CategoryPicker from './CategoryPicker';
+import SourcePicker from './SourcePicker';
+import SuccessModal from './SuccessModal';
 
 interface QuickAddModalProps {
   isVisible: boolean;
@@ -61,16 +63,19 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
   const { theme, isDarkMode } = useTheme();
   const [type, setType] = useState<'expense' | 'income'>(initialType);
   const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState(EXPENSE_CATEGORIES[0]);
+  const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [isCreating, setIsCreating] = useState(false);
-  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
-  const dropdownAnim = React.useRef(new Animated.Value(0)).current;
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const categories = type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
 
   React.useEffect(() => {
-    setCategory(categories[0]);
+    if (type === 'expense') {
+      setCategory(EXPENSE_CATEGORIES[0]);
+    } else {
+      setCategory('Salary'); // Default income source
+    }
   }, [type]);
 
   const handleSubmit = async () => {
@@ -101,14 +106,19 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
         });
       }
       
-      Alert.alert('Success', `${type === 'expense' ? 'Expense' : 'Income'} added successfully!`);
+      // Show success modal
+      setShowSuccessModal(true);
       onSuccess?.();
-      onClose();
       
       // Reset form
       setAmount('');
       setDescription('');
-      setCategory(categories[0]);
+      setCategory(type === 'expense' ? EXPENSE_CATEGORIES[0] : 'Salary');
+      
+      // Close main modal after a short delay
+      setTimeout(() => {
+        onClose();
+      }, 500);
     } catch (error) {
       console.error(`Failed to create ${type}:`, error);
       Alert.alert('Error', `Failed to add ${type}. Please try again.`);
@@ -188,95 +198,21 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
             </View>
           </View>
 
-          {/* Category Field */}
+          {/* Category/Source Field */}
           <View style={styles.fieldContainer}>
-            <Text style={[styles.label, { color: theme.colors.text }]}>Category</Text>
-            <TouchableOpacity
-              style={[styles.dropdownButton, { 
-                backgroundColor: theme.colors.surface, 
-                borderColor: showCategoryDropdown ? theme.colors.primary : theme.colors.border 
-              }]}
-              onPress={() => {
-                const toValue = showCategoryDropdown ? 0 : 1;
-                setShowCategoryDropdown(!showCategoryDropdown);
-                Animated.spring(dropdownAnim, {
-                  toValue,
-                  tension: 300,
-                  friction: 20,
-                  useNativeDriver: false,
-                }).start();
-              }}
-            >
-              <View style={styles.dropdownButtonContent}>
-                <View style={[styles.categoryIcon, { backgroundColor: getCategoryColor(category) }]}>
-                  <Ionicons name={getCategoryIcon(category)} size={16} color="#FFFFFF" />
-                </View>
-                <Text style={[styles.dropdownText, { color: theme.colors.text }]}>{category}</Text>
-              </View>
-              <Animated.View style={{
-                transform: [{
-                  rotate: dropdownAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ['0deg', '180deg'],
-                  })
-                }]
-              }}>
-                <Ionicons name="chevron-down" size={20} color={theme.colors.primary} />
-              </Animated.View>
-            </TouchableOpacity>
-            
-            {showCategoryDropdown && (
-              <Animated.View style={[
-                styles.dropdown, 
-                { 
-                  backgroundColor: theme.colors.surface, 
-                  borderColor: theme.colors.border,
-                  opacity: dropdownAnim,
-                  transform: [{
-                    scaleY: dropdownAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0.8, 1],
-                    })
-                  }]
-                }
-              ]}>
-                <ScrollView style={styles.dropdownList} showsVerticalScrollIndicator={false}>
-                  {categories.map((item, index) => (
-                    <TouchableOpacity
-                      key={item}
-                      style={[
-                        styles.dropdownItem, 
-                        item === category && styles.dropdownItemActive,
-                        index === categories.length - 1 && styles.dropdownItemLast
-                      ]}
-                      onPress={() => {
-                        setCategory(item);
-                        Animated.spring(dropdownAnim, {
-                          toValue: 0,
-                          tension: 300,
-                          friction: 20,
-                          useNativeDriver: false,
-                        }).start(() => setShowCategoryDropdown(false));
-                      }}
-                    >
-                      <View style={styles.dropdownItemContent}>
-                        <View style={[styles.categoryIcon, { backgroundColor: getCategoryColor(item) }]}>
-                          <Ionicons name={getCategoryIcon(item)} size={14} color="#FFFFFF" />
-                        </View>
-                        <Text style={[
-                          styles.dropdownItemText,
-                          { color: item === category ? '#FFFFFF' : theme.colors.text }
-                        ]}>
-                          {item}
-                        </Text>
-                      </View>
-                      {item === category && (
-                        <Ionicons name="checkmark" size={16} color="#FFFFFF" />
-                      )}
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </Animated.View>
+            <Text style={[styles.label, { color: theme.colors.text }]}>
+              {type === 'expense' ? 'Category' : 'Source'}
+            </Text>
+            {type === 'expense' ? (
+              <CategoryPicker
+                selectedCategory={category}
+                onCategorySelect={setCategory}
+              />
+            ) : (
+              <SourcePicker
+                selectedSource={category}
+                onSourceSelect={setCategory}
+              />
             )}
           </View>
 
@@ -322,6 +258,15 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
           </TouchableOpacity>
         </View>
       </View>
+      
+      {/* Success Modal */}
+      <SuccessModal
+        isVisible={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        type={type}
+        amount={parseFloat(amount) || 0}
+        category={category}
+      />
     </Modal>
   );
 };
@@ -449,94 +394,7 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     fontWeight: '500',
   },
-  dropdownButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    height: 56,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    borderWidth: 2,
-    backgroundColor: '#F9FAFB',
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  dropdownButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  categoryIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  dropdownText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    flex: 1,
-  },
-  dropdown: {
-    position: 'absolute',
-    top: 84,
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 12,
-    zIndex: 1000,
-    maxHeight: 240,
-    overflow: 'hidden',
-  },
-  dropdownList: {
-    maxHeight: 240,
-  },
-  dropdownItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  dropdownItemLast: {
-    borderBottomWidth: 0,
-  },
-  dropdownItemActive: {
-    backgroundColor: '#3B82F6',
-  },
-  dropdownItemContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  dropdownItemText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#1F2937',
-    marginLeft: 4,
-  },
+
   buttonContainer: {
     flexDirection: 'row',
     paddingHorizontal: 24,
@@ -581,42 +439,6 @@ const styles = StyleSheet.create({
   },
 });
 
-const getCategoryIcon = (category: string) => {
-  const iconMap: { [key: string]: keyof typeof Ionicons.glyphMap } = {
-    'Food & Drinks': 'restaurant',
-    'Transport': 'car',
-    'Shopping': 'bag',
-    'Entertainment': 'game-controller',
-    'Bills & Fees': 'receipt',
-    'Healthcare': 'medical',
-    'Education': 'school',
-    'Salary': 'briefcase',
-    'Freelance': 'laptop',
-    'Investment': 'trending-up',
-    'Business': 'business',
-    'Gift': 'gift',
-    'Other': 'ellipsis-horizontal',
-  };
-  return iconMap[category] || 'ellipsis-horizontal';
-};
 
-const getCategoryColor = (category: string) => {
-  const colorMap: { [key: string]: string } = {
-    'Food & Drinks': '#F59E0B',
-    'Transport': '#3B82F6',
-    'Shopping': '#EC4899',
-    'Entertainment': '#8B5CF6',
-    'Bills & Fees': '#EF4444',
-    'Healthcare': '#10B981',
-    'Education': '#06B6D4',
-    'Salary': '#059669',
-    'Freelance': '#7C3AED',
-    'Investment': '#DC2626',
-    'Business': '#1F2937',
-    'Gift': '#F97316',
-    'Other': '#6B7280',
-  };
-  return colorMap[category] || '#6B7280';
-};
 
 export default QuickAddModal;
