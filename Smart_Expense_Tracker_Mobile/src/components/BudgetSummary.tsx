@@ -12,7 +12,7 @@ interface BudgetSummaryProps {
 
 const BudgetSummary: React.FC<BudgetSummaryProps> = ({ budgets, getSpentAmount }) => {
   const { formatCurrency } = useCurrency();
-  const { theme } = useTheme();
+  const { theme, isDarkMode } = useTheme();
   const totalBudget = budgets.reduce((sum, budget) => sum + budget.amount, 0);
   const totalSpent = budgets.reduce((sum, budget) => sum + getSpentAmount(budget.category), 0);
   const totalRemaining = totalBudget - totalSpent;
@@ -67,20 +67,20 @@ const BudgetSummary: React.FC<BudgetSummaryProps> = ({ budgets, getSpentAmount }
       <View style={[styles.statusSection, { backgroundColor: theme.colors.card }]}>
         <Text style={[styles.statusTitle, { color: theme.colors.text }]}>Budget Status Overview</Text>
         <View style={styles.statusCards}>
-          <View style={[styles.statusCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-            <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-            <Text style={[styles.statusNumber, { color: theme.colors.text }]}>{budgetsOnTrack}</Text>
-            <Text style={[styles.statusLabel, { color: theme.colors.textSecondary }]}>On Track</Text>
+          <View style={[styles.statusCard, { backgroundColor: isDarkMode ? 'transparent' : '#10B981', borderColor: theme.colors.border }]}>
+            <Ionicons name="checkmark-circle" size={20} color={isDarkMode ? "#10B981" : "#FFFFFF"} />
+            <Text style={[styles.statusNumber, { color: isDarkMode ? theme.colors.text : "#FFFFFF" }]}>{budgetsOnTrack}</Text>
+            <Text style={[styles.statusLabel, { color: isDarkMode ? theme.colors.textSecondary : "#FFFFFF" }]}>On Track</Text>
           </View>
-          <View style={[styles.statusCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-            <Ionicons name="warning" size={20} color="#F59E0B" />
-            <Text style={[styles.statusNumber, { color: theme.colors.text }]}>{budgetsNearLimit}</Text>
-            <Text style={[styles.statusLabel, { color: theme.colors.textSecondary }]}>Near Limit</Text>
+          <View style={[styles.statusCard, { backgroundColor: isDarkMode ? 'transparent' : '#F59E0B', borderColor: theme.colors.border }]}>
+            <Ionicons name="warning" size={20} color={isDarkMode ? "#F59E0B" : "#FFFFFF"} />
+            <Text style={[styles.statusNumber, { color: isDarkMode ? theme.colors.text : "#FFFFFF" }]}>{budgetsNearLimit}</Text>
+            <Text style={[styles.statusLabel, { color: isDarkMode ? theme.colors.textSecondary : "#FFFFFF" }]}>Near Limit</Text>
           </View>
-          <View style={[styles.statusCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-            <Ionicons name="warning" size={20} color="#EF4444" />
-            <Text style={[styles.statusNumber, { color: theme.colors.text }]}>{budgetsOverLimit}</Text>
-            <Text style={[styles.statusLabel, { color: theme.colors.textSecondary }]}>Over Budget</Text>
+          <View style={[styles.statusCard, { backgroundColor: isDarkMode ? 'transparent' : '#EF4444', borderColor: theme.colors.border }]}>
+            <Ionicons name="warning" size={20} color={isDarkMode ? "#EF4444" : "#FFFFFF"} />
+            <Text style={[styles.statusNumber, { color: isDarkMode ? theme.colors.text : "#FFFFFF" }]}>{budgetsOverLimit}</Text>
+            <Text style={[styles.statusLabel, { color: isDarkMode ? theme.colors.textSecondary : "#FFFFFF" }]}>Over Budget</Text>
           </View>
         </View>
       </View>

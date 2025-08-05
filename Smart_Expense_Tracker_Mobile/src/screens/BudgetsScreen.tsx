@@ -36,6 +36,10 @@ const BudgetsScreen = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [formData, setFormData] = useState({ category: '', amount: '' });
+  const [showOptionsModal, setShowOptionsModal] = useState(false);
+  const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
@@ -117,26 +121,29 @@ const BudgetsScreen = () => {
   };
 
   const handleDeleteBudget = (budget: Budget) => {
-    Alert.alert(
-      'Delete Budget',
-      `Are you sure you want to delete the ${budget.category} budget?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteBudget(budget.id);
-              await loadData();
-            } catch (error) {
-              console.error('Error deleting budget:', error);
-              Alert.alert('Error', 'Failed to delete budget');
-            }
-          },
-        },
-      ]
-    );
+    setSelectedBudget(budget);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedBudget) return;
+    
+    setIsDeleting(true);
+    try {
+      await deleteBudget(selectedBudget.id);
+      Alert.alert('Success', 'Budget deleted successfully!');
+      setShowDeleteModal(false);
+      await loadData();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to delete budget. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleBudgetPress = (budget: Budget) => {
+    setSelectedBudget(budget);
+    setShowOptionsModal(true);
   };
 
   if (isLoading) {
@@ -193,8 +200,7 @@ const BudgetsScreen = () => {
                 key={budget.id}
                 budget={budget}
                 spent={getSpentAmount(budget.category)}
-                onPress={() => handleEditBudget(budget)}
-                onLongPress={() => handleDeleteBudget(budget)}
+                onPress={() => handleBudgetPress(budget)}
               />
             ))}
           </View>
@@ -205,24 +211,30 @@ const BudgetsScreen = () => {
 
       <Modal
         visible={showCreateModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
+        transparent
+        animationType="fade"
         onRequestClose={() => setShowCreateModal(false)}
       >
-        <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.colors.background }]}>
-          <View style={[styles.modalHeader, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border }]}>
-            <TouchableOpacity onPress={() => setShowCreateModal(false)}>
-              <Text style={styles.modalCancelText}>Cancel</Text>
-            </TouchableOpacity>
-            <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
-              {editingBudget ? 'Edit Budget' : 'Create Budget'}
-            </Text>
-            <TouchableOpacity onPress={handleSaveBudget}>
-              <Text style={styles.modalSaveText}>Save</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalPopup, { backgroundColor: theme.colors.card }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: theme.colors.border }]}>
+              <View style={styles.headerLeft}>
+                <View style={styles.iconContainer}>
+                  <Ionicons name="wallet" size={24} color="#FFFFFF" />
+                </View>
+                <View>
+                  <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
+                    {editingBudget ? 'Edit Budget' : 'Create Budget'}
+                  </Text>
+                  <Text style={[styles.modalSubtitle, { color: theme.colors.textSecondary }]}>Set your spending limit</Text>
+                </View>
+              </View>
+              <TouchableOpacity onPress={() => setShowCreateModal(false)} style={styles.closeButton}>
+                <Ionicons name="close" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+            </View>
 
-          <View style={styles.modalContent}>
+            <View style={styles.modalContent}>
             <View style={styles.inputGroup}>
               <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Category</Text>
               <CategoryPicker
@@ -238,7 +250,7 @@ const BudgetsScreen = () => {
             <View style={styles.inputGroup}>
               <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Budget Amount</Text>
               <TextInput
-                style={[styles.textInput, { backgroundColor: theme.colors.card, color: theme.colors.text, borderColor: theme.colors.border }]}
+                style={[styles.textInput, { backgroundColor: theme.colors.surface, color: theme.colors.text, borderColor: theme.colors.border }]}
                 value={formData.amount}
                 onChangeText={(text) => setFormData({ ...formData, amount: text })}
                 placeholder="Enter budget amount"
@@ -246,8 +258,143 @@ const BudgetsScreen = () => {
                 keyboardType="numeric"
               />
             </View>
+            </View>
+
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity style={styles.cancelButton} onPress={() => setShowCreateModal(false)}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.saveButton} onPress={handleSaveBudget}>
+                <Text style={styles.saveButtonText}>Save Budget</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </SafeAreaView>
+        </View>
+      </Modal>
+
+      {/* Budget Options Modal */}
+      <Modal
+        visible={showOptionsModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowOptionsModal(false)}
+      >
+        <View style={styles.optionsOverlay}>
+          <View style={[styles.optionsModalContent, { backgroundColor: theme.colors.card }]}>
+            <View style={styles.optionsHeader}>
+              <View style={[styles.optionsIcon, { backgroundColor: '#F59E0B20' }]}>
+                <Ionicons name="wallet" size={24} color="#F59E0B" />
+              </View>
+              <View style={styles.optionsInfo}>
+                <Text style={[styles.optionsTitle, { color: theme.colors.text }]}>Budget Options</Text>
+                <Text style={[styles.optionsSubtitle, { color: theme.colors.textSecondary }]}>
+                  {selectedBudget?.category}
+                </Text>
+              </View>
+            </View>
+            
+            <View style={styles.optionsButtons}>
+              <TouchableOpacity 
+                style={[styles.optionButton, styles.editButton]}
+                onPress={() => {
+                  setShowOptionsModal(false);
+                  if (selectedBudget) {
+                    handleEditBudget(selectedBudget);
+                  }
+                }}
+              >
+                <Ionicons name="create-outline" size={20} color="#FFFFFF" />
+                <Text style={styles.optionButtonText}>Edit</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.optionButton, styles.deleteButton]}
+                onPress={() => {
+                  setShowOptionsModal(false);
+                  setTimeout(() => {
+                    if (selectedBudget) {
+                      handleDeleteBudget(selectedBudget);
+                    }
+                  }, 200);
+                }}
+              >
+                <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
+                <Text style={styles.optionButtonText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <TouchableOpacity 
+              style={[styles.cancelOptionButton, { borderColor: theme.colors.border }]}
+              onPress={() => setShowOptionsModal(false)}
+            >
+              <Text style={[styles.cancelOptionText, { color: theme.colors.textSecondary }]}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        visible={showDeleteModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => !isDeleting && setShowDeleteModal(false)}
+      >
+        <View style={styles.deleteOverlay}>
+          <View style={[styles.deleteModalContent, { backgroundColor: theme.colors.card }]}>
+            <View style={styles.deleteHeader}>
+              <View style={styles.deleteIconContainer}>
+                <Ionicons name="warning" size={32} color="#EF4444" />
+              </View>
+              <Text style={[styles.deleteTitle, { color: theme.colors.text }]}>Delete Budget</Text>
+              <Text style={[styles.deleteSubtitle, { color: theme.colors.textSecondary }]}>
+                This action cannot be undone
+              </Text>
+            </View>
+
+            <View style={[styles.deleteBudgetInfo, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+              <View style={[styles.deleteBudgetIcon, { backgroundColor: '#F59E0B20' }]}>
+                <Ionicons name="wallet" size={20} color="#F59E0B" />
+              </View>
+              <View style={styles.deleteBudgetDetails}>
+                <Text style={[styles.deleteBudgetCategory, { color: theme.colors.text }]}>
+                  {selectedBudget?.category}
+                </Text>
+                <Text style={[styles.deleteBudgetAmount, { color: '#F59E0B' }]}>
+                  {formatCurrency(selectedBudget?.amount || 0)}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.deleteButtons}>
+              <TouchableOpacity 
+                style={[styles.deleteCancelButton, { borderColor: theme.colors.border }]} 
+                onPress={() => setShowDeleteModal(false)}
+                disabled={isDeleting}
+              >
+                <Text style={[styles.deleteCancelText, { color: theme.colors.textSecondary }]}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.deleteConfirmButton, isDeleting && styles.deleteConfirmButtonDisabled]} 
+                onPress={confirmDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <View style={styles.deleteLoadingContainer}>
+                    <Ionicons name="hourglass" size={18} color="#FFFFFF" />
+                    <Text style={styles.deleteConfirmText}>Deleting...</Text>
+                  </View>
+                ) : (
+                  <View style={styles.deleteLoadingContainer}>
+                    <Ionicons name="trash" size={18} color="#FFFFFF" />
+                    <Text style={styles.deleteConfirmText}>Delete</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -349,36 +496,96 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 8,
   },
-  modalContainer: {
+  modalOverlay: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalPopup: {
+    width: '100%',
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
   },
   modalHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    justifyContent: 'space-between',
+    padding: 24,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#3B82F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 4,
   },
-  modalCancelText: {
-    fontSize: 16,
-    color: '#6B7280',
+  modalSubtitle: {
+    fontSize: 14,
   },
-  modalSaveText: {
-    fontSize: 16,
-    color: '#3B82F6',
-    fontWeight: '600',
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(107, 114, 128, 0.1)',
   },
   modalContent: {
-    padding: 20,
+    padding: 24,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+    gap: 12,
+  },
+  cancelButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  saveButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#3B82F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   inputGroup: {
     marginBottom: 20,
@@ -406,6 +613,196 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6B7280',
     marginTop: 4,
+  },
+  optionsOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  optionsModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 320,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  optionsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  optionsIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  optionsInfo: {
+    flex: 1,
+  },
+  optionsTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  optionsSubtitle: {
+    fontSize: 14,
+  },
+  optionsButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  optionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 8,
+  },
+  editButton: {
+    backgroundColor: '#3B82F6',
+  },
+  deleteButton: {
+    backgroundColor: '#EF4444',
+  },
+  optionButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  cancelOptionButton: {
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  cancelOptionText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  deleteOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  deleteModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 340,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 15,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 25,
+    elevation: 15,
+  },
+  deleteHeader: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  deleteIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#FEE2E2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  deleteTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  deleteSubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  deleteBudgetInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 24,
+  },
+  deleteBudgetIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  deleteBudgetDetails: {
+    flex: 1,
+  },
+  deleteBudgetCategory: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  deleteBudgetAmount: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  deleteButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  deleteCancelButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteCancelText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  deleteConfirmButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteConfirmButtonDisabled: {
+    backgroundColor: '#9CA3AF',
+  },
+  deleteConfirmText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginLeft: 8,
+  },
+  deleteLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });
 

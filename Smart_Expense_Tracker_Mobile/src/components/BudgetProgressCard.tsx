@@ -9,14 +9,12 @@ interface BudgetProgressCardProps {
   budget: Budget;
   spent: number;
   onPress?: () => void;
-  onLongPress?: () => void;
 }
 
 const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({ 
   budget, 
   spent, 
-  onPress, 
-  onLongPress 
+  onPress
 }) => {
   const { theme } = useTheme();
   const percentage = (spent / budget.amount) * 100;
@@ -28,6 +26,27 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
     if (percentage >= 90) return '#F59E0B';
     if (percentage >= 75) return '#F97316';
     return '#10B981';
+  };
+
+  const getCategoryIcon = (category: string) => {
+    const iconMap: { [key: string]: keyof typeof Ionicons.glyphMap } = {
+      'Food & Drinks': 'restaurant',
+      'Transport': 'car',
+      'Utilities': 'flash',
+      'Shopping': 'bag',
+      'Electronics & Gadgets': 'phone-portrait',
+      'Healthcare': 'medical',
+      'Education': 'school',
+      'Rent': 'home',
+      'Bills': 'receipt',
+      'Entertainment': 'game-controller',
+      'Investments': 'trending-up',
+      'Personal Care': 'cut',
+      'Family & Kids': 'people',
+      'Charity & Donations': 'heart',
+      'Miscellaneous': 'ellipsis-horizontal',
+    };
+    return iconMap[category] || 'wallet';
   };
 
   const getStatusIcon = () => {
@@ -45,29 +64,31 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
     <TouchableOpacity 
       style={styles.container} 
       onPress={onPress}
-      onLongPress={onLongPress}
       activeOpacity={0.7}
     >
       <View style={[styles.card, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
         <View style={styles.header}>
-          <View style={styles.categoryInfo}>
-            <Text style={[styles.category, { color: theme.colors.text }]}>{budget.category}</Text>
-            <View style={styles.statusContainer}>
+          <View style={styles.categorySection}>
+            <View style={[styles.categoryIcon, { backgroundColor: getProgressColor() }]}>
               <Ionicons 
-                name={getStatusIcon()} 
+                name={getCategoryIcon(budget.category)} 
                 size={16} 
-                color={getProgressColor()} 
+                color="#FFFFFF" 
               />
-              <Text style={[styles.statusText, { color: getProgressColor() }]}>
-                {isOverBudget ? 'Over Budget' : `${percentage.toFixed(0)}% Used`}
-              </Text>
+            </View>
+            <View style={styles.categoryInfo}>
+              <Text style={[styles.category, { color: theme.colors.text }]}>{budget.category}</Text>
+              <Text style={[styles.budgetAmount, { color: theme.colors.textSecondary }]}>{formatCurrencyAbs(budget.amount)}</Text>
             </View>
           </View>
-          <Text style={[styles.budgetAmount, { color: theme.colors.primary }]}>{formatCurrencyAbs(budget.amount)}</Text>
+          
+          <Text style={[styles.percentage, { color: getProgressColor() }]}>
+            {percentage.toFixed(0)}%
+          </Text>
         </View>
 
         <View style={styles.progressSection}>
-          <View style={styles.progressBar}>
+          <View style={[styles.progressBar, { backgroundColor: theme.colors.surface }]}>
             <View 
               style={[
                 styles.progressFill, 
@@ -77,31 +98,17 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
                 }
               ]} 
             />
-            {isOverBudget && (
-              <View 
-                style={[
-                  styles.overBudgetIndicator,
-                  { backgroundColor: getProgressColor() }
-                ]}
-              />
-            )}
           </View>
         </View>
 
         <View style={styles.footer}>
           <View style={styles.stat}>
             <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>Spent</Text>
-            <Text style={[styles.statValue, { color: '#EF4444' }]}>
-              {formatCurrencyAbs(spent)}
-            </Text>
+            <Text style={[styles.statValue, { color: '#EF4444' }]}>{formatCurrencyAbs(spent)}</Text>
           </View>
           <View style={styles.stat}>
-            <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
-              {isOverBudget ? 'Over by' : 'Remaining'}
-            </Text>
-            <Text style={[styles.statValue, { color: getProgressColor() }]}>
-              {formatCurrencyAbs(remaining)}
-            </Text>
+            <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>Left</Text>
+            <Text style={[styles.statValue, { color: getProgressColor() }]}>{formatCurrencyAbs(remaining)}</Text>
           </View>
         </View>
       </View>
@@ -130,51 +137,49 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  categorySection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  categoryIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
   },
   categoryInfo: {
     flex: 1,
   },
   category: {
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: '600',
-    marginBottom: 4,
-  },
-  statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '500',
-    marginLeft: 4,
+    marginBottom: 2,
   },
   budgetAmount: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  percentage: {
+    fontSize: 16,
+    fontWeight: '700',
   },
   progressSection: {
     marginBottom: 16,
   },
   progressBar: {
-    height: 8,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 4,
+    height: 6,
+    borderRadius: 3,
     overflow: 'hidden',
-    position: 'relative',
   },
   progressFill: {
     height: '100%',
-    borderRadius: 4,
-  },
-  overBudgetIndicator: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
-    borderRadius: 2,
+    borderRadius: 3,
   },
   footer: {
     flexDirection: 'row',
@@ -184,11 +189,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statLabel: {
-    fontSize: 12,
-    marginBottom: 4,
+    fontSize: 10,
+    fontWeight: '500',
+    marginBottom: 2,
   },
   statValue: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '600',
   },
 });
