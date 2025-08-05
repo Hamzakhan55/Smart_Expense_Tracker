@@ -14,7 +14,7 @@ if not exist "app\main.py" (
 )
 
 echo Backend will be accessible at:
-echo - http://192.168.1.20:8000
+echo - http://192.168.1.22:8000
 echo - http://localhost:8000
 echo.
 echo Starting server...

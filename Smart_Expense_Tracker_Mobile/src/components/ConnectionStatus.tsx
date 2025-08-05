@@ -1,58 +1,81 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { testConnection, getConnectionStatus } from '../services/apiService';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { connectionManager } from '../services/connectionManager';
 
 export const ConnectionStatus: React.FC = () => {
   const [isConnected, setIsConnected] = useState(false);
-  const [isChecking, setIsChecking] = useState(true);
-
-  useEffect(() => {
-    checkConnection();
-    const interval = setInterval(checkConnection, 30000); // Check every 30s
-    return () => clearInterval(interval);
-  }, []);
+  const [currentURL, setCurrentURL] = useState<string>('');
+  const [isChecking, setIsChecking] = useState(false);
 
   const checkConnection = async () => {
     setIsChecking(true);
-    const connected = await testConnection();
-    setIsConnected(connected);
-    setIsChecking(false);
+    try {
+      const connected = await connectionManager.testConnection();
+      setIsConnected(connected);
+      if (connected) {
+        const url = await connectionManager.getBackendURL();
+        setCurrentURL(url);
+      }
+    } catch (error) {
+      setIsConnected(false);
+    } finally {
+      setIsChecking(false);
+    }
   };
 
-  if (isChecking) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.checking}>🔍 Connecting...</Text>
-      </View>
-    );
-  }
+  useEffect(() => {
+    checkConnection();
+    const interval = setInterval(checkConnection, 30000); // Check every 30 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  const getStatusColor = () => {
+    if (isChecking) return '#FFA500';
+    return isConnected ? '#10B981' : '#EF4444';
+  };
+
+  const getStatusText = () => {
+    if (isChecking) return 'Checking...';
+    return isConnected ? 'Connected' : 'Offline';
+  };
 
   return (
-    <View style={[styles.container, isConnected ? styles.connected : styles.disconnected]}>
+    <TouchableOpacity style={styles.container} onPress={checkConnection}>
+      <View style={[styles.indicator, { backgroundColor: getStatusColor() }]} />
       <Text style={styles.text}>
-        {isConnected ? '✅ Backend Connected' : '📱 Offline Mode'}
+        {getStatusText()}
+        {isConnected && currentURL && (
+          <Text style={styles.url}> • {currentURL.replace('http://', '')}</Text>
+        )}
       </Text>
-    </View>
+    </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 8,
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 16,
+    marginHorizontal: 16,
+    marginVertical: 8,
   },
-  connected: {
-    backgroundColor: '#d4edda',
-  },
-  disconnected: {
-    backgroundColor: '#f8d7da',
+  indicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
   },
   text: {
     fontSize: 12,
+    color: '#6B7280',
     fontWeight: '500',
   },
-  checking: {
-    fontSize: 12,
-    color: '#666',
+  url: {
+    fontSize: 10,
+    color: '#9CA3AF',
   },
 });

@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: 2,
     paddingTop: 4,
   },
   tabItem: {
@@ -215,8 +215,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 6,
-    paddingHorizontal: 8,
-    minWidth: 65,
+    paddingHorizontal: 4,
+    minWidth: 75,
   },
   activeBackground: {
     position: 'absolute',
@@ -258,6 +258,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     textAlign: 'center',
     marginTop: 2,
+    minWidth: 60,
   },
 });
 

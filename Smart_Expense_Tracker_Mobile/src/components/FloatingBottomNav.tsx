@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
     paddingVertical: 12,
     flex: 1,
   },
@@ -231,9 +231,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     borderRadius: 18,
-    minWidth: 65,
+    minWidth: 75,
     position: 'relative',
   },
   activeTabItem: {
@@ -273,6 +273,7 @@ const styles = StyleSheet.create({
     fontSize: 9,
     marginTop: 2,
     numberOfLines: 1,
+    minWidth: 60,
   },
   activePulse: {
     position: 'absolute',

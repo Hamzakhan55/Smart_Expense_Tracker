@@ -1,14 +1,25 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 class ConnectionManager {
-  private baseURLs = [
-    'http://192.168.1.20:8000', // Current IP
-    'http://192.168.1.25:8000', // Previous IP
-    'http://192.168.1.1:8000',  // Router IP
-    'http://10.0.2.2:8000',     // Android emulator
-    'http://localhost:8000',
-    'http://127.0.0.1:8000'
-  ];
+  private generateBaseURLs(): string[] {
+    // Auto-generate IP range for current network
+    const baseIPs = [];
+    // Try common IP ranges
+    for (let i = 1; i <= 50; i++) {
+      baseIPs.push(`http://192.168.1.${i}:8000`);
+      baseIPs.push(`http://192.168.0.${i}:8000`);
+    }
+    return [
+      'http://10.0.2.2:8000',     // Android emulator (priority)
+      ...baseIPs,
+      'http://localhost:8000',
+      'http://127.0.0.1:8000'
+    ];
+  }
+  
+  private get baseURLs(): string[] {
+    return this.generateBaseURLs();
+  }
   
   private currentURL: string | null = null;
   private isConnected = false;
@@ -72,7 +83,7 @@ class ConnectionManager {
 
     // Find new working URL
     const workingURL = await this.findWorkingURL();
-    return workingURL || 'http://192.168.1.20:8000'; // fallback to current IP
+    return workingURL || 'http://localhost:8000'; // fallback to localhost
   }
 
   getConnectionStatus(): boolean {
