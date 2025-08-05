@@ -18,17 +18,20 @@ import Modal from 'react-native-modal';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
-import { getExpenses, getIncomes, exportTransactionsPDF, exportFilteredTransactionsPDF } from '../services/apiService';
+import { getExpenses, getIncomes, updateExpense, deleteExpense, updateIncome, deleteIncome } from '../services/apiService';
 import { useCurrency } from '../context/CurrencyContext';
 import { useTheme } from '../context/ThemeContext';
 import { Expense, Income } from '../types';
+import EditTransactionModal from '../components/EditTransactionModal';
 
 interface TransactionItemProps {
   item: Expense | Income;
   type: 'expense' | 'income';
+  onEdit: (item: Expense | Income, type: 'expense' | 'income') => void;
+  onDelete: (item: Expense | Income, type: 'expense' | 'income') => void;
 }
 
-const TransactionItem: React.FC<TransactionItemProps> = ({ item, type }) => {
+const TransactionItem: React.FC<TransactionItemProps> = ({ item, type, onEdit, onDelete }) => {
   const { formatCurrency } = useCurrency();
   const { theme } = useTheme();
 
@@ -49,7 +52,11 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ item, type }) => {
   };
 
   return (
-    <View style={[styles.transactionItem, { backgroundColor: theme.colors.card }]}>
+    <TouchableOpacity 
+      style={[styles.transactionItem, { backgroundColor: theme.colors.card }]}
+      onLongPress={() => onEdit(item, type)} // Simplified to direct edit
+      activeOpacity={0.7}
+    >
       <View style={[
         styles.categoryIcon, 
         { backgroundColor: type === 'expense' ? '#FEE2E2' : '#D1FAE5' }
@@ -73,12 +80,13 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ item, type }) => {
       ]}>
         {type === 'expense' ? '-' : '+'}{formatCurrency(item.amount)}
       </Text>
-    </View>
+    </TouchableOpacity>
   );
 };
 
 const TransactionsScreen = () => {
   const { theme } = useTheme();
+  const { formatCurrency } = useCurrency();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -89,6 +97,12 @@ const TransactionsScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
   const [isExporting, setIsExporting] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<{ item: Expense | Income; type: 'expense' | 'income' } | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showOptionsModal, setShowOptionsModal] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<{ item: Expense | Income; type: 'expense' | 'income' } | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const categories = ['Food & Drinks', 'Transport', 'Shopping', 'Entertainment', 'Bills & Fees', 'Healthcare', 'Education', 'Salary', 'Freelance', 'Investment', 'Other'];
 
@@ -329,6 +343,54 @@ const TransactionsScreen = () => {
     setDateRange({ start: '', end: '' });
   };
 
+  const handleEditTransaction = (item: Expense | Income, type: 'expense' | 'income') => {
+    setEditingTransaction({ item, type });
+    setShowEditModal(true);
+  };
+
+  const handleDeleteTransaction = (item: Expense | Income, type: 'expense' | 'income') => {
+    setSelectedTransaction({ item, type });
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedTransaction) return;
+    
+    setIsDeleting(true);
+    try {
+      if (selectedTransaction.type === 'expense') {
+        await deleteExpense(selectedTransaction.item.id);
+      } else {
+        await deleteIncome(selectedTransaction.item.id);
+      }
+      Alert.alert('Success', `${selectedTransaction.type} deleted successfully!`);
+      setShowDeleteModal(false);
+      await loadTransactions();
+    } catch (error) {
+      Alert.alert('Error', `Failed to delete ${selectedTransaction.type}. Please try again.`);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleUpdateTransaction = async (updatedData: { amount: number; category: string; description: string }) => {
+    if (!editingTransaction) return;
+    
+    try {
+      if (editingTransaction.type === 'expense') {
+        await updateExpense({ id: editingTransaction.item.id, ...updatedData });
+      } else {
+        await updateIncome({ id: editingTransaction.item.id, ...updatedData });
+      }
+      Alert.alert('Success', `${editingTransaction.type} updated successfully!`);
+      setShowEditModal(false);
+      setEditingTransaction(null);
+      await loadTransactions();
+    } catch (error) {
+      Alert.alert('Error', `Failed to update ${editingTransaction.type}. Please try again.`);
+    }
+  };
+
   const FilterButton: React.FC<{ 
     title: string; 
     value: 'all' | 'expenses' | 'incomes'; 
@@ -420,7 +482,15 @@ const TransactionsScreen = () => {
         data={getFilteredTransactions()}
         keyExtractor={(item, index) => `${item.type}-${item.item.id}-${index}`}
         renderItem={({ item }) => (
-          <TransactionItem item={item.item} type={item.type} />
+          <TransactionItem 
+            item={item.item} 
+            type={item.type} 
+            onEdit={(transactionItem, transactionType) => {
+              setSelectedTransaction({ item: transactionItem, type: transactionType });
+              setShowOptionsModal(true);
+            }}
+            onDelete={handleDeleteTransaction}
+          />
         )}
         style={styles.transactionsList}
         refreshControl={
@@ -513,6 +583,163 @@ const TransactionsScreen = () => {
             </TouchableOpacity>
             <TouchableOpacity style={styles.applyButton} onPress={() => setShowFilters(false)}>
               <Text style={styles.applyButtonText}>Apply</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit Transaction Modal */}
+      {editingTransaction && (
+        <Modal
+          isVisible={showEditModal}
+          onBackdropPress={() => setShowEditModal(false)}
+          style={styles.editModal}
+          animationIn="zoomIn"
+          animationOut="zoomOut"
+          backdropOpacity={0.5}
+        >
+          <EditTransactionModal
+            transaction={editingTransaction}
+            onClose={() => setShowEditModal(false)}
+            onUpdate={handleUpdateTransaction}
+          />
+        </Modal>
+      )}
+
+      {/* Transaction Options Modal */}
+      <Modal
+        isVisible={showOptionsModal}
+        onBackdropPress={() => setShowOptionsModal(false)}
+        style={styles.optionsModal}
+        animationIn="fadeIn"
+        animationOut="fadeOut"
+        backdropOpacity={0.5}
+      >
+        <View style={[styles.optionsModalContent, { backgroundColor: theme.colors.card }]}>
+          <View style={styles.optionsHeader}>
+            <View style={[styles.optionsIcon, { 
+              backgroundColor: selectedTransaction?.type === 'expense' ? '#FEE2E2' : '#D1FAE5' 
+            }]}>
+              <Ionicons 
+                name={selectedTransaction?.type === 'expense' ? 'remove-circle' : 'add-circle'} 
+                size={24} 
+                color={selectedTransaction?.type === 'expense' ? '#EF4444' : '#10B981'} 
+              />
+            </View>
+            <View style={styles.optionsInfo}>
+              <Text style={[styles.optionsTitle, { color: theme.colors.text }]}>Transaction Options</Text>
+              <Text style={[styles.optionsSubtitle, { color: theme.colors.textSecondary }]}>
+                {selectedTransaction?.item.description}
+              </Text>
+            </View>
+          </View>
+          
+          <View style={styles.optionsButtons}>
+            <TouchableOpacity 
+              style={[styles.optionButton, styles.editButton]}
+              onPress={() => {
+                setShowOptionsModal(false);
+                if (selectedTransaction) {
+                  handleEditTransaction(selectedTransaction.item, selectedTransaction.type);
+                }
+              }}
+            >
+              <Ionicons name="create-outline" size={20} color="#FFFFFF" />
+              <Text style={styles.optionButtonText}>Edit</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.optionButton, styles.deleteButton]}
+              onPress={() => {
+                setShowOptionsModal(false);
+                setTimeout(() => {
+                  if (selectedTransaction) {
+                    handleDeleteTransaction(selectedTransaction.item, selectedTransaction.type);
+                  }
+                }, 200);
+              }}
+            >
+              <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
+              <Text style={styles.optionButtonText}>Delete</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <TouchableOpacity 
+            style={[styles.cancelOptionButton, { borderColor: theme.colors.border }]}
+            onPress={() => setShowOptionsModal(false)}
+          >
+            <Text style={[styles.cancelOptionText, { color: theme.colors.textSecondary }]}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isVisible={showDeleteModal}
+        onBackdropPress={() => !isDeleting && setShowDeleteModal(false)}
+        style={styles.deleteModal}
+        animationIn="zoomIn"
+        animationOut="zoomOut"
+        backdropOpacity={0.6}
+      >
+        <View style={[styles.deleteModalContent, { backgroundColor: theme.colors.card }]}>
+          <View style={styles.deleteHeader}>
+            <View style={styles.deleteIconContainer}>
+              <Ionicons name="warning" size={32} color="#EF4444" />
+            </View>
+            <Text style={[styles.deleteTitle, { color: theme.colors.text }]}>Delete Transaction</Text>
+            <Text style={[styles.deleteSubtitle, { color: theme.colors.textSecondary }]}>
+              This action cannot be undone
+            </Text>
+          </View>
+
+          <View style={[styles.deleteTransactionInfo, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+            <View style={[styles.deleteTransactionIcon, { 
+              backgroundColor: selectedTransaction?.type === 'expense' ? '#FEE2E2' : '#D1FAE5' 
+            }]}>
+              <Ionicons 
+                name={selectedTransaction?.type === 'expense' ? 'remove-circle' : 'add-circle'} 
+                size={20} 
+                color={selectedTransaction?.type === 'expense' ? '#EF4444' : '#10B981'} 
+              />
+            </View>
+            <View style={styles.deleteTransactionDetails}>
+              <Text style={[styles.deleteTransactionDescription, { color: theme.colors.text }]}>
+                {selectedTransaction?.item.description}
+              </Text>
+              <Text style={[styles.deleteTransactionAmount, { 
+                color: selectedTransaction?.type === 'expense' ? '#EF4444' : '#10B981' 
+              }]}>
+                {selectedTransaction?.type === 'expense' ? '-' : '+'}{formatCurrency(selectedTransaction?.item.amount || 0)}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.deleteButtons}>
+            <TouchableOpacity 
+              style={[styles.deleteCancelButton, { borderColor: theme.colors.border }]} 
+              onPress={() => setShowDeleteModal(false)}
+              disabled={isDeleting}
+            >
+              <Text style={[styles.deleteCancelText, { color: theme.colors.textSecondary }]}>Cancel</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.deleteConfirmButton, isDeleting && styles.deleteConfirmButtonDisabled]} 
+              onPress={confirmDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <View style={styles.deleteLoadingContainer}>
+                  <Ionicons name="hourglass" size={18} color="#FFFFFF" />
+                  <Text style={styles.deleteConfirmText}>Deleting...</Text>
+                </View>
+              ) : (
+                <View style={styles.deleteLoadingContainer}>
+                  <Ionicons name="trash" size={18} color="#FFFFFF" />
+                  <Text style={styles.deleteConfirmText}>Delete</Text>
+                </View>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -830,6 +1057,402 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  editModal: {
+    margin: 20,
+    justifyContent: 'center',
+  },
+  editModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    maxHeight: '80%',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  editHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 24,
+    paddingBottom: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  editHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  editIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  editTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  editSubtitle: {
+    fontSize: 14,
+  },
+  editCloseButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  editForm: {
+    paddingHorizontal: 24,
+    paddingBottom: 8,
+    maxHeight: 300,
+  },
+  editFieldContainer: {
+    marginBottom: 20,
+    position: 'relative',
+  },
+  editLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  editInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 16,
+    borderWidth: 2,
+    paddingHorizontal: 16,
+    height: 56,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  editDescriptionContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    borderRadius: 16,
+    borderWidth: 2,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    minHeight: 80,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  editFieldIcon: {
+    marginRight: 12,
+  },
+  editInput: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  editDescriptionInput: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+    minHeight: 60,
+  },
+  editCurrency: {
+    fontSize: 14,
+    fontWeight: '700',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+  },
+  editButtonContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+    gap: 12,
+  },
+  editCancelButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  editCancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  editSaveButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#3B82F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  editSaveButtonDisabled: {
+    backgroundColor: '#9CA3AF',
+  },
+  editSaveButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginLeft: 8,
+  },
+  editLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  editDropdown: {
+    position: 'absolute',
+    top: 84,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 9999,
+    maxHeight: 240,
+  },
+  editDropdownList: {
+    maxHeight: 240,
+  },
+  editDropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  editDropdownItemLast: {
+    borderBottomWidth: 0,
+  },
+  editDropdownItemActive: {
+    backgroundColor: '#3B82F6',
+  },
+  editDropdownItemText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  optionsModal: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    margin: 20,
+  },
+  optionsModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 320,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  optionsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  optionsIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  optionsInfo: {
+    flex: 1,
+  },
+  optionsTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  optionsSubtitle: {
+    fontSize: 14,
+  },
+  optionsButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  optionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 8,
+  },
+  editButton: {
+    backgroundColor: '#3B82F6',
+  },
+  deleteButton: {
+    backgroundColor: '#EF4444',
+  },
+  optionButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  cancelOptionButton: {
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  cancelOptionText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  deleteModal: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    margin: 20,
+  },
+  deleteModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 340,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 12,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  deleteHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  deleteIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#FEE2E2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  deleteTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  deleteSubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  deleteTransactionInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 24,
+  },
+  deleteTransactionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  deleteTransactionDetails: {
+    flex: 1,
+  },
+  deleteTransactionDescription: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  deleteTransactionAmount: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  deleteButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  deleteCancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  deleteCancelText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  deleteConfirmButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteConfirmButtonDisabled: {
+    backgroundColor: '#9CA3AF',
+  },
+  deleteConfirmText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginLeft: 8,
+  },
+  deleteLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
 });
+
+
 
 export default TransactionsScreen;
