@@ -54,7 +54,7 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ item, type, onEdit, o
   return (
     <TouchableOpacity 
       style={[styles.transactionItem, { backgroundColor: theme.colors.card }]}
-      onLongPress={() => onEdit(item, type)} // Simplified to direct edit
+      onPress={() => onEdit(item, type)}
       activeOpacity={0.7}
     >
       <View style={[

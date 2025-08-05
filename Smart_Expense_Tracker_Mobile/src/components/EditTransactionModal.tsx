@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useCurrency } from '../context/CurrencyContext';
 import { useTheme } from '../context/ThemeContext';
 import { Expense, Income } from '../types';
+import CategoryPicker from './CategoryPicker';
 
 interface EditTransactionModalProps {
   transaction: { item: Expense | Income; type: 'expense' | 'income' };
@@ -59,33 +60,9 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
   const [amount, setAmount] = useState(transaction.item.amount.toString());
   const [category, setCategory] = useState(transaction.item.category);
   const [description, setDescription] = useState(transaction.item.description);
-  const [showDropdown, setShowDropdown] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  
-  const dropdownAnim = React.useRef(new Animated.Value(0)).current;
-  const categories = transaction.type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
 
-  const toggleDropdown = () => {
-    const toValue = showDropdown ? 0 : 1;
-    setShowDropdown(!showDropdown);
-    
-    Animated.spring(dropdownAnim, {
-      toValue,
-      tension: 300,
-      friction: 20,
-      useNativeDriver: false,
-    }).start();
-  };
 
-  const selectCategory = (selectedCategory: string) => {
-    setCategory(selectedCategory);
-    Animated.spring(dropdownAnim, {
-      toValue: 0,
-      tension: 300,
-      friction: 20,
-      useNativeDriver: false,
-    }).start(() => setShowDropdown(false));
-  };
 
   const handleUpdate = async () => {
     const numericAmount = parseFloat(amount);
@@ -103,37 +80,7 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
     }
   };
 
-  const getCategoryIcon = (cat: string) => {
-    const iconMap: { [key: string]: keyof typeof Ionicons.glyphMap } = {
-      'Food & Drinks': 'restaurant',
-      'Transport': 'car',
-      'Shopping': 'bag',
-      'Entertainment': 'game-controller',
-      'Bills': 'receipt',
-      'Healthcare': 'medical',
-      'Education': 'school',
-      'Salary': 'briefcase',
-      'Freelance': 'laptop',
-      'Investment': 'trending-up',
-    };
-    return iconMap[cat] || 'ellipsis-horizontal';
-  };
 
-  const getCategoryColor = (cat: string) => {
-    const colorMap: { [key: string]: string } = {
-      'Food & Drinks': '#F59E0B',
-      'Transport': '#3B82F6',
-      'Shopping': '#EC4899',
-      'Entertainment': '#8B5CF6',
-      'Bills': '#EF4444',
-      'Healthcare': '#10B981',
-      'Education': '#06B6D4',
-      'Salary': '#059669',
-      'Freelance': '#7C3AED',
-      'Investment': '#DC2626',
-    };
-    return colorMap[cat] || '#6B7280';
-  };
 
   return (
     <View style={[styles.modalContent, { backgroundColor: theme.colors.card }]}>
@@ -182,103 +129,13 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
           </View>
         </View>
 
-        {/* Category Field with Responsive Dropdown */}
-        <View style={[styles.fieldContainer, { zIndex: 1000 }]}>
+        {/* Category Field */}
+        <View style={styles.fieldContainer}>
           <Text style={[styles.label, { color: theme.colors.text }]}>Category</Text>
-          <TouchableOpacity
-            style={[styles.dropdownButton, { 
-              backgroundColor: theme.colors.surface, 
-              borderColor: showDropdown ? theme.colors.primary : theme.colors.border,
-              borderWidth: showDropdown ? 2 : 1,
-            }]}
-            onPress={toggleDropdown}
-            activeOpacity={0.7}
-          >
-            <View style={styles.dropdownContent}>
-              <View style={[styles.categoryIcon, { backgroundColor: getCategoryColor(category) + '20' }]}>
-                <Ionicons 
-                  name={getCategoryIcon(category)} 
-                  size={18} 
-                  color={getCategoryColor(category)} 
-                />
-              </View>
-              <Text style={[styles.dropdownText, { color: theme.colors.text }]}>
-                {category}
-              </Text>
-            </View>
-            <Animated.View style={{
-              transform: [{
-                rotate: dropdownAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ['0deg', '180deg'],
-                })
-              }]
-            }}>
-              <Ionicons name="chevron-down" size={20} color={theme.colors.primary} />
-            </Animated.View>
-          </TouchableOpacity>
-          
-          {/* Responsive Dropdown */}
-          {showDropdown && (
-            <Animated.View style={[
-              styles.dropdown, 
-              { 
-                backgroundColor: theme.colors.surface,
-                borderColor: theme.colors.border,
-                maxHeight: dropdownAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, Math.min(categories.length * 50, 250)],
-                }),
-                opacity: dropdownAnim,
-                transform: [{
-                  scaleY: dropdownAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.8, 1],
-                  })
-                }]
-              }
-            ]}>
-              <ScrollView 
-                style={styles.dropdownList} 
-                showsVerticalScrollIndicator={true}
-                nestedScrollEnabled={true}
-                bounces={true}
-                scrollEventThrottle={16}
-              >
-                {categories.map((cat, index) => (
-                  <TouchableOpacity
-                    key={cat}
-                    style={[
-                      styles.dropdownItem,
-                      cat === category && [styles.dropdownItemActive, { backgroundColor: theme.colors.primary + '15' }],
-                      index === categories.length - 1 && styles.dropdownItemLast
-                    ]}
-                    onPress={() => selectCategory(cat)}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.dropdownItemContent}>
-                      <View style={[styles.categoryIcon, { backgroundColor: getCategoryColor(cat) + '20' }]}>
-                        <Ionicons 
-                          name={getCategoryIcon(cat)} 
-                          size={16} 
-                          color={getCategoryColor(cat)} 
-                        />
-                      </View>
-                      <Text style={[
-                        styles.dropdownItemText,
-                        { color: cat === category ? theme.colors.primary : theme.colors.text }
-                      ]}>
-                        {cat}
-                      </Text>
-                    </View>
-                    {cat === category && (
-                      <Ionicons name="checkmark" size={18} color={theme.colors.primary} />
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </Animated.View>
-          )}
+          <CategoryPicker
+            selectedCategory={category}
+            onCategorySelect={setCategory}
+          />
         </View>
 
         {/* Description Field */}
