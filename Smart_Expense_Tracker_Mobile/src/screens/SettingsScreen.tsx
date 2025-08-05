@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   Alert,
   SafeAreaView,
+  Linking,
+  Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -80,6 +82,9 @@ const SettingsScreen = () => {
   const [showCurrencySelector, setShowCurrencySelector] = useState(false);
   const [showChangeEmailModal, setShowChangeEmailModal] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [showThemeModal, setShowThemeModal] = useState(false);
+  const [showClearDataModal, setShowClearDataModal] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -223,41 +228,33 @@ const SettingsScreen = () => {
   };
 
   const handleClearData = () => {
-    Alert.alert(
-      'Clear All Data',
-      'This will delete all your transactions, budgets, and goals. This action cannot be undone.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Clear',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const [expenses, incomes, budgets, goals] = await Promise.all([
-                getExpenses(),
-                getIncomes(),
-                getBudgets(new Date().getFullYear(), new Date().getMonth() + 1),
-                getGoals()
-              ]);
-              
-              await Promise.all([
-                ...expenses.map(expense => deleteExpense(expense.id)),
-                ...incomes.map(income => deleteIncome(income.id)),
-                ...budgets.map(budget => deleteBudget(budget.id)),
-                ...goals.map(goal => deleteGoal(goal.id))
-              ]);
-              
-              Alert.alert('Data Cleared', 'All your data has been cleared.');
-            } catch (error) {
-              Alert.alert('Error', 'Failed to clear data.');
-            }
-          },
-        },
-      ]
-    );
+    setShowClearDataModal(true);
+  };
+
+  const confirmClearData = async () => {
+    setIsClearing(true);
+    try {
+      const [expenses, incomes, budgets, goals] = await Promise.all([
+        getExpenses(),
+        getIncomes(),
+        getBudgets(new Date().getFullYear(), new Date().getMonth() + 1),
+        getGoals()
+      ]);
+      
+      await Promise.all([
+        ...expenses.map(expense => deleteExpense(expense.id)),
+        ...incomes.map(income => deleteIncome(income.id)),
+        ...budgets.map(budget => deleteBudget(budget.id)),
+        ...goals.map(goal => deleteGoal(goal.id))
+      ]);
+      
+      Alert.alert('✅ Success', 'All your data has been cleared successfully!');
+      setShowClearDataModal(false);
+    } catch (error) {
+      Alert.alert('❌ Error', 'Failed to clear data. Please try again.');
+    } finally {
+      setIsClearing(false);
+    }
   };
 
   return (
@@ -284,11 +281,9 @@ const SettingsScreen = () => {
               </View>
               <View style={styles.profileInfo}>
                 <Text style={styles.profileName}>{user?.name || 'User'}</Text>
-                <Text style={styles.profileEmail}>{user?.email || 'user@example.com'}</Text>
+                <Text style={styles.profileEmail}>{user?.email || 'demo@example.com'}</Text>
               </View>
-              <TouchableOpacity style={styles.editButton}>
-                <Ionicons name="pencil" size={16} color="#FFFFFF" />
-              </TouchableOpacity>
+
             </LinearGradient>
           </View>
         </View>
@@ -297,22 +292,7 @@ const SettingsScreen = () => {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Preferences</Text>
           <View style={[styles.settingsGroup, { backgroundColor: theme.colors.card }]}>
-            <SettingItem
-              icon="notifications-outline"
-              title="Notifications"
-              subtitle="Budget alerts and reminders"
-              onPress={() => {
-                Alert.alert(
-                  'Notification Settings',
-                  'Choose your notification preferences:',
-                  [
-                    { text: 'Budget Alerts', onPress: () => Alert.alert('Budget Alerts', 'Budget alert notifications enabled') },
-                    { text: 'Goal Reminders', onPress: () => Alert.alert('Goal Reminders', 'Goal reminder notifications enabled') },
-                    { text: 'Cancel', style: 'cancel' }
-                  ]
-                );
-              }}
-            />
+
             <SettingItem
               icon="globe-outline"
               title="Currency"
@@ -321,9 +301,9 @@ const SettingsScreen = () => {
             />
             <SettingItem
               icon={isDarkMode ? "sunny-outline" : "moon-outline"}
-              title="Dark Mode"
-              subtitle={isDarkMode ? "Switch to light theme" : "Switch to dark theme"}
-              onPress={toggleTheme}
+              title="Theme"
+              subtitle={isDarkMode ? "Dark Mode" : "Light Mode"}
+              onPress={() => setShowThemeModal(true)}
             />
           </View>
         </View>
@@ -359,9 +339,9 @@ const SettingsScreen = () => {
               subtitle="Get help and find answers"
               onPress={() => {
                 Alert.alert(
-                  'Help & FAQ',
-                  'Common Questions:\n\n• How to add expenses?\nTap the + button on dashboard or use voice recording\n\n• How to set budgets?\nGo to Budgets tab and tap "Set New Budget"\n\n• How to track goals?\nUse Goals tab to create and manage savings goals\n\n• How to export data?\nGo to Settings > Export Data for PDF reports\n\n• How to change theme?\nSettings > Dark Mode toggle',
-                  [{ text: 'OK' }]
+                  '📱 Smart Expense Tracker - Help & FAQ',
+                  '🎯 GETTING STARTED:\n• Dashboard: View financial overview with real-time stats\n• Voice Input: Hold FAB button to record expenses\n• Quick Actions: Add income/expenses from dashboard\n\n💰 EXPENSE MANAGEMENT:\n• Add expenses manually or via voice recognition\n• Categorize transactions automatically\n• Edit/delete transactions by tapping them\n• Search and filter transaction history\n\n📊 BUDGETS & GOALS:\n• Set monthly budgets by category\n• Track spending progress with visual indicators\n• Create savings goals with target amounts\n• Monitor goal progress and add funds\n\n📈 ANALYTICS:\n• View spending trends and patterns\n• Analyze category breakdowns\n• Get AI-powered financial insights\n• Track savings rate and net worth\n\n⚙️ SETTINGS & DATA:\n• Switch between light/dark themes\n• Change currency preferences\n• Export data as PDF reports\n• Clear all data when needed\n\n🔊 VOICE FEATURES:\n• AI-powered expense recognition\n• Automatic category prediction\n• Amount extraction from speech\n• Fallback manual entry option',
+                  [{ text: 'Got it!' }]
                 );
               }}
             />
@@ -370,46 +350,27 @@ const SettingsScreen = () => {
               title="Contact Support"
               subtitle="Get in touch with our team"
               onPress={() => {
-                Alert.alert(
-                  'Contact Support',
-                  'Need help or have feedback?\n\nEmail: hamzakhan127109@gmail.com\n\nWe typically respond within 24 hours.',
-                  [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Send Email', onPress: () => {
-                      // In a real app, this would open the email client
-                      Alert.alert('Email Client', 'Opening email app...');
-                    }}
-                  ]
-                );
+                const email = 'hamzakhan127109@gmail.com';
+                const subject = 'Smart Expense Tracker - Support Request';
+                const body = 'Hi,\n\nI need help with Smart Expense Tracker app.\n\nIssue Description:\n\n\nDevice Info:\n- App Version: 1.0.0\n- Platform: Mobile\n\nThank you!';
+                
+                const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                
+                Linking.openURL(mailtoUrl).catch(() => {
+                  Alert.alert('Error', 'Could not open email client. Please email us at: hamzakhan127109@gmail.com');
+                });
               }}
             />
-            <SettingItem
-              icon="star-outline"
-              title="Rate App"
-              subtitle="Rate us on the app store"
-              onPress={() => {
-                Alert.alert(
-                  'Rate Smart Expense Tracker',
-                  'Enjoying the app? Your rating helps us improve and reach more users!',
-                  [
-                    { text: 'Later', style: 'cancel' },
-                    { text: 'Rate Now', onPress: () => {
-                      // In a real app, this would open the app store
-                      Alert.alert('Thank You!', 'Redirecting to app store...');
-                    }}
-                  ]
-                );
-              }}
-            />
+
             <SettingItem
               icon="information-circle-outline"
               title="About"
               subtitle="Version 1.0.0"
               onPress={() => {
                 Alert.alert(
-                  'About Smart Expense Tracker',
-                  'Version 1.0.0\n\nSmart Expense Tracker is a comprehensive financial management app that helps you take control of your finances. Features include:\n\n• AI-powered expense tracking with voice input\n• Smart budget management with alerts\n• Goal setting and progress tracking\n• Advanced analytics and insights\n• Data export and reporting\n• Dark/Light theme support\n• Multi-currency support\n\nAI Models Integrated:\n• AI Voice Recognition - Converts speech to expense data\n• Category Prediction - Automatically categorizes transactions\n\nBuilt with React Native and modern AI technologies for intelligent financial management.\n\nDeveloped by Hamza Khan\nFull-Stack Developer\n\nCreated with ❤️ for better financial wellness.',
-                  [{ text: 'OK' }]
+                  '🚀 Smart Expense Tracker',
+                  '📱 Version 1.0.0\n\n💡 ABOUT THE APP:\nSmart Expense Tracker is an advanced financial management solution designed to revolutionize how you handle personal finances. Built with cutting-edge technology and AI integration, it provides intelligent insights for better financial decision-making.\n\n🎯 KEY FEATURES:\n• AI-Powered Voice Recognition for instant expense logging\n• Intelligent category prediction and auto-categorization\n• Real-time budget tracking with smart alerts\n• Goal-oriented savings management\n• Advanced analytics with predictive insights\n• Multi-currency support for global users\n• Secure data export and backup capabilities\n• Adaptive dark/light theme interface\n\n🤖 AI TECHNOLOGY:\n• Natural Language Processing for voice commands\n• Machine Learning for spending pattern analysis\n• Predictive algorithms for financial forecasting\n• Smart categorization engine\n\n⚡ TECHNICAL STACK:\n• React Native with TypeScript\n• FastAPI backend architecture\n• SQLite database with real-time sync\n• Expo framework for cross-platform deployment\n• Advanced charting and visualization libraries\n\n👨‍💻 DEVELOPER PROFILE:\n\n🎓 Hamza Khan\n🏢 Senior Full-Stack Developer & AI Specialist\n🌟 5+ years in mobile app development\n🔧 Expert in React Native, Python, AI/ML\n📧 hamzakhan127109@gmail.com\n\n🎯 MISSION:\nEmpowering individuals with intelligent financial tools for better money management and long-term financial wellness.\n\n💝 Crafted with passion and precision for your financial success.',
+                  [{ text: 'Awesome!' }]
                 );
               }}
             />
@@ -482,6 +443,126 @@ const SettingsScreen = () => {
           }
         }}
       />
+      
+      {/* Theme Selection Modal */}
+      <Modal
+        visible={showThemeModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowThemeModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.themeModal, { backgroundColor: theme.colors.card }]}>
+            <View style={styles.themeHeader}>
+              <Text style={[styles.themeTitle, { color: theme.colors.text }]}>Choose Theme</Text>
+              <TouchableOpacity onPress={() => setShowThemeModal(false)}>
+                <Ionicons name="close" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+            </View>
+            
+            <TouchableOpacity 
+              style={[styles.themeOption, !isDarkMode && styles.themeOptionActive]}
+              onPress={() => {
+                if (isDarkMode) toggleTheme();
+                setShowThemeModal(false);
+              }}
+            >
+              <Ionicons name="sunny" size={24} color={!isDarkMode ? '#F59E0B' : theme.colors.textSecondary} />
+              <View style={styles.themeOptionText}>
+                <Text style={[styles.themeOptionTitle, { color: theme.colors.text }]}>Light Mode</Text>
+                <Text style={[styles.themeOptionSubtitle, { color: theme.colors.textSecondary }]}>Bright and clean interface</Text>
+              </View>
+              {!isDarkMode && <Ionicons name="checkmark-circle" size={20} color="#3B82F6" />}
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.themeOption, isDarkMode && styles.themeOptionActive]}
+              onPress={() => {
+                if (!isDarkMode) toggleTheme();
+                setShowThemeModal(false);
+              }}
+            >
+              <Ionicons name="moon" size={24} color={isDarkMode ? '#8B5CF6' : theme.colors.textSecondary} />
+              <View style={styles.themeOptionText}>
+                <Text style={[styles.themeOptionTitle, { color: theme.colors.text }]}>Dark Mode</Text>
+                <Text style={[styles.themeOptionSubtitle, { color: theme.colors.textSecondary }]}>Easy on the eyes</Text>
+              </View>
+              {isDarkMode && <Ionicons name="checkmark-circle" size={20} color="#3B82F6" />}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+      
+      {/* Clear Data Confirmation Modal */}
+      <Modal
+        visible={showClearDataModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => !isClearing && setShowClearDataModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.clearDataModal, { backgroundColor: theme.colors.card }]}>
+            <LinearGradient
+              colors={['#EF4444', '#DC2626']}
+              style={styles.clearDataHeader}
+            >
+              <View style={styles.clearDataIconContainer}>
+                <Ionicons name="warning" size={32} color="#FFFFFF" />
+              </View>
+              <Text style={styles.clearDataTitle}>Clear All Data</Text>
+              <Text style={styles.clearDataSubtitle}>This action cannot be undone</Text>
+            </LinearGradient>
+            
+            <View style={styles.clearDataContent}>
+              <View style={[styles.clearDataWarning, { 
+                backgroundColor: isDarkMode ? 'rgba(239, 68, 68, 0.1)' : '#FEE2E2', 
+                borderColor: '#EF4444' 
+              }]}>
+                <Ionicons name="alert-circle" size={16} color="#EF4444" />
+                <Text style={[styles.clearDataWarningText, { color: isDarkMode ? '#F87171' : '#DC2626' }]}>
+                  All your transactions, budgets, goals, and settings will be permanently deleted.
+                </Text>
+              </View>
+              
+              <View style={styles.clearDataButtons}>
+                <TouchableOpacity 
+                  style={[styles.clearDataCancelButton, { 
+                    backgroundColor: theme.colors.surface,
+                    borderColor: theme.colors.border 
+                  }]} 
+                  onPress={() => setShowClearDataModal(false)}
+                  disabled={isClearing}
+                >
+                  <Text style={[styles.clearDataCancelText, { color: theme.colors.text }]}>Cancel</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.clearDataConfirmButton, isClearing && styles.clearDataConfirmButtonDisabled]} 
+                  onPress={confirmClearData}
+                  disabled={isClearing}
+                >
+                  <LinearGradient
+                    colors={isClearing ? ['#9CA3AF', '#6B7280'] : ['#EF4444', '#DC2626']}
+                    style={styles.clearDataConfirmGradient}
+                  >
+                    {isClearing ? (
+                      <View style={styles.clearDataLoadingContainer}>
+                        <Ionicons name="hourglass" size={18} color="#FFFFFF" />
+                        <Text style={styles.clearDataConfirmText}>Clearing...</Text>
+                      </View>
+                    ) : (
+                      <View style={styles.clearDataLoadingContainer}>
+                        <Ionicons name="trash" size={18} color="#FFFFFF" />
+                        <Text style={styles.clearDataConfirmText}>Clear All</Text>
+                      </View>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -602,6 +683,144 @@ const styles = StyleSheet.create({
   },
   settingSubtitle: {
     fontSize: 14,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  themeModal: {
+    width: '100%',
+    borderRadius: 16,
+    padding: 20,
+  },
+  themeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  themeTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  themeOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  themeOptionActive: {
+    borderColor: '#3B82F6',
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+  },
+  themeOptionText: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  themeOptionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  themeOptionSubtitle: {
+    fontSize: 14,
+  },
+  clearDataModal: {
+    width: '100%',
+    maxWidth: 340,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 15 },
+    shadowOpacity: 0.3,
+    shadowRadius: 25,
+    elevation: 15,
+  },
+  clearDataHeader: {
+    alignItems: 'center',
+    padding: 24,
+    paddingBottom: 20,
+  },
+  clearDataIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  clearDataTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 8,
+  },
+  clearDataSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+  },
+  clearDataContent: {
+    padding: 24,
+  },
+  clearDataWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 24,
+    gap: 12,
+  },
+  clearDataWarningText: {
+    fontSize: 14,
+    color: '#DC2626',
+    flex: 1,
+  },
+  clearDataButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  clearDataCancelButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clearDataCancelText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  clearDataConfirmButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  clearDataConfirmGradient: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clearDataConfirmText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginLeft: 8,
+  },
+  clearDataLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });
 

@@ -44,15 +44,37 @@ const AnalyticsScreen = () => {
         getAnalyticsStats(),
       ]);
       
+      // Calculate dynamic top category from actual expenses
+      const topCategory = getTopCategory(expenseData);
+      const dynamicStats = {
+        ...stats,
+        top_category: topCategory
+      };
+      
       setHistoricalData(historical);
       setExpenses(expenseData);
       setCategoryData(categoryBreakdown);
-      setAnalyticsStats(stats);
+      setAnalyticsStats(dynamicStats);
     } catch (error) {
       console.error('Error loading analytics data:', error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const getTopCategory = (expenses: Expense[]): string => {
+    if (!expenses || expenses.length === 0) return 'N/A';
+    
+    const categoryTotals: { [key: string]: number } = {};
+    
+    expenses.forEach(expense => {
+      categoryTotals[expense.category] = (categoryTotals[expense.category] || 0) + expense.amount;
+    });
+    
+    const topCategory = Object.entries(categoryTotals)
+      .sort(([,a], [,b]) => b - a)[0];
+    
+    return topCategory ? topCategory[0] : 'N/A';
   };
 
   const onRefresh = async () => {
@@ -238,7 +260,7 @@ const AnalyticsScreen = () => {
             <View style={styles.statCard}>
               <LinearGradient colors={['#8B5CF6', '#7C3AED']} style={styles.statGradient}>
                 <Ionicons name="pie-chart" size={24} color="#FFFFFF" />
-                <Text style={styles.statValue}>
+                <Text style={[styles.statValue, { fontSize: 14 }]}>
                   {analyticsStats?.top_category || 'N/A'}
                 </Text>
                 <Text style={styles.statLabel}>Top Category</Text>
