@@ -40,7 +40,7 @@ def add_sample_transactions():
             {"amount": 85.00, "category": "Family & Kids", "description": "Children's toys"},
             {"amount": 100.00, "category": "Charity & Donations", "description": "Monthly charity donation"},
             {"amount": 500.00, "category": "Investments", "description": "Stock purchase"},
-            {"amount": 25.00, "category": "Others", "description": "Random expense"},
+            {"amount": 25.00, "category": "Other", "description": "Random expense"},
         ]
         
         # Sample incomes

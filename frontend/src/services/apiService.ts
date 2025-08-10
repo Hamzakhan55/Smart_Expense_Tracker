@@ -20,7 +20,7 @@ const checkBackendStatus = async (): Promise<boolean> => {
 
 const apiClient = axios.create({
   baseURL: 'http://127.0.0.1:8000',
-  timeout: 30000, // Increased to 30 seconds for voice processing
+  timeout: 60000, // Increased to 60 seconds for model loading
   headers: {
     'Content-Type': 'application/json',
   },
@@ -95,7 +95,7 @@ export const processVoiceExpense = async (audioFile: File): Promise<Expense> => 
     headers: {
       'Content-Type': 'multipart/form-data', 
     },
-    timeout: 60000, // 60 seconds for voice processing
+    timeout: 120000, // 120 seconds for initial model loading
   });
   return response.data;
 };
@@ -158,7 +158,7 @@ export const processVoiceDryRun = async (audioFile: File): Promise<AiResponse> =
 
   const response = await apiClient.post<AiResponse>('/process-voice-dry-run/', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
-    timeout: 60000, // 60 seconds for voice processing
+    timeout: 120000, // 120 seconds for initial model loading
   });
   return response.data;
 };

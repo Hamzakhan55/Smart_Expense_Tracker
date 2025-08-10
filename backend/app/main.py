@@ -22,7 +22,7 @@ from datetime import date
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 sys.path.append(str(Path(__file__).parent.parent))
-from services.ai_processor_final import final_ai_processor as ai_processor
+from services.ai_processor import ai_processor
 
 app = FastAPI(
     title="Expense Tracker API",

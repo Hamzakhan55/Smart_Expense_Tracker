@@ -17,19 +17,19 @@ interface CategoryPickerProps {
 }
 
 const EXPENSE_CATEGORIES = [
+  { name: 'Charity & Donations', icon: 'heart' },
+  { name: 'Education', icon: 'school' },
+  { name: 'Electronics & Gadgets', icon: 'phone-portrait' },
+  { name: 'Entertainment', icon: 'game-controller' },
+  { name: 'Family & Kids', icon: 'people' },
   { name: 'Food & Drinks', icon: 'restaurant' },
+  { name: 'Healthcare', icon: 'medical' },
+  { name: 'Investments', icon: 'trending-up' },
+  { name: 'Other', icon: 'ellipsis-horizontal' },
+  { name: 'Rent', icon: 'home' },
+  { name: 'Shopping', icon: 'bag' },
   { name: 'Transport', icon: 'car' },
   { name: 'Utilities & Bills', icon: 'flash' },
-  { name: 'Shopping', icon: 'bag' },
-  { name: 'Electronics & Gadgets', icon: 'phone-portrait' },
-  { name: 'Healthcare', icon: 'medical' },
-  { name: 'Education', icon: 'school' },
-  { name: 'Rent', icon: 'home' },
-  { name: 'Entertainment', icon: 'game-controller' },
-  { name: 'Investments', icon: 'trending-up' },
-  { name: 'Family & Kids', icon: 'people' },
-  { name: 'Charity & Donations', icon: 'heart' },
-  { name: 'Others', icon: 'ellipsis-horizontal' },
 ];
 
 const CategoryPicker: React.FC<CategoryPickerProps> = ({

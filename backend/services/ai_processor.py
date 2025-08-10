@@ -2,7 +2,6 @@
 
 import torch
 import torchaudio
-import pickle
 import re
 from pathlib import Path
 import torch.nn.functional as F
@@ -19,140 +18,143 @@ import numpy as np
 class AIProcessor:
     def __init__(self):
         """
-        Initializes the service by loading all AI models and processors.
-        This is called only once when the FastAPI application starts.
+        Preloads all models at startup for instant response.
         """
-        print("📦 Initializing AIProcessor: Loading all models...")
-
-        # Define paths relative to the backend directory
-        base_path = Path(__file__).parent.parent
-        whisper_model_path = base_path / "models" / "whisper-large-v3"
-        classifier_model_path = base_path / "models" / "MiniLM-V2" / "fine-tuned-minilm-advanced"
-        label_encoder_path = base_path / "models" / "MiniLM-V2" / "fine-tuned-minilm-advanced" / "label_encoder.pkl"
-
-        if not whisper_model_path.exists() or not classifier_model_path.exists():
-            raise FileNotFoundError("AI models not found. Make sure they are placed in the `backend/models` directory.")
+        print("📦 Initializing AIProcessor with preloading...")
         
-        print(f"🧠 Loading Whisper model from: {whisper_model_path}")
-        print(f"🧠 Loading Classifier model from: {classifier_model_path}")
-
+        # Define paths
+        base_path = Path(__file__).parent.parent
+        self.whisper_model_path = base_path / "models" / "whisper-large-v3"
+        self.classifier_model_path = base_path / "models" / "distilbert-expense" / "checkpoint-3072"
+        
+        if not self.whisper_model_path.exists() or not self.classifier_model_path.exists():
+            raise FileNotFoundError("AI models not found.")
+        
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         print(f"💡 Using device: {self.device}")
-
-        self.whisper_processor = WhisperProcessor.from_pretrained(str(whisper_model_path))
+        
+        # Load all models immediately
+        self._load_models()
+        print("✅ AIProcessor ready for instant predictions.")
+    
+    def _load_models(self):
+        """Load all models at startup."""
+        print("🧠 Loading Whisper model...")
+        self.whisper_processor = WhisperProcessor.from_pretrained(str(self.whisper_model_path))
         self.whisper_model = WhisperForConditionalGeneration.from_pretrained(
-            str(whisper_model_path),
-            torch_dtype=torch.float16 if self.device == "cuda" else torch.float32  # Use half precision on GPU
+            str(self.whisper_model_path),
+            torch_dtype=torch.float32  # Use float32 for better accuracy
         ).to(self.device)
-        
-        # Optimize model for inference
         self.whisper_model.eval()
-        if self.device == "cuda":
-            self.whisper_model = torch.compile(self.whisper_model, mode="max-autotune")  # Compile for speed
-
-        self.classifier_tokenizer = AutoTokenizer.from_pretrained(str(classifier_model_path))
+        
+        print("🧠 Loading DistilBERT classifier...")
+        self.classifier_tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
         self.classifier_model = AutoModelForSequenceClassification.from_pretrained(
-            str(classifier_model_path),
-            torch_dtype=torch.float16 if self.device == "cuda" else torch.float32
+            str(self.classifier_model_path),
+            torch_dtype=torch.float32  # Use float32 for better accuracy
         ).to(self.device)
-        
-        # Optimize classifier for inference
         self.classifier_model.eval()
-        if self.device == "cuda":
-            self.classifier_model = torch.compile(self.classifier_model, mode="max-autotune")
-
-        import warnings
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=UserWarning)
-            with open(label_encoder_path, "rb") as f:
-                label_encoder = pickle.load(f)
-        self.id2label = {i: label for i, label in enumerate(label_encoder.classes_)}
         
-        print("✅ AIProcessor initialized successfully.")
+        self.id2label = self.classifier_model.config.id2label
 
     # --- THIS IS THE CORRECTED, ROBUST FUNCTION ---
     def transcribe_audio(self, audio_file_path: str) -> str:
         """
-        Transcribes any audio file to text by converting it to the format Whisper needs.
+        Transcribes audio file to text with optimized settings.
         """
         try:
-            # 1. Load and optimize audio for speed
+            print(f"Processing audio file: {audio_file_path}")
+            
+            # Load audio using pydub
             audio = AudioSegment.from_file(audio_file_path)
+            print(f"Original audio: {len(audio)}ms, {audio.frame_rate}Hz, {audio.channels} channels")
             
-            # 2. Aggressive audio optimization for speed
-            audio = audio.set_frame_rate(16000)
-            audio = audio.set_channels(1)
+            # Convert to mono and 16kHz
+            audio = audio.set_channels(1).set_frame_rate(16000)
             
-            # Limit audio length to 10 seconds for faster processing
-            if len(audio) > 10000:  # 10 seconds in milliseconds
-                audio = audio[:10000]
-
-            # 3. Convert audio data to a PyTorch tensor
-            samples = np.array(audio.get_array_of_samples()).astype(np.float32)
-            # Normalize to the [-1.0, 1.0] range that Whisper expects
-            samples /= (2**(audio.sample_width * 8 - 1)) # Normalize based on sample width
+            # Convert to numpy array and normalize
+            samples = np.array(audio.get_array_of_samples(), dtype=np.float32)
             
-            waveform = torch.from_numpy(samples).float()
-
-            # 4. Process the audio with optimized settings
-            inputs = self.whisper_processor(
-                waveform, 
-                sampling_rate=16000, 
-                return_tensors="pt",
-                padding=True,
-                truncation=True
-            )
-            # Use half precision on GPU for speed
-            if self.device == "cuda":
-                inputs = {k: v.to(self.device).half() if v.dtype == torch.float32 else v.to(self.device) for k, v in inputs.items()}
+            # Proper normalization for different bit depths
+            if audio.sample_width == 1:  # 8-bit
+                samples = samples / 128.0
+            elif audio.sample_width == 2:  # 16-bit
+                samples = samples / 32768.0
+            elif audio.sample_width == 4:  # 32-bit
+                samples = samples / 2147483648.0
             else:
-                inputs = {k: v.to(self.device) for k, v in inputs.items()}
-
-            # --- FIX: Use generation_config for forced_decoder_ids ---
-            forced_decoder_ids = self.whisper_processor.get_decoder_prompt_ids(language="en", task="transcribe")
-            generation_config = self.whisper_model.generation_config
-            generation_config.forced_decoder_ids = forced_decoder_ids
-
-            # Maximum speed optimizations
-            predicted_ids = self.whisper_model.generate(
-                **inputs,
-                generation_config=generation_config,
-                max_length=30,      # Even shorter output
-                num_beams=1,        # Greedy decoding
-                do_sample=False,    # No sampling
-                early_stopping=True, # Stop as soon as possible
-                use_cache=True,     # Use KV cache
-                pad_token_id=self.whisper_processor.tokenizer.eos_token_id
-            )
-            transcription = self.whisper_processor.batch_decode(predicted_ids, skip_special_tokens=True)[0]
+                samples = samples / np.max(np.abs(samples))  # Fallback normalization
             
+            print(f"Normalized audio shape: {samples.shape}, range: [{samples.min():.3f}, {samples.max():.3f}]")
+            
+            # Process with Whisper
+            inputs = self.whisper_processor(
+                samples,
+                sampling_rate=16000,
+                return_tensors="pt"
+            )
+            
+            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+            
+            # Force English transcription using forced_decoder_ids
+            forced_decoder_ids = self.whisper_processor.get_decoder_prompt_ids(language="en", task="transcribe")
+            
+            with torch.no_grad():
+                predicted_ids = self.whisper_model.generate(
+                    inputs["input_features"],
+                    max_length=448,
+                    num_beams=1,
+                    do_sample=False,
+                    forced_decoder_ids=forced_decoder_ids
+                )
+            
+            transcription = self.whisper_processor.batch_decode(predicted_ids, skip_special_tokens=True)[0]
             print(f"📝 Transcription: '{transcription}'")
             return transcription.strip()
             
         except Exception as e:
-            # The most common error is that ffmpeg is not installed. This message helps with debugging.
-            print(f"ERROR in transcribe_audio. A common cause is a missing 'ffmpeg' installation. Full error: {e}")
+            print(f"ERROR in transcribe_audio: {e}")
+            import traceback
+            traceback.print_exc()
             return ""
 
     def classify_text(self, text: str) -> str:
-        """Classifies text into an expense category."""
+        """Pure model classification - exactly like test script."""
         if not text:
-            return "Uncategorized"
-        # Maximum speed tokenization
-        inputs = self.classifier_tokenizer(
-            text, 
-            return_tensors="pt", 
-            padding=True, 
-            truncation=True, 
-            max_length=64   # Much shorter input
-        ).to(self.device)
+            return "Other"
         
-        with torch.no_grad(), torch.autocast(device_type=self.device, enabled=self.device=="cuda"):
-            logits = self.classifier_model(**inputs).logits
-        predicted_class_id = torch.argmax(logits, dim=1).item()
-        category = self.id2label.get(predicted_class_id, "Uncategorized")
-        print(f"🏷️ Classified Category: '{category}'")
-        return category
+        print(f"🔍 Text: '{text}'")
+        
+        # Exact same tokenization as test script - NO preprocessing
+        inputs = self.classifier_tokenizer(text, return_tensors="pt", padding=True, truncation=True)
+        
+        # Exact same prediction as test script
+        with torch.no_grad():
+            outputs = self.classifier_model(**inputs)
+            probabilities = torch.softmax(outputs.logits, dim=-1)
+            predicted_id = torch.argmax(outputs.logits, dim=1).item()
+            confidence = probabilities[0][predicted_id].item()
+        
+        # Use exact same mapping as test script
+        id2label = {
+            "0": "Charity & Donations",
+            "1": "Education",
+            "2": "Electronics & Gadgets",
+            "3": "Entertainment",
+            "4": "Family & Kids",
+            "5": "Food & Drinks",
+            "6": "Healthcare",
+            "7": "Investments",
+            "8": "Other",
+            "9": "Rent",
+            "10": "Shopping",
+            "11": "Transport",
+            "12": "Utilities & Bills"
+        }
+        predicted_category = id2label.get(str(predicted_id), "Other")
+        print(f"🏷️ Predicted: {predicted_category} (confidence: {confidence:.3f})")
+        
+        return predicted_category
 
     def extract_amount(self, text: str) -> float:
         """Extracts numerical amount from text, handling commas and various formats."""
@@ -185,8 +187,8 @@ class AIProcessor:
         transcription = self.transcribe_audio(audio_file_path)
         if not transcription:
             return {
-                "description": "Failed to transcribe audio",
-                "category": "Error",
+                "description": "Could not understand audio",
+                "category": "Other",
                 "amount": 0.0
             }
         category = self.classify_text(transcription)
