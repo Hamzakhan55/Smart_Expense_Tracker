@@ -15,7 +15,9 @@ const CategoryIcon: React.FC<CategoryIconProps> = ({ category, size = 20, color 
         return 'restaurant';
       case 'transport':
         return 'car';
+      case 'utilities & bills':
       case 'utilities':
+      case 'bills':
         return 'flash';
       case 'shopping':
         return 'bag';
@@ -27,18 +29,15 @@ const CategoryIcon: React.FC<CategoryIconProps> = ({ category, size = 20, color 
         return 'school';
       case 'rent':
         return 'home';
-      case 'bills':
-        return 'receipt';
       case 'entertainment':
         return 'game-controller';
       case 'investments':
         return 'trending-up';
-      case 'personal care':
-        return 'cut';
       case 'family & kids':
         return 'people';
       case 'charity & donations':
         return 'heart';
+      case 'others':
       case 'miscellaneous':
         return 'ellipsis-horizontal';
       

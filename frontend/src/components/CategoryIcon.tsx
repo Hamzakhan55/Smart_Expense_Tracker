@@ -1,19 +1,17 @@
 import {
   UtensilsCrossed,  // For "Food & Drinks"
   Car,              // For "Transport"
-  Zap,              // For "Utilities"
+  Zap,              // For "Utilities & Bills"
   ShoppingBag,      // For "Shopping"
   Smartphone,       // For "Electronics & Gadgets"
   HeartPulse,       // For "Healthcare"
   GraduationCap,    // For "Education"
   Home,             // For "Rent"
-  FileText,         // For "Bills"
   Gamepad2,         // For "Entertainment"
   TrendingUp,       // For "Investments"
-  Scissors,         // For "Personal Care"
   Baby,             // For "Family & Kids"
   Heart,            // For "Charity & Donations"
-  CircleDashed,     // For "Miscellaneous"
+  CircleDashed,     // For "Others"
   
   // Income category icons
   Banknote,         // For "Salary"
@@ -48,7 +46,9 @@ const CategoryIcon = ({ category, ...props }: CategoryIconProps) => {
       return <UtensilsCrossed {...props} />;
     case 'transport':
       return <Car {...props} />;
+    case 'utilities & bills':
     case 'utilities':
+    case 'bills':
       return <Zap {...props} />;
     case 'shopping':
       return <ShoppingBag {...props} />;
@@ -60,18 +60,15 @@ const CategoryIcon = ({ category, ...props }: CategoryIconProps) => {
       return <GraduationCap {...props} />;
     case 'rent':
       return <Home {...props} />;
-    case 'bills':
-      return <FileText {...props} />;
     case 'entertainment':
       return <Gamepad2 {...props} />;
     case 'investments':
       return <TrendingUp {...props} />;
-    case 'personal care':
-      return <Scissors {...props} />;
     case 'family & kids':
       return <Baby {...props} />;
     case 'charity & donations':
       return <Heart {...props} />;
+    case 'others':
     case 'miscellaneous':
       return <CircleDashed {...props} />;
     

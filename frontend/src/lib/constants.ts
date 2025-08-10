@@ -1,19 +1,17 @@
 export const EXPENSE_CATEGORIES = [
   "Food & Drinks",
   "Transport",
-  "Utilities",
+  "Utilities & Bills",
   "Shopping",
   "Electronics & Gadgets",
   "Healthcare",
   "Education",
   "Rent",
-  "Bills",
   "Entertainment",
   "Investments",
-  "Personal Care",
   "Family & Kids",
   "Charity & Donations",
-  "Miscellaneous",
+  "Others",
 ];
 
 
