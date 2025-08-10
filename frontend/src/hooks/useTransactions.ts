@@ -80,12 +80,9 @@ export const useTransactions = (search?: string) => {
   });
 
   const processVoiceMutation = useMutation<AiResponse, Error, File>({
-    mutationFn: processVoiceDryRun, // It calls the dry run function
-    // We remove the onSuccess here because we are not invalidating queries anymore.
-    // The success will be handled in the component that calls this mutation.
+    mutationFn: processVoiceDryRun,
     onError: (error) => {
       console.error("Error processing voice expense:", error);
-      alert("Sorry, we couldn't understand that. Please try again.");
     }
   });
 
@@ -161,7 +158,17 @@ export const useTransactions = (search?: string) => {
     editIncome: updateIncomeMutation.mutate,
     isUpdating: updateExpenseMutation.isPending || updateIncomeMutation.isPending,
     clearAllTransactions: deleteAllMutation.mutate,
-    processVoice: processVoiceMutation.mutate,
+    processVoice: (audioFile: File, callbacks?: { onSuccess?: (data: AiResponse) => void; onError?: (error: any) => void }) => {
+      processVoiceMutation.mutate(audioFile, {
+        onSuccess: (data) => {
+          callbacks?.onSuccess?.(data);
+        },
+        onError: (error) => {
+          console.error("Voice processing error:", error);
+          callbacks?.onError?.(error);
+        }
+      });
+    },
     isProcessingVoice: processVoiceMutation.isPending,
 
   };

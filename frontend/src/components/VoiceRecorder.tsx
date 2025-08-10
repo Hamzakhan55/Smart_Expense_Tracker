@@ -26,30 +26,69 @@ const VoiceRecorder = ({ onRecordingComplete, isProcessing }: VoiceRecorderProps
     if (status !== "idle") return
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 16000
+        } 
+      })
       setStatus("recording")
 
-      const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" })
+      // Try different MIME types for better compatibility
+      let mimeType = "audio/webm"
+      if (!MediaRecorder.isTypeSupported("audio/webm")) {
+        if (MediaRecorder.isTypeSupported("audio/mp4")) {
+          mimeType = "audio/mp4"
+        } else if (MediaRecorder.isTypeSupported("audio/wav")) {
+          mimeType = "audio/wav"
+        }
+      }
+      
+      console.log(`Using MIME type: ${mimeType}`)
+      const recorder = new MediaRecorder(stream, { mimeType })
       mediaRecorderRef.current = recorder
       audioChunksRef.current = []
 
       recorder.ondataavailable = (event) => {
+        console.log(`Audio chunk received: ${event.data.size} bytes`)
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data)
         }
       }
 
       recorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" })
+        console.log(`Total audio chunks: ${audioChunksRef.current.length}`)
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType })
+        console.log(`Audio blob size: ${audioBlob.size} bytes`)
+        
         if (audioBlob.size > 0) {
-          const audioFile = new File([audioBlob], "voice-expense.webm", { type: "audio/webm" })
+          const audioFile = new File([audioBlob], "voice-expense.webm", { type: mimeType })
+          console.log(`Created audio file: ${audioFile.name}, size: ${audioFile.size} bytes`)
           onRecordingComplete(audioFile)
+        } else {
+          console.error("Audio blob is empty")
+          alert("Recording failed. Please try again.")
+          setStatus("idle")
+          return
         }
+        
         stream.getTracks().forEach((track) => track.stop())
         setStatus("processing")
       }
 
-      recorder.start()
+      recorder.onerror = (event) => {
+        console.error("MediaRecorder error:", event.error)
+        setStatus("idle")
+        stream.getTracks().forEach((track) => track.stop())
+        alert("Recording error occurred. Please try again.")
+      }
+
+      // Start recording with a time slice to ensure data is captured
+      recorder.start(100) // Capture data every 100ms
+      console.log("Recording started")
+      
     } catch (error) {
       console.error("Error accessing microphone:", error)
       setStatus("idle")
@@ -59,7 +98,11 @@ const VoiceRecorder = ({ onRecordingComplete, isProcessing }: VoiceRecorderProps
 
   const stopRecording = () => {
     if (status !== "recording" || !mediaRecorderRef.current) return
-    mediaRecorderRef.current.stop()
+    
+    console.log("Stopping recording...")
+    if (mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.stop()
+    }
     // Don't set status here, let onstop handler do it
   }
 

@@ -11,11 +11,11 @@ DISTILBERT_AVAILABLE = False
 
 try:
     import torch
-    from transformers import DistilBertTokenizerFast, DistilBertForSequenceClassification
+    from transformers import BertForSequenceClassification, XLMRobertaTokenizer
     DISTILBERT_AVAILABLE = True
-    print("DistilBERT models available")
+    print("BERT models available")
 except ImportError as e:
-    print(f"DistilBERT import failed: {e}")
+    print(f"BERT import failed: {e}")
 
 try:
     from transformers import WhisperProcessor, WhisperForConditionalGeneration
@@ -69,13 +69,13 @@ class AIProcessor:
             return
             
         try:
-            model_path = Path(__file__).parent.parent / "models" / "distilbert-base-uncased-mnli" / "my_model"
-            label_encoder_path = Path(__file__).parent.parent / "models" / "distilbert-base-uncased-mnli" / "label_encoder.pkl"
+            model_path = Path(__file__).parent.parent / "models" / "MiniLM-V2" / "fine-tuned-minilm-advanced"
+            label_encoder_path = Path(__file__).parent.parent / "models" / "MiniLM-V2" / "fine-tuned-minilm-advanced" / "label_encoder.pkl"
             
             if model_path.exists() and label_encoder_path.exists():
-                from transformers import DistilBertTokenizerFast, DistilBertForSequenceClassification
-                self.category_model = DistilBertForSequenceClassification.from_pretrained(str(model_path))
-                self.category_tokenizer = DistilBertTokenizerFast.from_pretrained(str(model_path))
+                from transformers import BertForSequenceClassification, XLMRobertaTokenizer
+                self.category_model = BertForSequenceClassification.from_pretrained(str(model_path))
+                self.category_tokenizer = XLMRobertaTokenizer.from_pretrained(str(model_path))
                 
                 with open(label_encoder_path, "rb") as f:
                     self.label_encoder = pickle.load(f)
@@ -114,6 +114,13 @@ class AIProcessor:
             print(f"Audio file not found: {audio_file_path}")
             return ""
         
+        file_size = os.path.getsize(audio_file_path)
+        print(f"Transcribing audio file: {audio_file_path} (size: {file_size} bytes)")
+        
+        if file_size == 0:
+            print("Audio file is empty")
+            return ""
+        
         # Try Whisper model first
         if self.whisper_model and self.whisper_processor and AUDIO_PROCESSING_AVAILABLE:
             try:
@@ -122,6 +129,15 @@ class AIProcessor:
                 # Load audio with librosa
                 audio_array, sampling_rate = librosa.load(audio_file_path, sr=16000)
                 print(f"Audio loaded: {len(audio_array)} samples at {sampling_rate}Hz")
+                
+                if len(audio_array) == 0:
+                    print("Audio array is empty after loading")
+                    return ""
+                
+                # Check if audio is too short (less than 0.1 seconds)
+                if len(audio_array) < 1600:  # 0.1 seconds at 16kHz
+                    print("Audio is too short for transcription")
+                    return ""
                 
                 # Process with Whisper
                 input_features = self.whisper_processor(audio_array, sampling_rate=sampling_rate, return_tensors="pt").input_features
@@ -132,10 +148,18 @@ class AIProcessor:
                     transcription = self.whisper_processor.batch_decode(predicted_ids, skip_special_tokens=True)[0]
                 
                 print(f"Whisper transcribed: '{transcription}'")
+                
+                # Check if transcription is meaningful
+                if not transcription or transcription.strip() == "" or len(transcription.strip()) < 2:
+                    print("Transcription is empty or too short")
+                    return ""
+                
                 return transcription.strip()
                 
             except Exception as e:
                 print(f"Whisper transcription failed: {e}")
+                import traceback
+                traceback.print_exc()
         
         # Fallback to speech_recognition if available
         if 'SPEECH_RECOGNITION_AVAILABLE' in globals() and SPEECH_RECOGNITION_AVAILABLE:
@@ -268,13 +292,13 @@ class AIProcessor:
         # Enhanced patterns with word boundaries and context
         patterns = [
             # "for 2000 rupees", "cost 500 rs", "paid 1000 rupees"
-            r'(?:for|cost|paid|spent|worth|price)\s+([0-9,]+(?:\.[0-9]{1,2})?)\s*(?:rupees?|rs?\.?|dollars?|\$|₹)',
-            # "2000 rupees", "500 rs", "1000 dollars"
-            r'\b([0-9,]+(?:\.[0-9]{1,2})?)\s*(?:rupees?|rs?\.?|dollars?|\$|₹)\b',
-            # "rupees 2000", "rs 500", "$ 1000"
-            r'(?:rupees?|rs?\.?|dollars?|\$|₹)\s+([0-9,]+(?:\.[0-9]{1,2})?)',
-            # "$2000", "₹500"
-            r'[\$₹]\s*([0-9,]+(?:\.[0-9]{1,2})?)',
+            r'(?:for|cost|paid|spent|worth|price)\s+([0-9,]+(?:\.[0-9]{1,2})?)\s*(?:rupees?|rs?\.?|dollars?|\$|pesos?)',
+            # "2000 rupees", "500 rs", "1000 dollars", "3000 pesos"
+            r'\b([0-9,]+(?:\.[0-9]{1,2})?)\s*(?:rupees?|rs?\.?|dollars?|\$|pesos?)\b',
+            # "rupees 2000", "rs 500", "$ 1000", "pesos 3000"
+            r'(?:rupees?|rs?\.?|dollars?|\$|pesos?)\s+([0-9,]+(?:\.[0-9]{1,2})?)',
+            # "$2000"
+            r'\$\s*([0-9,]+(?:\.[0-9]{1,2})?)',
             # Numbers with commas "1,000" or "10,000"
             r'\b([0-9]{1,3}(?:,[0-9]{3})+(?:\.[0-9]{1,2})?)\b',
             # Decimal numbers "25.50"
@@ -303,12 +327,34 @@ class AIProcessor:
     
     def process_expense_audio(self, audio_file_path: str) -> dict:
         print(f"Processing audio file: {audio_file_path}")
+        
+        # Check if file exists
+        if not os.path.exists(audio_file_path):
+            print(f"Audio file not found: {audio_file_path}")
+            return {
+                "description": "Sorry, we couldn't understand that. Please try again.",
+                "category": "Error",
+                "amount": 0.0
+            }
+        
+        # Check file size
+        file_size = os.path.getsize(audio_file_path)
+        print(f"Audio file size: {file_size} bytes")
+        
+        if file_size == 0:
+            print("Audio file is empty")
+            return {
+                "description": "Sorry, we couldn't understand that. Please try again.",
+                "category": "Error",
+                "amount": 0.0
+            }
+        
         transcription = self.transcribe_audio(audio_file_path)
         
-        if not transcription:
-            print("Transcription failed, returning error response")
+        if not transcription or transcription.strip() == "":
+            print("Transcription failed or empty, returning error response")
             return {
-                "description": "Audio transcription failed. Please check your internet connection and try again.",
+                "description": "Sorry, we couldn't understand that. Please try again.",
                 "category": "Error",
                 "amount": 0.0
             }

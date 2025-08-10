@@ -2,9 +2,14 @@
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+import os
+from dotenv import load_dotenv
 
-# This should be a secret key stored securely, e.g., in your .env file
-SECRET_KEY = "c44df0c124ca2149186660defdb6dda55a7a86afe9906a719fa78894d2eb05f0a2e958e00de89ccc9e26aa8c60e3cf1c" 
+# Load environment variables
+load_dotenv()
+
+# Get secret key from environment or use a default for development
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8 hours
 

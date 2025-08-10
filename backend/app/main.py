@@ -8,6 +8,7 @@ from pydantic import BaseModel
 import sys
 import io
 from datetime import datetime
+import traceback
 
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
@@ -21,7 +22,7 @@ from datetime import date
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 sys.path.append(str(Path(__file__).parent.parent))
-from services.ai_processor_local import ai_processor
+from services.ai_processor_final import final_ai_processor as ai_processor
 
 app = FastAPI(
     title="Expense Tracker API",
@@ -175,28 +176,87 @@ async def process_voice_dry_run(file: UploadFile = File(...)):
     temp_dir = Path("temp_audio")
     temp_dir.mkdir(exist_ok=True)
     temp_file_path = temp_dir / file.filename
+    
+    print(f"Dry run - Received file: {file.filename}, content_type: {file.content_type}")
+    
     try:
+        # Save uploaded file
         with temp_file_path.open("wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+            content = await file.read()
+            buffer.write(content)
+            print(f"Dry run - Saved file to: {temp_file_path}, size: {len(content)} bytes")
+        
+        # Verify file was saved correctly
+        if not temp_file_path.exists():
+            print(f"Dry run - File was not saved correctly: {temp_file_path}")
+            raise HTTPException(status_code=500, detail="Failed to save audio file")
+        
+        file_size = temp_file_path.stat().st_size
+        print(f"Dry run - File saved successfully: {temp_file_path}, size: {file_size} bytes")
+        
+        if file_size == 0:
+            print("Dry run - Uploaded file is empty")
+            raise HTTPException(status_code=400, detail="Sorry, we couldn't understand that. Please try again.")
+        
+        # Process with AI
         expense_data = ai_processor.process_expense_audio(str(temp_file_path))
+        print(f"Dry run - AI processing result: {expense_data}")
+        
         if expense_data.get("category") == "Error":
             raise HTTPException(status_code=400, detail=expense_data.get("description"))
+        
         return AiResponse(**expense_data)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Dry run - Unexpected error in voice processing: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="Sorry, we couldn't understand that. Please try again.")
     finally:
         if temp_file_path.exists():
             temp_file_path.unlink()
+            print(f"Dry run - Cleaned up temporary file: {temp_file_path}")
 
 @app.post("/process-voice/", response_model=schemas.Expense)
 async def process_voice(file: UploadFile = File(...), db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     temp_dir = Path("temp_audio")
     temp_dir.mkdir(exist_ok=True)
     temp_file_path = temp_dir / file.filename
+    
+    print(f"Received file: {file.filename}, content_type: {file.content_type}")
+    
     try:
+        # Save uploaded file
         with temp_file_path.open("wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+            content = await file.read()
+            buffer.write(content)
+            print(f"Saved file to: {temp_file_path}, size: {len(content)} bytes")
+        
+        # Verify file was saved correctly
+        if not temp_file_path.exists():
+            print(f"File was not saved correctly: {temp_file_path}")
+            raise HTTPException(status_code=500, detail="Failed to save audio file")
+        
+        file_size = temp_file_path.stat().st_size
+        print(f"File saved successfully: {temp_file_path}, size: {file_size} bytes")
+        
+        if file_size == 0:
+            print("Uploaded file is empty")
+            raise HTTPException(status_code=400, detail="Sorry, we couldn't understand that. Please try again.")
+        
+        # Process with AI
         expense_data = ai_processor.process_expense_audio(str(temp_file_path))
+        print(f"AI processing result: {expense_data}")
+        
         if expense_data.get("category") == "Error":
             raise HTTPException(status_code=400, detail=expense_data.get("description"))
+        
+        # Validate extracted data
+        if expense_data.get("amount", 0) <= 0:
+            print("No valid amount extracted from audio")
+            raise HTTPException(status_code=400, detail="Sorry, we couldn't understand the amount. Please try again.")
         
         # Create expense from AI data
         expense_create = schemas.ExpenseCreate(
@@ -205,13 +265,37 @@ async def process_voice(file: UploadFile = File(...), db: Session = Depends(get_
             description=expense_data["description"]
         )
         return crud.create_expense_for_user(db=db, expense=expense_create, user_id=current_user.id)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Unexpected error in voice processing: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="Sorry, we couldn't understand that. Please try again.")
     finally:
         if temp_file_path.exists():
             temp_file_path.unlink()
+            print(f"Cleaned up temporary file: {temp_file_path}")
 
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
+
+@app.get("/ai-status")
+def ai_status_check():
+    """Check AI processor status for debugging"""
+    try:
+        status = ai_processor.get_status()
+        return {
+            "status": "ok",
+            "ai_processor": status
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e)
+        }
 
 @app.get("/me", response_model=schemas.User)
 async def read_users_me(current_user: models.User = Depends(get_current_user)):

@@ -34,8 +34,8 @@ def test_model_paths():
     base_path = Path(__file__).parent / "models"
     
     whisper_path = base_path / "whisper-large-v3"
-    distilbert_path = base_path / "distilbert-base-uncased-mnli" / "my_model"
-    label_encoder_path = base_path / "distilbert-base-uncased-mnli" / "label_encoder.pkl"
+    distilbert_path = base_path / "MiniLM-V2"
+    label_encoder_path = base_path / "MiniLM-V2" / "label_encoder.pkl"
     
     print(f"Base models path: {base_path}")
     print(f"Whisper path exists: {whisper_path.exists()} - {whisper_path}")

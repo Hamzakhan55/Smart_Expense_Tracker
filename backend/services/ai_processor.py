@@ -27,8 +27,8 @@ class AIProcessor:
         # Define paths relative to the backend directory
         base_path = Path(__file__).parent.parent
         whisper_model_path = base_path / "models" / "whisper-large-v3"
-        classifier_model_path = base_path / "models" / "distilbert-base-uncased-mnli" / "my_model"
-        label_encoder_path = base_path / "models" / "distilbert-base-uncased-mnli" / "label_encoder.pkl"
+        classifier_model_path = base_path / "models" / "MiniLM-V2" / "fine-tuned-minilm-advanced"
+        label_encoder_path = base_path / "models" / "MiniLM-V2" / "fine-tuned-minilm-advanced" / "label_encoder.pkl"
 
         if not whisper_model_path.exists() or not classifier_model_path.exists():
             raise FileNotFoundError("AI models not found. Make sure they are placed in the `backend/models` directory.")
