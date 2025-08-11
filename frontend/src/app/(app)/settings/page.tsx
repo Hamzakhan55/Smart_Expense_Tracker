@@ -9,6 +9,7 @@ import { useTheme } from "@/context/ThemeContext"
 import { useCurrency } from "@/context/CurrencyContext"
 import { generateTransactionReport } from "@/services/reportService"
 import CurrencySelector from "@/components/CurrencySelector"
+import DocumentationModal from "@/components/DocumentationModal"
 import {
   SettingsIcon,
   User,
@@ -55,6 +56,7 @@ export default function SettingsPage() {
   const [emailForm, setEmailForm] = useState({ newEmail: '', password: '' })
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
   const [isUpdating, setIsUpdating] = useState(false)
+  const [showDocumentation, setShowDocumentation] = useState<{ isOpen: boolean; type: 'guide' | 'faq' }>({ isOpen: false, type: 'guide' })
 
   const allTransactions = useMemo(() => {
     const combined = [
@@ -115,11 +117,11 @@ export default function SettingsPage() {
   }
 
   const handleUserGuide = () => {
-    alert('User Guide: This feature will be available soon. For now, explore the app to learn about its features!')
+    setShowDocumentation({ isOpen: true, type: 'guide' })
   }
 
   const handleFAQ = () => {
-    alert('FAQ: Common questions and answers will be available soon. Contact the developer for immediate help.')
+    setShowDocumentation({ isOpen: true, type: 'faq' })
   }
 
   const handleChangeEmail = async (e: React.FormEvent) => {
@@ -832,6 +834,13 @@ export default function SettingsPage() {
             </div>
           </div>
         )}
+
+        {/* Documentation Modal */}
+        <DocumentationModal 
+          isOpen={showDocumentation.isOpen}
+          onClose={() => setShowDocumentation({ isOpen: false, type: 'guide' })}
+          type={showDocumentation.type}
+        />
       </div>
     </div>
   )
