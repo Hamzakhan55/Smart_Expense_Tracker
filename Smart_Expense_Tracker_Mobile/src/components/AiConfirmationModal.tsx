@@ -14,6 +14,7 @@ import { AiResponse } from '../types';
 import { createExpense } from '../services/apiService';
 import { useCurrency } from '../context/CurrencyContext';
 import { useTheme } from '../context/ThemeContext';
+import SuccessModal from './SuccessModal';
 
 interface AiConfirmationModalProps {
   aiData: AiResponse | null;
@@ -51,6 +52,7 @@ const AiConfirmationModal: React.FC<AiConfirmationModalProps> = ({
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [description, setDescription] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   useEffect(() => {
     if (aiData) {
@@ -83,9 +85,12 @@ const AiConfirmationModal: React.FC<AiConfirmationModalProps> = ({
         description,
       });
       
-      Alert.alert('Success', 'Expense saved successfully!');
+      setShowSuccessModal(true);
       onSuccess?.();
-      onClose();
+      
+      setTimeout(() => {
+        onClose();
+      }, 2000);
     } catch (error) {
       console.error('Failed to create expense:', error);
       Alert.alert('Error', 'Failed to save expense. Please try again.');
@@ -226,6 +231,14 @@ const AiConfirmationModal: React.FC<AiConfirmationModalProps> = ({
           </TouchableOpacity>
         </View>
       </View>
+      
+      <SuccessModal
+        isVisible={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        type="expense"
+        amount={parseFloat(amount) || 0}
+        category={category}
+      />
     </Modal>
   );
 };

@@ -526,7 +526,8 @@ const parseVoiceText = (text: string): AiResponse => {
 export const processVoiceDryRun = async (formData: FormData): Promise<AiResponse> => {
   try {
     console.log('Sending voice data to backend...');
-    const response = await apiClient.post<AiResponse>('/process-voice-dry-run/', formData, {
+    const client = await getApiClient();
+    const response = await client.post<AiResponse>('/process-voice-dry-run/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 30000,
     });
@@ -535,13 +536,11 @@ export const processVoiceDryRun = async (formData: FormData): Promise<AiResponse
     // Validate and enhance backend response
     const result = response.data;
     if (!result.amount || result.amount === 0) {
-      // Try to parse amount from description if backend failed
       const parsed = parseVoiceText(result.description || '');
       result.amount = parsed.amount || result.amount;
     }
     
     if (!result.category || result.category === 'Other') {
-      // Try to predict category if backend failed
       const parsed = parseVoiceText(result.description || '');
       result.category = parsed.category !== 'Other' ? parsed.category : result.category;
     }
@@ -550,7 +549,6 @@ export const processVoiceDryRun = async (formData: FormData): Promise<AiResponse
   } catch (error: any) {
     console.error('Voice processing error:', error.response?.data || error.message);
     
-    // Check if it's a transcription error from backend
     if (error.response?.data?.detail) {
       console.log('Backend transcription failed:', error.response.data.detail);
       return {
@@ -571,7 +569,8 @@ export const processVoiceDryRun = async (formData: FormData): Promise<AiResponse
 
 export const processVoiceExpense = async (formData: FormData): Promise<Expense> => {
   try {
-    const response = await apiClient.post<Expense>('/process-voice/', formData, {
+    const client = await getApiClient();
+    const response = await client.post<Expense>('/process-voice/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 30000,
     });
