@@ -79,10 +79,12 @@ export const useTransactions = (search?: string) => {
     },
   });
 
-  const processVoiceMutation = useMutation<AiResponse, Error, File>({
-    mutationFn: processVoiceDryRun,
+  const processVoiceMutation = useMutation<AiResponse, Error, { file: File; signal?: AbortSignal }>({
+    mutationFn: ({ file, signal }) => processVoiceDryRun(file, signal),
     onError: (error) => {
-      console.error("Error processing voice expense:", error);
+      if (error.name !== 'CanceledError') {
+        console.error("Error processing voice expense:", error);
+      }
     }
   });
 
@@ -158,8 +160,8 @@ export const useTransactions = (search?: string) => {
     editIncome: updateIncomeMutation.mutate,
     isUpdating: updateExpenseMutation.isPending || updateIncomeMutation.isPending,
     clearAllTransactions: deleteAllMutation.mutate,
-    processVoice: (audioFile: File, callbacks?: { onSuccess?: (data: AiResponse) => void; onError?: (error: any) => void }) => {
-      processVoiceMutation.mutate(audioFile, {
+    processVoice: (audioFile: File, callbacks?: { onSuccess?: (data: AiResponse) => void; onError?: (error: any) => void; signal?: AbortSignal }) => {
+      processVoiceMutation.mutate({ file: audioFile, signal: callbacks?.signal }, {
         onSuccess: (data) => {
           callbacks?.onSuccess?.(data);
         },

@@ -152,13 +152,14 @@ export const deleteAllTransactions = async (): Promise<void> => {
 };
 
 
-export const processVoiceDryRun = async (audioFile: File): Promise<AiResponse> => {
+export const processVoiceDryRun = async (audioFile: File, signal?: AbortSignal): Promise<AiResponse> => {
   const formData = new FormData();
   formData.append('file', audioFile);
 
   const response = await apiClient.post<AiResponse>('/process-voice-dry-run/', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
     timeout: 120000, // 120 seconds for initial model loading
+    signal, // Pass the abort signal
   });
   return response.data;
 };

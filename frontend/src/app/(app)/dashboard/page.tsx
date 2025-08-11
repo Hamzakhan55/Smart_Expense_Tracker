@@ -89,6 +89,7 @@ export default function DashboardPage() {
   const { expenses, incomes, isLoading: isTransactionsLoading, processVoice, isProcessingVoice } = useTransactions()
   const { getBackgroundClass, getCardClass, getTextClass } = useTheme()
   const [aiData, setAiData] = useState<AiResponse | null>(null)
+  const [voiceController, setVoiceController] = useState<AbortController | null>(null)
   const currentMonth = new Date().getMonth() + 1
   const currentYear = new Date().getFullYear()
   const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1
@@ -97,14 +98,32 @@ export default function DashboardPage() {
   const { monthlySummary: lastMonthlySummary } = useSummary(lastMonthYear, lastMonth)
 
   const handleVoiceRecording = (audioFile: File) => {
+    const controller = new AbortController()
+    setVoiceController(controller)
+    
     processVoice(audioFile, {
+      signal: controller.signal,
       onSuccess: (data: AiResponse) => {
         setAiData(data)
+        setVoiceController(null)
       },
       onError: (error) => {
-        console.error("Voice processing failed:", error)
+        if (!error.code?.includes('ERR_CANCELED') && error.name !== 'CanceledError') {
+          console.error("Voice processing failed:", error)
+        }
+        setVoiceController(null)
       },
     })
+  }
+
+  const handleCancelVoice = () => {
+    if (voiceController) {
+      const originalError = console.error
+      console.error = () => {}
+      voiceController.abort()
+      setTimeout(() => { console.error = originalError }, 100)
+      setVoiceController(null)
+    }
   }
 
   // Calculate percentage changes
@@ -258,7 +277,11 @@ export default function DashboardPage() {
 
         {/* Voice Recorder */}
         <div className="fixed bottom-8 right-8 z-50">
-          <VoiceRecorder onRecordingComplete={handleVoiceRecording} isProcessing={isProcessingVoice} />
+          <VoiceRecorder 
+            onRecordingComplete={handleVoiceRecording} 
+            isProcessing={isProcessingVoice}
+            onCancel={handleCancelVoice}
+          />
         </div>
 
         <AiConfirmationModal aiData={aiData} onClose={() => setAiData(null)} />

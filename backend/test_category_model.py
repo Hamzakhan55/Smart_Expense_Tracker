@@ -36,7 +36,7 @@ def test_category_model():
     
     # Test cases
     test_texts = [
-        "Buy books for school for $3,000",
+        "I have given you a pizza for Rs. 2000",
         "going from karachi to islamabad i spent 300 rupees", 
         "ordered pizza from shop for 200 rupees",
         "book a car for 4500 rupees",

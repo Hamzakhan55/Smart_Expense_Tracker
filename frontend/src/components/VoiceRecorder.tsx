@@ -1,15 +1,19 @@
 "use client"
 
-import { Mic, Sparkles } from "lucide-react"
+import { Mic, Sparkles, X } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
+import { useTheme } from "@/context/ThemeContext"
 
 interface VoiceRecorderProps {
   onRecordingComplete: (audioFile: File) => void
   isProcessing: boolean
+  onCancel?: () => void
 }
 
-const VoiceRecorder = ({ onRecordingComplete, isProcessing }: VoiceRecorderProps) => {
+const VoiceRecorder = ({ onRecordingComplete, isProcessing, onCancel }: VoiceRecorderProps) => {
   const [status, setStatus] = useState<"idle" | "recording" | "processing">("idle")
+  const [showModal, setShowModal] = useState(false)
+  const { getModalClass, getTextClass } = useTheme()
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
@@ -17,96 +21,103 @@ const VoiceRecorder = ({ onRecordingComplete, isProcessing }: VoiceRecorderProps
   useEffect(() => {
     if (isProcessing) {
       setStatus("processing")
+      setShowModal(true)
     } else if (status === "processing" && !isProcessing) {
       setStatus("idle")
+      setShowModal(false)
     }
   }, [isProcessing, status])
 
-  const startRecording = async () => {
-    if (status !== "idle") return
+  const toggleRecording = async () => {
+    if (status === "idle") {
+      // Start recording
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            sampleRate: 16000
+          } 
+        })
+        setStatus("recording")
 
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          sampleRate: 16000
-        } 
-      })
-      setStatus("recording")
-
-      // Try different MIME types for better compatibility
-      let mimeType = "audio/webm"
-      if (!MediaRecorder.isTypeSupported("audio/webm")) {
-        if (MediaRecorder.isTypeSupported("audio/mp4")) {
-          mimeType = "audio/mp4"
-        } else if (MediaRecorder.isTypeSupported("audio/wav")) {
-          mimeType = "audio/wav"
+        let mimeType = "audio/webm"
+        if (!MediaRecorder.isTypeSupported("audio/webm")) {
+          if (MediaRecorder.isTypeSupported("audio/mp4")) {
+            mimeType = "audio/mp4"
+          } else if (MediaRecorder.isTypeSupported("audio/wav")) {
+            mimeType = "audio/wav"
+          }
         }
-      }
-      
-      console.log(`Using MIME type: ${mimeType}`)
-      const recorder = new MediaRecorder(stream, { mimeType })
-      mediaRecorderRef.current = recorder
-      audioChunksRef.current = []
-
-      recorder.ondataavailable = (event) => {
-        console.log(`Audio chunk received: ${event.data.size} bytes`)
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data)
-        }
-      }
-
-      recorder.onstop = () => {
-        console.log(`Total audio chunks: ${audioChunksRef.current.length}`)
-        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType })
-        console.log(`Audio blob size: ${audioBlob.size} bytes`)
         
-        if (audioBlob.size > 0) {
-          const audioFile = new File([audioBlob], "voice-expense.webm", { type: mimeType })
-          console.log(`Created audio file: ${audioFile.name}, size: ${audioFile.size} bytes`)
-          onRecordingComplete(audioFile)
-        } else {
-          console.error("Audio blob is empty")
-          alert("Recording failed. Please try again.")
+        const recorder = new MediaRecorder(stream, { mimeType })
+        mediaRecorderRef.current = recorder
+        audioChunksRef.current = []
+
+        recorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            audioChunksRef.current.push(event.data)
+          }
+        }
+
+        recorder.onstop = () => {
+          const audioBlob = new Blob(audioChunksRef.current, { type: mimeType })
+          
+          if (audioBlob.size > 0) {
+            const audioFile = new File([audioBlob], "voice-expense.webm", { type: mimeType })
+            onRecordingComplete(audioFile)
+          } else {
+            alert("Recording failed. Please try again.")
+            setStatus("idle")
+            return
+          }
+          
+          stream.getTracks().forEach((track) => track.stop())
+        }
+
+        recorder.onerror = () => {
           setStatus("idle")
-          return
+          stream.getTracks().forEach((track) => track.stop())
+          alert("Recording error occurred. Please try again.")
         }
+
+        recorder.start(100)
         
-        stream.getTracks().forEach((track) => track.stop())
-        setStatus("processing")
-      }
-
-      recorder.onerror = (event) => {
-        console.error("MediaRecorder error:", event.error)
+      } catch (error) {
         setStatus("idle")
-        stream.getTracks().forEach((track) => track.stop())
-        alert("Recording error occurred. Please try again.")
+        alert("Microphone access was denied. Please allow it in your browser settings.")
       }
-
-      // Start recording with a time slice to ensure data is captured
-      recorder.start(100) // Capture data every 100ms
-      console.log("Recording started")
-      
-    } catch (error) {
-      console.error("Error accessing microphone:", error)
-      setStatus("idle")
-      alert("Microphone access was denied. Please allow it in your browser settings.")
+    } else if (status === "recording") {
+      // Stop recording
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+        mediaRecorderRef.current.stop()
+      }
     }
   }
 
-  const stopRecording = () => {
-    if (status !== "recording" || !mediaRecorderRef.current) return
+  const cancelProcessing = () => {
+    // Call parent cancel function to stop API request
+    onCancel?.()
     
-    console.log("Stopping recording...")
-    if (mediaRecorderRef.current.state === "recording") {
+    // Stop any ongoing recording
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
       mediaRecorderRef.current.stop()
     }
-    // Don't set status here, let onstop handler do it
+    
+    // Stop all media tracks
+    if (mediaRecorderRef.current && mediaRecorderRef.current.stream) {
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop())
+    }
+    
+    // Reset state
+    setStatus("idle")
+    setShowModal(false)
+    mediaRecorderRef.current = null
+    audioChunksRef.current = []
   }
 
-  const isDisabled = status === "processing"
+
 
   const getButtonClasses = () => {
     switch (status) {
@@ -121,53 +132,63 @@ const VoiceRecorder = ({ onRecordingComplete, isProcessing }: VoiceRecorderProps
   }
 
   return (
-    <div className="relative">
-      {/* Pulse rings for recording state */}
-      {status === "recording" && (
-        <>
-          <div className="absolute inset-0 rounded-full bg-red-500/20 animate-ping scale-150"></div>
-          <div className="absolute inset-0 rounded-full bg-red-500/10 animate-ping scale-125 animation-delay-75"></div>
-        </>
-      )}
-
-      <button
-        onMouseDown={startRecording}
-        onMouseUp={stopRecording}
-        onMouseLeave={stopRecording}
-        onTouchStart={startRecording}
-        onTouchEnd={stopRecording}
-        onTouchCancel={stopRecording}
-        disabled={isDisabled}
-        className={`relative w-20 h-20 rounded-full flex items-center justify-center text-white transition-all duration-300 transform active:scale-95 ${getButtonClasses()}`}
-        aria-label="Hold to record expense"
-      >
-        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-        {status === "processing" ? (
-          <div className="relative">
-            <div className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
-            <Sparkles className="absolute inset-0 w-4 h-4 m-auto text-white/60" />
-          </div>
-        ) : (
-          <Mic size={32} className="relative z-10" />
+    <>
+      <div className="relative">
+        {/* Pulse rings for recording state */}
+        {status === "recording" && (
+          <>
+            <div className="absolute inset-0 rounded-full bg-red-500/20 animate-ping scale-150"></div>
+            <div className="absolute inset-0 rounded-full bg-red-500/10 animate-ping scale-125 animation-delay-75"></div>
+          </>
         )}
 
-        {/* Status indicator */}
-        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
-          <div
-            className={`px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm border transition-all duration-200 ${
-              status === "recording"
-                ? "bg-red-500/90 text-white border-red-400/50"
-                : status === "processing"
-                  ? "bg-amber-500/90 text-white border-amber-400/50"
+        <button
+          onClick={toggleRecording}
+          disabled={status === "processing"}
+          className={`relative w-20 h-20 rounded-full flex items-center justify-center text-white transition-all duration-300 transform active:scale-95 ${getButtonClasses()}`}
+          aria-label={status === "idle" ? "Click to start recording" : status === "recording" ? "Click to stop recording" : "Processing..."}
+        >
+          <Mic size={32} className="relative z-10" />
+
+          {/* Status indicator */}
+          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
+            <div
+              className={`px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm border transition-all duration-200 ${
+                status === "recording"
+                  ? "bg-red-500/90 text-white border-red-400/50"
                   : "bg-white/90 text-slate-700 border-white/50 opacity-0 group-hover:opacity-100"
-            }`}
-          >
-            {status === "recording" ? "Recording..." : status === "processing" ? "Processing..." : "Hold to record"}
+              }`}
+            >
+              {status === "recording" ? "Click to stop" : "Click to record"}
+            </div>
+          </div>
+        </button>
+      </div>
+
+      {/* Processing Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className={`${getModalClass()} p-8 max-w-sm mx-4 text-center`}>
+            <div className="mb-6">
+              <div className="w-16 h-16 mx-auto mb-4 relative">
+                <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                <Sparkles className="absolute inset-0 w-8 h-8 m-auto text-blue-600/60" />
+              </div>
+              <h3 className={`text-xl font-semibold ${getTextClass('primary')} mb-2`}>Processing Your Expense</h3>
+              <p className={getTextClass('secondary')}>AI is analyzing your voice recording...</p>
+            </div>
+            
+            <button
+              onClick={cancelProcessing}
+              className="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-6 rounded-xl transition-colors duration-200 flex items-center justify-center gap-2"
+            >
+              <X size={20} />
+              Cancel Command
+            </button>
           </div>
         </div>
-      </button>
-    </div>
+      )}
+    </>
   )
 }
 
