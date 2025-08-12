@@ -64,10 +64,10 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
   }, [isVisible]);
 
   const isExpense = type === 'expense';
-  const gradientColors = isExpense ? ['#EF4444', '#DC2626'] : ['#10B981', '#059669'];
-  const title = isExpense ? '💸 Expense Added!' : '💰 Income Added!';
-  const subtitle = isExpense ? 'Successfully recorded your expense' : 'Successfully recorded your income';
-  const icon = isExpense ? 'checkmark-circle' : 'checkmark-circle';
+  const gradientColors = ['#3B82F6', '#2563EB']; // Always blue for success
+  const title = isExpense ? '✅ Expense Saved!' : '✅ Income Saved!';
+  const subtitle = isExpense ? 'Successfully recorded' : 'Successfully recorded';
+  const icon = 'checkmark-circle';
 
   return (
     <Modal
@@ -94,7 +94,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
           style={styles.iconContainer}
         >
           <Animated.View style={{ transform: [{ scale: checkAnim }] }}>
-            <Ionicons name="checkmark" size={40} color="#FFFFFF" />
+            <Ionicons name="checkmark" size={28} color="#FFFFFF" />
           </Animated.View>
         </LinearGradient>
 
@@ -112,8 +112,8 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
               <View style={styles.detailRow}>
                 <Ionicons 
                   name="pricetag" 
-                  size={18} 
-                  color="#FFFFFF" 
+                  size={16} 
+                  color="#3B82F6" 
                 />
                 <Text style={styles.detailText}>
                   {category}
@@ -142,51 +142,51 @@ const styles = StyleSheet.create({
     margin: 0,
   },
   container: {
-    width: width * 0.9,
-    borderRadius: 24,
+    width: width * 0.75,
+    borderRadius: 20,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 15,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 25,
-    elevation: 20,
-  },
-  iconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'center',
-    marginTop: 40,
-    marginBottom: 24,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 8,
     },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
     elevation: 12,
   },
+  iconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginTop: 24,
+    marginBottom: 16,
+    shadowColor: '#3B82F6',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
   content: {
-    paddingHorizontal: 32,
-    paddingBottom: 40,
+    paddingHorizontal: 20,
+    paddingBottom: 24,
     alignItems: 'center',
   },
   title: {
-    fontSize: 26,
-    fontWeight: '800',
+    fontSize: 18,
+    fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
     opacity: 0.8,
   },
   detailsContainer: {
@@ -196,21 +196,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 16,
-    gap: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    borderRadius: 12,
+    gap: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: 'rgba(59, 130, 246, 0.2)',
   },
   detailText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: '#3B82F6',
   },
   successBar: {
-    height: 6,
+    height: 4,
     width: '100%',
   },
 });
